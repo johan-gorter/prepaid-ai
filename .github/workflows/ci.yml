@@ -75,6 +75,39 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
+  test-pwa:
+    name: PWA Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run PWA tests
+        run: npx playwright test --config=playwright-pwa.config.ts
+        env:
+          CI: true
+
+      - name: Upload PWA test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-pwa-report
+          path: playwright-report/
+          retention-days: 14
+
   test-ct:
     name: Component Tests
     needs: build
