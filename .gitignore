@@ -21,6 +21,7 @@ dist-ssr
 playwright-report/
 blob-report/
 test-results/
+playwright/.cache/
 
 # Firebase emulator data
 firebase-debug.log

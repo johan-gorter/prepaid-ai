@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "../composables/useAuth";
+import { auth } from "../firebase";
 import { useRouter } from "vue-router";
 
 const { signInWithGoogle, signInWithMicrosoft, signInWithApple, loading } =
   useAuth();
 const router = useRouter();
+
+const isEmulatorMode = import.meta.env.VITE_USE_EMULATORS === "true";
+
+// Dev login credentials — matches the user created by `npm run emulators:seed`
+const DEV_EMAIL = "dev@renovision.test";
+const DEV_PASSWORD = "dev-password";
 
 async function handleSignIn(provider: "google" | "microsoft" | "apple") {
   try {
@@ -17,6 +25,20 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
     router.push(redirect);
   } catch (err) {
     console.error("Sign-in error:", err);
+  }
+}
+
+async function handleDevLogin() {
+  try {
+    await signInWithEmailAndPassword(auth, DEV_EMAIL, DEV_PASSWORD);
+    const redirect =
+      (router.currentRoute.value.query.redirect as string) || "/";
+    router.push(redirect);
+  } catch (err) {
+    console.error("Dev login failed:", err);
+    alert(
+      `Dev login failed.\n\nMake sure you have run:\n  npm run emulators:seed`,
+    );
   }
 }
 </script>
@@ -53,6 +75,20 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
         >
           <span class="icon">A</span>
           Sign in with Apple
+        </button>
+      </div>
+
+      <!-- Dev login panel — only rendered when running with emulators -->
+      <div v-if="isEmulatorMode" class="dev-panel">
+        <div class="dev-divider">
+          <span>🧪 Dev / Emulator mode</span>
+        </div>
+        <p class="dev-hint">
+          Run <code>npm run emulators:seed</code> once to create this user.
+        </p>
+        <button class="btn btn-dev" @click="handleDevLogin">
+          <span class="icon">⚡</span>
+          Dev Login ({{ DEV_EMAIL }})
         </button>
       </div>
     </div>
@@ -150,5 +186,53 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
 }
 .btn-apple .icon {
   color: #000;
+}
+
+/* Dev panel — only visible in emulator mode */
+.dev-panel {
+  margin-top: 1.5rem;
+}
+
+.dev-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.dev-divider::before,
+.dev-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #eee;
+}
+
+.dev-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.dev-hint code {
+  background: #f5f5f5;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.btn-dev {
+  background: #fff8e1;
+  border-color: #ffe082;
+  color: #5d4037;
+  width: 100%;
+}
+
+.btn-dev:hover {
+  background: #fff3cd;
 }
 </style>

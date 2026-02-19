@@ -1,29 +1,12 @@
 import { expect, test } from "@playwright/experimental-ct-vue";
 import NewRenovationPage from "../src/views/NewRenovationPage.vue";
 
-// Mock vue-router
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    // Provide a minimal router mock for useRouter()
-    (window as unknown as Record<string, unknown>).__VUE_ROUTER_MOCK__ = true;
-  });
-});
-
+// Note: useRouter() returns undefined when no router is provided but does not
+// throw. Since this test never clicks the back button, mounting without a
+// router is safe and avoids needing a full router setup for a static TODO page.
 test.describe("NewRenovationPage component", () => {
   test("shows TODO placeholder content", async ({ mount }) => {
-    const component = await mount(NewRenovationPage, {
-      global: {
-        stubs: {
-          // Stub router-link to plain anchor
-          "router-link": {
-            template: "<a><slot /></a>",
-          },
-        },
-        mocks: {
-          $router: { push: () => {} },
-        },
-      },
-    });
+    const component = await mount(NewRenovationPage);
 
     await expect(component.getByText("Coming Soon")).toBeVisible();
     await expect(component.getByText("TODO")).toBeVisible();

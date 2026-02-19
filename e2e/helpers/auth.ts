@@ -99,14 +99,15 @@ export async function getTestUserToken(): Promise<string> {
 export async function signInTestUser(page: Page): Promise<void> {
   // Wait for the test sign-in helper to be exposed by firebase.ts
   await page.waitForFunction(
-    () =>
-      typeof (window as Record<string, unknown>).__testSignIn === "function",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    () => typeof (window as any).__testSignIn === "function",
     { timeout: 5000 },
   );
 
   await page.evaluate(
     async (user: { email: string; password: string }) => {
-      const signIn = (window as Record<string, unknown>).__testSignIn as (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const signIn = (window as any).__testSignIn as (
         email: string,
         password: string,
       ) => Promise<unknown>;

@@ -1,5 +1,4 @@
 import { defineConfig } from "@playwright/experimental-ct-vue";
-import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   testDir: "./ct",
@@ -12,8 +11,5 @@ export default defineConfig({
 
   use: {
     trace: "on-first-retry",
-    ctViteConfig: {
-      plugins: [vue()],
-    },
   },
 });
