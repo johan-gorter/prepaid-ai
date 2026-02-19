@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { getCurrentUser } from "vuefire";
+import { getCurrentUser } from "../composables/useAuth";
 
 const routes = [
   {

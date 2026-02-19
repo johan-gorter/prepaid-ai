@@ -1,4 +1,4 @@
-import type { Timestamp } from "firebase/firestore/lite";
+import type { Timestamp } from "firebase/firestore";
 
 export interface Renovation {
   id: string;

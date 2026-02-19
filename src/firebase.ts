@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore/lite";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,15 +11,15 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
 // Connect to Firebase emulators in local dev/test
 if (import.meta.env.VITE_USE_EMULATORS === "true") {
   Promise.all([
     import("firebase/auth"),
-    import("firebase/firestore/lite"),
+    import("firebase/firestore"),
   ]).then(([authModule, firestoreModule]) => {
+    const auth = authModule.getAuth(firebaseApp);
     authModule.connectAuthEmulator(auth, "http://127.0.0.1:9099", {
       disableWarnings: true,
     });

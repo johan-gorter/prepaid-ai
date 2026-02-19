@@ -18,6 +18,13 @@ export default defineConfig({
               return "vue";
             }
             if (id.includes("firebase") || id.includes("@firebase")) {
+              // Let auth land in its own async chunk (dynamically imported)
+              if (
+                id.includes("@firebase/auth") ||
+                id.includes("firebase/auth")
+              ) {
+                return "firebase-auth";
+              }
               return "firebase";
             }
           }
