@@ -1,26 +1,23 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { getCurrentUser } from "vuefire";
-import HomePage from "../views/HomePage.vue";
-import LoginPage from "../views/LoginPage.vue";
-import NewRenovationPage from "../views/NewRenovationPage.vue";
 
 const routes = [
   {
     path: "/",
     name: "home",
-    component: HomePage,
+    component: () => import("../views/HomePage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/login",
     name: "login",
-    component: LoginPage,
+    component: () => import("../views/LoginPage.vue"),
     meta: { requiresAuth: false },
   },
   {
     path: "/renovation/new",
     name: "new-renovation",
-    component: NewRenovationPage,
+    component: () => import("../views/NewRenovationPage.vue"),
     meta: { requiresAuth: true },
   },
 ];

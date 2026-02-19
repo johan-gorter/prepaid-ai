@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
-import { connectStorageEmulator, getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,20 +14,21 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig);
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
-export const storage = getStorage(firebaseApp);
 
 // Connect to Firebase emulators in local dev/test
 if (import.meta.env.VITE_USE_EMULATORS === "true") {
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
-    disableWarnings: true,
-  });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
-  connectStorageEmulator(storage, "127.0.0.1", 9199);
+  Promise.all([
+    import("firebase/auth"),
+    import("firebase/firestore"),
+  ]).then(([authModule, firestoreModule]) => {
+    authModule.connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+      disableWarnings: true,
+    });
+    firestoreModule.connectFirestoreEmulator(db, "127.0.0.1", 8080);
 
-  // Expose a test helper so Playwright can sign in without bare module imports
-  import("firebase/auth").then(({ signInWithEmailAndPassword }) => {
+    // Expose a test helper so Playwright can sign in without bare module imports
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__testSignIn = (email: string, password: string) =>
-      signInWithEmailAndPassword(auth, email, password);
+      authModule.signInWithEmailAndPassword(auth, email, password);
   });
 }

@@ -3,6 +3,28 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("vuefire") ||
+              id.includes("/vue/") ||
+              id.includes("vue-router") ||
+              id.includes("pinia") ||
+              id.includes("@vue/")
+            ) {
+              return "vue";
+            }
+            if (id.includes("firebase") || id.includes("@firebase")) {
+              return "firebase";
+            }
+          }
+        },
+      },
+    },
+  },
   plugins: [
     vue(),
     VitePWA({
