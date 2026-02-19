@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(cat | jq -r '.tool_input.file_path // empty'); for p in .env .env.local firestore.rules storage.rules; do if [[ \"$FILE\" == *\"$p\" ]]; then echo \"Blocked: $FILE is protected\" >&2; exit 2; fi; done",
+            "timeout": 5,
+            "statusMessage": "Checking protected files..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(cat | jq -r '.tool_input.file_path // empty'); if [[ \"$FILE\" == *.ts || \"$FILE\" == *.vue ]]; then cd \"$CLAUDE_PROJECT_DIR\" && npx vue-tsc -b --noEmit 2>&1 | head -20; fi",
+            "timeout": 30,
+            "statusMessage": "Type checking..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Reminders: Vue 3 Composition API + <script setup lang=ts> only. No enums (erasableSyntaxOnly). No ESLint — rely on vue-tsc strict. All tests are Playwright (E2E/CT/PWA). E2E needs Firebase emulators running.'"
+          }
+        ]
+      }
+    ]
+  }
+}
