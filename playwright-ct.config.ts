@@ -1,0 +1,19 @@
+import { defineConfig } from "@playwright/experimental-ct-vue";
+import vue from "@vitejs/plugin-vue";
+
+export default defineConfig({
+  testDir: "./ct",
+  testMatch: "**/*.ct.ts",
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI ? [["github"], ["html"]] : "html",
+
+  use: {
+    trace: "on-first-retry",
+    ctViteConfig: {
+      plugins: [vue()],
+    },
+  },
+});
