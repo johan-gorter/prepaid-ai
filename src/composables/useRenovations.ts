@@ -1,4 +1,9 @@
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+} from "firebase/firestore/lite";
 import { ref, watchEffect } from "vue";
 import { db } from "../firebase";
 import type { Renovation } from "../types";
@@ -11,7 +16,7 @@ export function useRenovations() {
 
   const { currentUser } = useAuth();
 
-  watchEffect((onCleanup) => {
+  watchEffect(() => {
     if (!currentUser.value) {
       renovations.value = [];
       loading.value = false;
@@ -29,23 +34,19 @@ export function useRenovations() {
     );
     const q = query(renovationsRef, orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        renovations.value = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+    getDocs(q)
+      .then((snapshot) => {
+        renovations.value = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
         })) as Renovation[];
         loading.value = false;
-      },
-      (err) => {
+      })
+      .catch((err) => {
         console.error("Error fetching renovations:", err);
         error.value = err.message;
         loading.value = false;
-      },
-    );
-
-    onCleanup(unsubscribe);
+      });
   });
 
   return { renovations, loading, error };

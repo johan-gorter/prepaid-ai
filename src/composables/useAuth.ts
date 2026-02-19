@@ -6,7 +6,7 @@ import {
   signInWithPopup,
   type User,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore/lite";
 import { computed, ref } from "vue";
 import { auth, db } from "../firebase";
 
