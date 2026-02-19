@@ -28,6 +28,10 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# TypeScript/Vue compiled artifacts
+src/**/*.js
+src/**/*.vue.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
