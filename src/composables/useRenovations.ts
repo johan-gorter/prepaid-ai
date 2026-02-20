@@ -1,4 +1,11 @@
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
 import { ref, watchEffect } from "vue";
 import { db } from "../firebase";
 import type { Renovation } from "../types";
@@ -48,5 +55,48 @@ export function useRenovations() {
     onCleanup(unsubscribe);
   });
 
-  return { renovations, loading, error };
+  async function createRenovation(data: {
+    title: string;
+    originalImageUrl: string;
+  }): Promise<string> {
+    if (!currentUser.value) throw new Error("Not authenticated");
+    const renovationsRef = collection(
+      db,
+      "users",
+      currentUser.value.uid,
+      "renovations",
+    );
+    const docRef = await addDoc(renovationsRef, {
+      title: data.title,
+      originalImageUrl: data.originalImageUrl,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return docRef.id;
+  }
+
+  async function createImpression(
+    renovationId: string,
+    data: { sourceImageUrl: string; prompt: string },
+  ): Promise<string> {
+    if (!currentUser.value) throw new Error("Not authenticated");
+    const impressionsRef = collection(
+      db,
+      "users",
+      currentUser.value.uid,
+      "renovations",
+      renovationId,
+      "impressions",
+    );
+    const docRef = await addDoc(impressionsRef, {
+      sourceImageUrl: data.sourceImageUrl,
+      resultImageUrl: "",
+      prompt: data.prompt,
+      status: "pending",
+      createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+  }
+
+  return { renovations, loading, error, createRenovation, createImpression };
 }

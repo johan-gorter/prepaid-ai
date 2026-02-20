@@ -23,6 +23,9 @@ blob-report/
 test-results/
 playwright/.cache/
 
+# Cloud Functions compiled output
+functions/lib/
+
 # Firebase emulator data
 firebase-debug.log
 firestore-debug.log

@@ -24,8 +24,8 @@ test.describe("Home Page", () => {
   }) => {
     await page.getByRole("link", { name: "+ New Renovation" }).click();
     await page.waitForURL("/renovation/new");
-    await expect(page.getByText("Coming Soon")).toBeVisible();
-    await expect(page.getByText("TODO")).toBeVisible();
+    await expect(page.getByText("New Renovation")).toBeVisible();
+    await expect(page.getByLabel("Title")).toBeVisible();
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {

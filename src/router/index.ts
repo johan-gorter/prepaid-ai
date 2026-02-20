@@ -20,6 +20,12 @@ const routes = [
     component: () => import("../views/NewRenovationPage.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/renovation/:id",
+    name: "renovation-detail",
+    component: () => import("../views/RenovationDetailPage.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

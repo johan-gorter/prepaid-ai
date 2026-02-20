@@ -12,7 +12,7 @@ export interface Impression {
   id: string;
   sourceImageUrl: string;
   resultImageUrl: string;
-  maskImageUrl: string;
+  maskImageUrl?: string;
   prompt: string;
   status: "pending" | "processing" | "completed" | "failed";
   createdAt: Timestamp;

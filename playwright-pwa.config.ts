@@ -5,8 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  * service worker, manifest, and all PWA assets are generated for real.
  */
 export default defineConfig({
-  testDir: "./e2e",
-  testMatch: "**/pwa.spec.ts",
+  testDir: "./e2e/pwa",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

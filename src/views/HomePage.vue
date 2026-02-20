@@ -59,6 +59,7 @@ async function handleSignOut() {
           v-for="renovation in renovations"
           :key="renovation.id"
           class="renovation-card"
+          @click="router.push(`/renovation/${renovation.id}`)"
         >
           <img
             :src="renovation.originalImageUrl"
