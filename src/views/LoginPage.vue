@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "../composables/useAuth";
-import { auth } from "../firebase";
+import { firebaseApp } from "../firebase";
 import { useRouter } from "vue-router";
 
 const { signInWithGoogle, signInWithMicrosoft, signInWithApple, loading } =
@@ -30,7 +29,14 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
 
 async function handleDevLogin() {
   try {
-    await signInWithEmailAndPassword(auth, DEV_EMAIL, DEV_PASSWORD);
+    const { signInWithEmailAndPassword, getAuth } = await import(
+      "firebase/auth"
+    );
+    await signInWithEmailAndPassword(
+      getAuth(firebaseApp),
+      DEV_EMAIL,
+      DEV_PASSWORD,
+    );
     const redirect =
       (router.currentRoute.value.query.redirect as string) || "/";
     router.push(redirect);

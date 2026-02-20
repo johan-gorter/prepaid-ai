@@ -1,59 +1,86 @@
-import {
-  GoogleAuthProvider,
-  OAuthProvider,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  signInWithPopup,
-  type User,
-} from "firebase/auth";
+import type { User } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { computed, ref } from "vue";
-import { auth, db } from "../firebase";
+import { computed, ref, watch } from "vue";
+import { db, firebaseApp } from "../firebase";
 
 const currentUser = ref<User | null>(null);
 const loading = ref(true);
 
-// Listen to auth state once
-onAuthStateChanged(auth, async (user) => {
-  currentUser.value = user;
-  loading.value = false;
+// Lazy-load Firebase Auth — keeps ~250 kB out of the initial bundle
+import("firebase/auth").then(({ getAuth, onAuthStateChanged }) => {
+  const auth = getAuth(firebaseApp);
+  onAuthStateChanged(auth, async (user) => {
+    currentUser.value = user;
+    loading.value = false;
 
-  if (user) {
-    // Upsert user profile in Firestore
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(
-      userRef,
-      {
-        displayName: user.displayName ?? "",
-        email: user.email ?? "",
-        photoURL: user.photoURL ?? "",
-        createdAt: serverTimestamp(),
-      },
-      { merge: true },
-    );
-  }
+    if (user) {
+      // Upsert user profile in Firestore
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(
+        userRef,
+        {
+          displayName: user.displayName ?? "",
+          email: user.email ?? "",
+          photoURL: user.photoURL ?? "",
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+  });
 });
+
+/** Resolves once the initial auth state is known. Replaces vuefire's getCurrentUser(). */
+export function getCurrentUser(): Promise<User | null> {
+  return new Promise((resolve) => {
+    if (!loading.value) {
+      resolve(currentUser.value);
+      return;
+    }
+    const unwatch = watch(loading, (isLoading) => {
+      if (!isLoading) {
+        unwatch();
+        resolve(currentUser.value);
+      }
+    });
+  });
+}
 
 export function useAuth() {
   const isAuthenticated = computed(() => !!currentUser.value);
 
   async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const { GoogleAuthProvider, signInWithPopup, getAuth } = await import(
+      "firebase/auth"
+    );
+    await signInWithPopup(getAuth(firebaseApp), new GoogleAuthProvider());
   }
 
   async function signInWithMicrosoft() {
-    const provider = new OAuthProvider("microsoft.com");
-    await signInWithPopup(auth, provider);
+    const { OAuthProvider, signInWithPopup, getAuth } = await import(
+      "firebase/auth"
+    );
+    await signInWithPopup(
+      getAuth(firebaseApp),
+      new OAuthProvider("microsoft.com"),
+    );
   }
 
   async function signInWithApple() {
-    const provider = new OAuthProvider("apple.com");
-    await signInWithPopup(auth, provider);
+    const { OAuthProvider, signInWithPopup, getAuth } = await import(
+      "firebase/auth"
+    );
+    await signInWithPopup(
+      getAuth(firebaseApp),
+      new OAuthProvider("apple.com"),
+    );
   }
 
   async function signOut() {
-    await firebaseSignOut(auth);
+    const { signOut: firebaseSignOut, getAuth } = await import(
+      "firebase/auth"
+    );
+    await firebaseSignOut(getAuth(firebaseApp));
   }
 
   return {

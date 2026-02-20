@@ -35,6 +35,14 @@
             "command": "echo 'Reminders: Vue 3 Composition API + <script setup lang=ts> only. No enums (erasableSyntaxOnly). No ESLint — rely on vue-tsc strict. All tests are Playwright (E2E/CT/PWA). E2E needs Firebase emulators running.'"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
       }
     ]
   }

@@ -3,6 +3,35 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("vuefire") ||
+              id.includes("/vue/") ||
+              id.includes("vue-router") ||
+              id.includes("pinia") ||
+              id.includes("@vue/")
+            ) {
+              return "vue";
+            }
+            if (id.includes("firebase") || id.includes("@firebase")) {
+              // Let auth land in its own async chunk (dynamically imported)
+              if (
+                id.includes("@firebase/auth") ||
+                id.includes("firebase/auth")
+              ) {
+                return "firebase-auth";
+              }
+              return "firebase";
+            }
+          }
+        },
+      },
+    },
+  },
   plugins: [
     vue(),
     VitePWA({
