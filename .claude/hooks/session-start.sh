@@ -28,7 +28,7 @@ npx playwright install chromium
 
 # 3. Pre-download Firebase emulator binaries by starting and immediately
 #    stopping the emulators. This ensures JARs are cached for later use.
-npx firebase emulators:start --project prepaid-ai-test &
+npx firebase emulators:start --project prepaid-ai-emulator &
 EMULATOR_PID=$!
 
 # Wait for emulators to become ready (up to 90s)
