@@ -10,7 +10,7 @@ const router = useRouter();
 const isEmulatorMode = import.meta.env.VITE_USE_EMULATORS === "true";
 
 // Dev login credentials — matches the user created by `npm run emulators:seed`
-const DEV_EMAIL = "dev@renovision.test";
+const DEV_EMAIL = "dev@prepaid.test";
 const DEV_PASSWORD = "dev-password";
 
 async function handleSignIn(provider: "google" | "microsoft" | "apple") {
@@ -53,7 +53,7 @@ async function handleDevLogin() {
   <div class="login-page">
     <div class="login-card">
       <div class="logo">
-        <h1>🏠 RenovisionAI</h1>
+        <h1>Prepaid AI</h1>
         <p class="tagline">Reimagine your space with AI</p>
       </div>
 

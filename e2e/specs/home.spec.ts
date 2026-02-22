@@ -29,7 +29,7 @@ test.describe("Home Page", () => {
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {
-    await expect(page.getByText("RenovisionAI")).toBeVisible();
+    await expect(page.getByText("Prepaid AI")).toBeVisible();
     await expect(page.getByText("Sign out")).toBeVisible();
   });
 });

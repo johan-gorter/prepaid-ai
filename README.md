@@ -1,4 +1,4 @@
-# RenovisionAI
+# Prepaid AI
 
 A Vue 3 PWA that lets users take or upload a photo of a space, mark an area to change, and get an AI-generated impression of their renovation idea.
 
@@ -104,7 +104,7 @@ The Auth Emulator runs at `http://localhost:4000/auth`. Three ways to sign in:
 **Option A — Dev Login button (easiest)**
 
 1. Run `npm run emulators:seed` to create the dev user
-2. Open the app and click **⚡ Dev Login** — it signs you in with `dev@renovision.test`
+2. Open the app and click **⚡ Dev Login** — it signs you in with `dev@prepaid.test`
 
 **Option B — Browser console**
 
@@ -112,7 +112,7 @@ In emulator mode the app exposes a `window.__testSignIn` helper:
 
 ```js
 // Open browser DevTools → Console
-await __testSignIn("dev@renovision.test", "dev-password");
+await __testSignIn("dev@prepaid.test", "dev-password");
 // Then navigate to /
 ```
 

@@ -24,7 +24,7 @@ See [AGENTS.md](AGENTS.md) for detailed scripts, test conventions, and environme
 
 ## Architecture
 
-**RenovisionAI** — Vue 3 PWA for AI-powered renovation visualizations. Users photograph a space, mask an area, and get AI-generated renovation impressions.
+**Prepaid AI** — Vue 3 PWA for AI-powered renovation visualizations. Users photograph a space, mask an area, and get AI-generated renovation impressions.
 
 ### Stack
 

@@ -1,5 +1,5 @@
 {
-  "name": "renovision-ai-functions",
+  "name": "prepaid-ai-functions",
   "private": true,
   "main": "lib/index.js",
   "engines": {

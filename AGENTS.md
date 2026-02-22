@@ -1,6 +1,6 @@
 # AGENTS.md — AI Agent Instructions
 
-This file contains instructions for AI coding agents working on the RenovisionAI codebase.
+This file contains instructions for AI coding agents working on the Prepaid AI codebase.
 
 ## Tech Stack
 

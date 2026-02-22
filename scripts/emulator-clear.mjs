@@ -11,7 +11,7 @@
  *   npm run emulators
  */
 
-const PROJECT_ID = "renovision-ai-test";
+const PROJECT_ID = "prepaid-ai-test";
 
 async function clearFirestore() {
   const res = await fetch(

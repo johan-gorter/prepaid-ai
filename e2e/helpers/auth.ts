@@ -9,11 +9,11 @@
 import type { Page } from "@playwright/test";
 
 const AUTH_EMULATOR_URL = "http://127.0.0.1:9099";
-const PROJECT_ID = "renovision-ai-test";
+const PROJECT_ID = "prepaid-ai-test";
 
 export const TEST_USER = {
   uid: "test-user-001",
-  email: "testuser@renovision.test",
+  email: "testuser@prepaid.test",
   displayName: "Test User",
   password: "test-password-123",
 };

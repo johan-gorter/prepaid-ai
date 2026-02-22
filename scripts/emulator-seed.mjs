@@ -9,11 +9,11 @@
  *   npm run emulators
  */
 
-const PROJECT_ID = "renovision-ai-test";
+const PROJECT_ID = "prepaid-ai-test";
 const AUTH_URL = "http://127.0.0.1:9099";
 
 export const DEV_USER = {
-  email: "dev@renovision.test",
+  email: "dev@prepaid.test",
   password: "dev-password",
   displayName: "Dev User",
 };

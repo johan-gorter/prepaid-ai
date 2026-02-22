@@ -16,7 +16,7 @@ async function handleSignOut() {
 <template>
   <div class="home-page">
     <header class="app-header">
-      <h1>🏠 RenovisionAI</h1>
+      <h1>Prepaid AI</h1>
       <div class="user-info" v-if="currentUser">
         <img
           v-if="currentUser.photoURL"

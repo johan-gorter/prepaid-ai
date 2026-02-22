@@ -38,9 +38,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "RenovisionAI",
-        short_name: "Renovision",
-        description: "AI-powered home renovation visualizer",
+        name: "Prepaid AI",
+        short_name: "Prepaid AI",
+        description: "AI-powered visualizations",
         theme_color: "#1a1a2e",
         background_color: "#1a1a2e",
         display: "standalone",

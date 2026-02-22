@@ -1,4 +1,4 @@
-# RenovisionAI — Project Setup Plan
+# Prepaid AI — Project Setup Plan
 
 ## Architecture Decisions
 
@@ -37,7 +37,7 @@ users/{uid}
 
 ### Phase 1: GCP & Firebase Project
 
-1. Create a GCP project named `renovision-ai` at console.cloud.google.com
+1. Create a GCP project named `prepaid-ai` at console.cloud.google.com
 2. Activate free trial ($300 credits / 90 days)
 3. Enable Firebase on the same project at console.firebase.google.com
 4. Select **Blaze plan** (pay-as-you-go — covered by GCP credits)
@@ -52,7 +52,7 @@ users/{uid}
 
 8. Install Firebase CLI: `npm install -g firebase-tools`
 9. `firebase login` and `firebase init` (select Firestore, Functions, Hosting, Storage)
-10. Scaffold Vue project: `npm create vite@latest renovision-ai -- --template vue-ts`
+10. Scaffold Vue project: `npm create vite@latest prepaid-ai -- --template vue-ts`
 11. Install dependencies:
     ```bash
     npm install firebase vuefire vue-router pinia
@@ -114,16 +114,16 @@ users/{uid}
 
 ```bash
 # ============================================
-# RenovisionAI — Local Environment Variables
+# Prepaid AI — Local Environment Variables
 # ============================================
 # DO NOT commit this file to version control.
 # Add .env to .gitignore
 
 # --- Firebase (client-side, VITE_ prefix required) ---
 VITE_FIREBASE_API_KEY=AIzaSy...
-VITE_FIREBASE_AUTH_DOMAIN=renovision-ai.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=renovision-ai
-VITE_FIREBASE_STORAGE_BUCKET=renovision-ai.appspot.com
+VITE_FIREBASE_AUTH_DOMAIN=prepaid-ai.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=prepaid-ai
+VITE_FIREBASE_STORAGE_BUCKET=prepaid-ai.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
 VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 

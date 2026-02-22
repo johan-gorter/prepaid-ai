@@ -4,7 +4,7 @@ test.describe("Login Page", () => {
   test("shows login form with all providers", async ({ page }) => {
     await page.goto("/login");
 
-    await expect(page.getByText("RenovisionAI")).toBeVisible();
+    await expect(page.getByText("Prepaid AI")).toBeVisible();
     await expect(page.getByText("Reimagine your space with AI")).toBeVisible();
 
     await expect(
@@ -23,6 +23,6 @@ test.describe("Login Page", () => {
   }) => {
     await page.goto("/");
     await page.waitForURL(/\/login/);
-    await expect(page.getByText("RenovisionAI")).toBeVisible();
+    await expect(page.getByText("Prepaid AI")).toBeVisible();
   });
 });

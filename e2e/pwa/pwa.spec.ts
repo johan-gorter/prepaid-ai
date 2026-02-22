@@ -20,8 +20,8 @@ test.describe("PWA Requirements", () => {
     const manifest = await response.json();
 
     // Required manifest fields
-    expect(manifest.name).toBe("RenovisionAI");
-    expect(manifest.short_name).toBe("Renovision");
+    expect(manifest.name).toBe("Prepaid AI");
+    expect(manifest.short_name).toBe("Prepaid AI");
     expect(manifest.start_url).toBe("/");
     expect(manifest.display).toBe("standalone");
     expect(manifest.theme_color).toBe("#1a1a2e");
