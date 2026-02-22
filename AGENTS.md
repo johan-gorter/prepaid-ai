@@ -8,8 +8,9 @@ This file contains instructions for AI coding agents working on the Prepaid AI c
 - **Auth:** Firebase Authentication (Google/Microsoft/Apple)
 - **Database:** Cloud Firestore
 - **Storage:** Firebase Storage (GCS-backed)
-- **Testing:** Playwright (E2E + Component Tests)
-- **Local Backend:** Firebase Emulator Suite
+- **Cloud Functions:** Firebase Cloud Functions (Firestore triggers)
+- **Testing:** Playwright (E2E + Component Tests + PWA)
+- **Local Backend:** Firebase Emulator Suite (Auth, Firestore, Storage, Functions)
 - **PWA:** vite-plugin-pwa
 
 ## Project Structure
@@ -28,6 +29,9 @@ e2e/                    # Playwright E2E tests
   global-setup.ts       # Creates test user in emulator before all tests
   global-teardown.ts    # Cleans up emulator data after all tests
 ct/                     # Playwright Component Tests (*.ct.ts)
+functions/              # Firebase Cloud Functions
+  src/index.ts          # processImpression Firestore trigger
+  lib/                  # Compiled output (git-ignored, must build before E2E)
 ```
 
 ## Available Scripts
@@ -45,10 +49,11 @@ ct/                     # Playwright Component Tests (*.ct.ts)
 
 | Command                   | Description                                                                                                                                |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run emulators`       | Start Firebase Emulator Suite (Auth :9099, Firestore :8080, Storage :9199, UI :4000). **Requires Java.** Must be running before E2E tests. |
+| `npm run emulators`       | Start Firebase Emulator Suite (Auth :9099, Functions :5001, Firestore :8080, Storage :9199, UI :4000). **Requires Java.** Must be running before E2E tests. |
 | `npm run test:e2e`        | Run Playwright E2E tests (auto-starts Vite dev server in test mode)                                                                        |
 | `npm run test:ct`         | Run Playwright Component Tests (no emulators needed)                                                                                       |
-| `npm run test`            | Run both E2E and Component Tests sequentially                                                                                              |
+| `npm run test:pwa`        | Run PWA tests (auto-builds production bundle)                                                                                              |
+| `npm run test`            | Run E2E, Component, and PWA tests sequentially                                                                                             |
 | `npm run test:e2e:ui`     | Open Playwright UI mode for E2E tests (interactive debugging)                                                                              |
 | `npm run test:e2e:headed` | Run E2E tests in a visible browser window                                                                                                  |
 
@@ -62,7 +67,19 @@ npx vue-tsc --noEmit
 
 ### E2E Tests (require Firebase Emulators)
 
-E2E tests use real Firebase Emulators for Auth, Firestore, and Storage. The emulators must be running before you start E2E tests.
+E2E tests use real Firebase Emulators for Auth, Firestore, Storage, and Functions. The emulators must be running before you start E2E tests.
+
+**One-time setup before first E2E run:**
+
+```bash
+# Install and build Cloud Functions (required for impression processing tests)
+cd functions && npm install && npm run build && cd ..
+
+# Install Playwright browsers
+npx playwright install
+```
+
+**Running E2E tests:**
 
 ```bash
 # Terminal 1 — start emulators (keep running)
@@ -77,9 +94,11 @@ The Playwright config (`playwright.config.ts`) automatically:
 - Starts a Vite dev server on port 5173 with emulator env vars
 - Runs global setup which waits for emulators, clears data, and creates a test user
 - Provides an `authenticatedPage` fixture for tests needing a signed-in user
-- Cleans up Firestore data between tests for isolation
+- Clears Firestore data before each test (in fixture setup) for parallel-safe isolation
 
 **No `.env` file is needed for tests** — the Playwright config injects fake Firebase config values directly. The emulators accept any project configuration.
+
+**Important:** If you change Cloud Function code in `functions/src/`, rebuild with `cd functions && npm run build` and restart the emulators.
 
 ### Component Tests (no emulators needed)
 
@@ -130,7 +149,7 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - Component test files go in `ct/` with the pattern `*.ct.ts`
 - Use the `authenticatedPage` fixture from `e2e/fixtures.ts` for tests that need a logged-in user
 - Use standard `page` from `@playwright/test` for unauthenticated tests (e.g., login page)
-- Each E2E test gets a clean Firestore state (data is cleared after each test using the fixture)
+- Each E2E test gets a clean Firestore state (data is cleared before each test in the fixture setup, not after, to avoid race conditions with parallel tests)
 
 ## Important Notes
 
