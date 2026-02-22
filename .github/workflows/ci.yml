@@ -158,45 +158,48 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-  deploy:
-    name: Deploy to Production
-    needs: [build, test-e2e, test-pwa, test-ct]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install functions dependencies
-        run: npm ci --prefix functions
-
-      - name: Authenticate to Firebase
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa-key.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
-
-      - name: Deploy to Firebase
-        run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project renovision-ai
+  # TEMP: Production deploy disabled — main pushes go to experimental instead
+  # deploy:
+  #   name: Deploy to Production
+  #   needs: [build, test-e2e, test-pwa, test-ct]
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #
+  #     - name: Download dist artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: dist
+  #         path: dist/
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Install functions dependencies
+  #       run: npm ci --prefix functions
+  #
+  #     - name: Authenticate to Firebase
+  #       run: |
+  #         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa-key.json"
+  #         echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
+  #
+  #     - name: Deploy to Firebase
+  #       run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project renovision-ai
 
   deploy-experimental:
     name: Deploy to Experimental
     needs: [build, test-e2e, test-pwa, test-ct]
-    if: github.event_name == 'pull_request'
+    # TEMP: was pull_request only — now also deploys on push to main
+    # if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
