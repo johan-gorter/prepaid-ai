@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { TEST_FIREBASE_ENV } from "./e2e/helpers/emulator-config";
 
 /**
  * PWA tests run against a production build (vite preview) so the
@@ -29,14 +30,6 @@ export default defineConfig({
     command: "vite build --mode test && vite preview --port 4173",
     port: 4173,
     reuseExistingServer: !process.env.CI,
-    env: {
-      VITE_FIREBASE_API_KEY: "fake-api-key",
-      VITE_FIREBASE_AUTH_DOMAIN: "localhost",
-      VITE_FIREBASE_PROJECT_ID: "prepaid-ai-test",
-      VITE_FIREBASE_STORAGE_BUCKET: "prepaid-ai-test.appspot.com",
-      VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000",
-      VITE_FIREBASE_APP_ID: "1:000000000:web:fake",
-      VITE_USE_EMULATORS: "true",
-    },
+    env: TEST_FIREBASE_ENV,
   },
 });

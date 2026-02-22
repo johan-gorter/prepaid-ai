@@ -9,8 +9,9 @@
  *   npm run emulators
  */
 
-const PROJECT_ID = "prepaid-ai-test";
-const AUTH_URL = "http://127.0.0.1:9099";
+import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config.mjs";
+
+const AUTH_URL = EMULATOR_URLS.auth;
 
 export const DEV_USER = {
   email: "dev@prepaid.test",

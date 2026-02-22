@@ -1,0 +1,37 @@
+/**
+ * Centralized emulator configuration.
+ *
+ * Single source of truth for all emulator ports, hosts, project ID, and URLs.
+ * Imported by scripts, E2E helpers, and global setup/teardown.
+ */
+
+export const PROJECT_ID = "prepaid-ai-test";
+
+export const EMULATOR_HOST = "127.0.0.1";
+
+export const EMULATOR_PORTS = {
+  auth: 9099,
+  firestore: 8080,
+  storage: 9199,
+  functions: 5001,
+  ui: 4000,
+};
+
+export const EMULATOR_URLS = {
+  auth: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.auth}`,
+  firestore: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.firestore}`,
+  storage: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.storage}`,
+  functions: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.functions}`,
+  ui: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.ui}`,
+};
+
+/** Firebase config env vars used by Playwright webServer and Vite test mode */
+export const TEST_FIREBASE_ENV = {
+  VITE_FIREBASE_API_KEY: "fake-api-key",
+  VITE_FIREBASE_AUTH_DOMAIN: "localhost",
+  VITE_FIREBASE_PROJECT_ID: PROJECT_ID,
+  VITE_FIREBASE_STORAGE_BUCKET: `${PROJECT_ID}.appspot.com`,
+  VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000",
+  VITE_FIREBASE_APP_ID: "1:000000000:web:fake",
+  VITE_USE_EMULATORS: "true",
+};

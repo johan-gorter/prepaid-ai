@@ -7,9 +7,7 @@
  */
 
 import type { Page } from "@playwright/test";
-
-const AUTH_EMULATOR_URL = "http://127.0.0.1:9099";
-const PROJECT_ID = "prepaid-ai-test";
+import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config";
 
 export const TEST_USER = {
   uid: "test-user-001",
@@ -32,7 +30,7 @@ export async function createTestUser(): Promise<void> {
   // Delete user if exists (ignore errors)
   try {
     await fetch(
-      `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+      `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
       {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -45,7 +43,7 @@ export async function createTestUser(): Promise<void> {
 
   // Create user via the emulator's signUp endpoint
   const signUpRes = await fetch(
-    `${AUTH_EMULATOR_URL}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
+    `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,7 +67,7 @@ export async function createTestUser(): Promise<void> {
  */
 export async function getTestUserToken(): Promise<string> {
   const res = await fetch(
-    `${AUTH_EMULATOR_URL}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
+    `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -125,7 +123,7 @@ export async function signInTestUser(page: Page): Promise<void> {
  */
 export async function clearFirestoreData(): Promise<void> {
   await fetch(
-    `http://127.0.0.1:8080/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
+    `${EMULATOR_URLS.firestore}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
     { method: "DELETE" },
   );
 }
@@ -135,7 +133,7 @@ export async function clearFirestoreData(): Promise<void> {
  */
 export async function clearAuthUsers(): Promise<void> {
   await fetch(
-    `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+    `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
     { method: "DELETE", headers: { "Content-Type": "application/json" } },
   );
 }
