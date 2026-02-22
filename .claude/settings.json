@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
+            "command": "echo Disabled because of errors: $CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
             "timeout": 300
           }
         ]
