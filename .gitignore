@@ -26,7 +26,8 @@ playwright/.cache/
 # Cloud Functions compiled output
 functions/lib/
 
-# Firebase emulator data
+# Firebase
+.firebase/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
