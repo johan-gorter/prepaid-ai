@@ -20,33 +20,59 @@ export no_proxy="$FIXED_NO_PROXY"
 # JAVA_TOOL_OPTIONS causes a "circular structure" serialisation error.
 export JAVA_TOOL_OPTIONS=""
 
-# 1. Install npm dependencies
-npm install
-
-# 2. Install Playwright chromium (the only browser used in tests)
-npx playwright install chromium
-
-# 3. Pre-download Firebase emulator binaries by starting and immediately
-#    stopping the emulators. This ensures JARs are cached for later use.
-npx firebase emulators:start --project prepaid-ai-emulator &
-EMULATOR_PID=$!
-
-# Wait for emulators to become ready (up to 90s)
-for i in $(seq 1 90); do
-  if curl -s http://127.0.0.1:4000 > /dev/null 2>&1; then
-    echo "Firebase emulators are ready (${i}s)"
-    break
-  fi
-  sleep 1
-done
-
-# Persist proxy fix so the agent session can start emulators later
+# Persist proxy fix early so the agent session has them even if later steps fail
 echo "export NO_PROXY=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
 echo "export no_proxy=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
 echo 'export JAVA_TOOL_OPTIONS=""' >> "$CLAUDE_ENV_FILE"
 
-# Stop the emulators — they were only started to cache the JARs
-kill "$EMULATOR_PID" 2>/dev/null || true
-wait "$EMULATOR_PID" 2>/dev/null || true
+# 1. Install npm dependencies (skip if node_modules exists and is current)
+if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ]; then
+  echo "Installing npm dependencies..."
+  timeout 120 npm install || echo "Warning: npm install failed or timed out"
+else
+  echo "npm dependencies already installed, skipping"
+fi
+
+# 2. Install Playwright chromium (skip if already cached)
+if ! npx playwright install --dry-run chromium 2>/dev/null | grep -q "already installed"; then
+  echo "Installing Playwright chromium..."
+  timeout 120 npx playwright install chromium || echo "Warning: Playwright install failed or timed out"
+else
+  echo "Playwright chromium already installed, skipping"
+fi
+
+# 3. Pre-download Firebase emulator binaries by starting and immediately
+#    stopping the emulators. This ensures JARs are cached for later use.
+if ! command -v java &> /dev/null; then
+  echo "Warning: Java not found, skipping emulator pre-cache"
+else
+  echo "Pre-caching Firebase emulator JARs..."
+  npx firebase emulators:start --project prepaid-ai-emulator &
+  EMULATOR_PID=$!
+
+  # Wait for emulators to become ready (up to 30s)
+  EMULATOR_READY=false
+  for i in $(seq 1 30); do
+    # Check if the process died early (e.g. download failure)
+    if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
+      echo "Emulator process exited early"
+      break
+    fi
+    if curl -s http://127.0.0.1:4000 > /dev/null 2>&1; then
+      echo "Firebase emulators are ready (${i}s)"
+      EMULATOR_READY=true
+      break
+    fi
+    sleep 1
+  done
+
+  if [ "$EMULATOR_READY" = false ]; then
+    echo "Warning: Emulators did not become ready in time"
+  fi
+
+  # Stop the emulators — they were only started to cache the JARs
+  kill "$EMULATOR_PID" 2>/dev/null || true
+  wait "$EMULATOR_PID" 2>/dev/null || true
+fi
 
 echo "Session start hook complete"
