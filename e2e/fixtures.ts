@@ -47,10 +47,11 @@ async function signInOnPage(page: Page): Promise<void> {
 
 export const test = base.extend<TestFixtures>({
   authenticatedPage: async ({ page }, use) => {
+    // Clean Firestore data before each test for isolation.
+    // Done before (not after) so parallel tests don't wipe each other's data.
+    await clearFirestoreData();
     await signInOnPage(page);
     await use(page);
-    // Clean Firestore data between tests for isolation
-    await clearFirestoreData();
   },
 });
 

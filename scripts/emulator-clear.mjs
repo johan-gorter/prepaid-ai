@@ -11,11 +11,11 @@
  *   npm run emulators
  */
 
-const PROJECT_ID = "prepaid-ai-test";
+import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config.mjs";
 
 async function clearFirestore() {
   const res = await fetch(
-    `http://127.0.0.1:8080/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
+    `${EMULATOR_URLS.firestore}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
     { method: "DELETE" },
   );
   if (!res.ok && res.status !== 404) {
@@ -26,7 +26,7 @@ async function clearFirestore() {
 
 async function clearAuth() {
   const res = await fetch(
-    `http://127.0.0.1:9099/emulator/v1/projects/${PROJECT_ID}/accounts`,
+    `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
     { method: "DELETE", headers: { "Content-Type": "application/json" } },
   );
   if (!res.ok && res.status !== 404) {

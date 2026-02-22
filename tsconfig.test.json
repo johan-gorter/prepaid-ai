@@ -17,6 +17,7 @@
     "src/env.d.ts",
     "playwright.config.ts",
     "playwright-ct.config.ts",
+    "playwright-pwa.config.ts",
     "e2e/**/*.ts",
     "ct/**/*.ts"
   ]
