@@ -1,12 +1,15 @@
 #!/bin/bash
-set -euo pipefail
+# SessionStart hook — sets up the remote environment for development.
+# Intentionally avoids "set -euo pipefail" so that individual failures
+# don't abort the entire hook (which would block env-var persistence
+# and make Claude Code appear to hang while waiting for the timeout).
 
 # Only run in Claude Code remote environments
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-cd "$CLAUDE_PROJECT_DIR"
+cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
 # Fix proxy exclusions: the default NO_PROXY excludes *.googleapis.com and
 # *.google.com, but in the sandbox there is no direct DNS for those hosts.
@@ -21,29 +24,43 @@ export no_proxy="$FIXED_NO_PROXY"
 export JAVA_TOOL_OPTIONS=""
 
 # Persist proxy fix early so the agent session has them even if later steps fail
-echo "export NO_PROXY=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
-echo "export no_proxy=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
-echo 'export JAVA_TOOL_OPTIONS=""' >> "$CLAUDE_ENV_FILE"
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  echo "export NO_PROXY=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
+  echo "export no_proxy=\"$FIXED_NO_PROXY\"" >> "$CLAUDE_ENV_FILE"
+  echo 'export JAVA_TOOL_OPTIONS=""' >> "$CLAUDE_ENV_FILE"
+fi
 
 # 1. Install npm dependencies (skip if node_modules exists and is current)
 if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ]; then
   echo "Installing npm dependencies..."
-  timeout 120 npm install || echo "Warning: npm install failed or timed out"
+  if command -v timeout &>/dev/null; then
+    timeout 120 npm install || echo "Warning: npm install failed or timed out"
+  else
+    npm install || echo "Warning: npm install failed"
+  fi
 else
   echo "npm dependencies already installed, skipping"
 fi
 
 # 2. Install Playwright chromium (skip if already cached)
-if ! npx playwright install --dry-run chromium 2>/dev/null | grep -q "already installed"; then
+NEED_PW_INSTALL=true
+if npx playwright install --dry-run chromium 2>/dev/null | grep -q "already installed"; then
+  NEED_PW_INSTALL=false
+fi
+if [ "$NEED_PW_INSTALL" = true ]; then
   echo "Installing Playwright chromium..."
-  timeout 120 npx playwright install chromium || echo "Warning: Playwright install failed or timed out"
+  if command -v timeout &>/dev/null; then
+    timeout 120 npx playwright install chromium || echo "Warning: Playwright install failed or timed out"
+  else
+    npx playwright install chromium || echo "Warning: Playwright install failed"
+  fi
 else
   echo "Playwright chromium already installed, skipping"
 fi
 
 # 3. Pre-download Firebase emulator binaries by starting and immediately
 #    stopping the emulators. This ensures JARs are cached for later use.
-if ! command -v java &> /dev/null; then
+if ! command -v java &>/dev/null; then
   echo "Warning: Java not found, skipping emulator pre-cache"
 else
   echo "Pre-caching Firebase emulator JARs..."
@@ -58,7 +75,7 @@ else
       echo "Emulator process exited early"
       break
     fi
-    if curl -s http://127.0.0.1:4000 > /dev/null 2>&1; then
+    if command -v curl &>/dev/null && curl -s http://127.0.0.1:4000 >/dev/null 2>&1; then
       echo "Firebase emulators are ready (${i}s)"
       EMULATOR_READY=true
       break
