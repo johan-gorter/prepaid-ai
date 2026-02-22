@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "renovision-ai"
+    "default": "renovision-ai",
+    "experimental": "renovision-ai-experimental"
   }
 }
