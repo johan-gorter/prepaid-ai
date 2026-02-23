@@ -229,7 +229,7 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
       - name: Deploy to experimental project
-        run: npx firebase deploy --only hosting,functions --project prepaid-ai-experimental
+        run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project prepaid-ai-experimental
 
       - name: Comment PR with experimental URL
         if: github.event_name == 'pull_request'
