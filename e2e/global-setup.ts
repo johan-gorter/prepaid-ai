@@ -11,15 +11,15 @@ import {
   clearFirestoreData,
   createTestUser,
 } from "./helpers/auth";
+import { EMULATOR_URLS } from "./helpers/emulator-config";
 
-const EMULATOR_HEALTH_URL = "http://127.0.0.1:4000";
 const MAX_RETRIES = 30;
 const RETRY_DELAY_MS = 1000;
 
 async function waitForEmulators(): Promise<void> {
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
-      const res = await fetch(EMULATOR_HEALTH_URL);
+      const res = await fetch(EMULATOR_URLS.ui);
       if (res.ok) {
         console.log("Firebase emulators are ready");
         return;

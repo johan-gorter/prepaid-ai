@@ -12,10 +12,22 @@
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
-# Fix proxy exclusions: the default NO_PROXY excludes *.googleapis.com and
-# *.google.com, but in the sandbox there is no direct DNS for those hosts.
-# Route them through the proxy so downloads (Playwright browsers, Firebase
-# emulator JARs) can succeed.
+# --- Cleanup trap: kill any background processes we started ----------------
+BACKGROUND_PIDS=()
+cleanup() {
+  for pid in "${BACKGROUND_PIDS[@]}"; do
+    kill "$pid" 2>/dev/null || true
+    # Also kill the process group in case of child processes (Java, etc.)
+    kill -- -"$pid" 2>/dev/null || true
+  done
+  wait 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# --- Fix proxy exclusions --------------------------------------------------
+# The default NO_PROXY excludes *.googleapis.com and *.google.com, but in the
+# sandbox there is no direct DNS for those hosts. Route them through the proxy
+# so downloads (Playwright browsers, Firebase emulator JARs) can succeed.
 FIXED_NO_PROXY="localhost,127.0.0.1,169.254.169.254,metadata.google.internal,*.svc.cluster.local,*.local"
 export NO_PROXY="$FIXED_NO_PROXY"
 export no_proxy="$FIXED_NO_PROXY"
@@ -31,53 +43,60 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   echo 'unset JAVA_TOOL_OPTIONS' >> "$CLAUDE_ENV_FILE"
 fi
 
-# 1. Install npm dependencies (skip if node_modules exists and is current)
+# --- 1. Install npm dependencies ------------------------------------------
+NPM_OK=false
 if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ]; then
   echo "Installing npm dependencies..." >&2
-  if command -v timeout &>/dev/null; then
-    timeout 120 npm install >&2 2>&1 || echo "Warning: npm install failed or timed out" >&2
+  if timeout 90 npm install >&2 2>&1; then
+    NPM_OK=true
   else
-    npm install >&2 2>&1 || echo "Warning: npm install failed" >&2
+    echo "Warning: npm install failed or timed out" >&2
   fi
 else
   echo "npm dependencies already installed, skipping" >&2
+  NPM_OK=true
 fi
 
-# 2. Install Playwright chromium (skip if already cached)
-NEED_PW_INSTALL=true
-if npx playwright install --dry-run chromium 2>/dev/null | grep -q "already installed"; then
-  NEED_PW_INSTALL=false
+# If npm install failed, skip steps that depend on installed packages
+if [ "$NPM_OK" != true ]; then
+  echo "Skipping Playwright and emulator setup (npm install failed)" >&2
+  echo "Session start hook complete (with warnings)" >&2
+  exit 0
 fi
-if [ "$NEED_PW_INSTALL" = true ]; then
-  echo "Installing Playwright chromium..." >&2
-  if command -v timeout &>/dev/null; then
-    timeout 120 npx playwright install chromium >&2 2>&1 || echo "Warning: Playwright install failed or timed out" >&2
-  else
-    npx playwright install chromium >&2 2>&1 || echo "Warning: Playwright install failed" >&2
-  fi
+
+# --- 2. Install Playwright chromium (skip if already cached) ---------------
+# Check if chromium is already present by looking at the cache directory
+PW_CACHE="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
+if [ -d "$PW_CACHE" ] && ls "$PW_CACHE"/chromium-* &>/dev/null; then
+  echo "Playwright chromium already cached, skipping" >&2
 else
-  echo "Playwright chromium already installed, skipping" >&2
+  echo "Installing Playwright chromium..." >&2
+  if ! timeout 90 npx playwright install chromium >&2 2>&1; then
+    echo "Warning: Playwright install failed or timed out" >&2
+  fi
 fi
 
-# 3. Pre-download Firebase emulator binaries by starting and immediately
-#    stopping the emulators. This ensures JARs are cached for later use.
-#    Use demo- project prefix to avoid production auth lookups.
+# --- 3. Pre-cache Firebase emulator JARs ----------------------------------
+# Start emulators briefly to download JARs, then stop them.
 if ! command -v java &>/dev/null; then
   echo "Warning: Java not found, skipping emulator pre-cache" >&2
+elif ! [ -x node_modules/.bin/firebase ]; then
+  echo "Warning: firebase-tools not installed, skipping emulator pre-cache" >&2
 else
   echo "Pre-caching Firebase emulator JARs..." >&2
-  npx firebase emulators:start --project demo-prepaid-ai >&2 2>&1 &
+  # Start in a new process group so we can kill the whole tree
+  setsid npx firebase emulators:start --project demo-prepaid-ai >/dev/null 2>&1 &
   EMULATOR_PID=$!
+  BACKGROUND_PIDS+=("$EMULATOR_PID")
 
-  # Wait for emulators to become ready (up to 60s, JARs may need downloading)
+  # Wait for emulators to become ready (up to 45s)
   EMULATOR_READY=false
-  for i in $(seq 1 60); do
-    # Check if the process died early (e.g. download failure)
+  for i in $(seq 1 45); do
     if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
       echo "Emulator process exited early" >&2
       break
     fi
-    if command -v curl &>/dev/null && curl -s http://127.0.0.1:4000 >/dev/null 2>&1; then
+    if curl -s --max-time 2 http://127.0.0.1:4000 >/dev/null 2>&1; then
       echo "Firebase emulators are ready (${i}s)" >&2
       EMULATOR_READY=true
       break
@@ -89,9 +108,11 @@ else
     echo "Warning: Emulators did not become ready in time" >&2
   fi
 
-  # Stop the emulators — they were only started to cache the JARs
-  kill "$EMULATOR_PID" 2>/dev/null || true
+  # Stop the emulators — they were only started to cache the JARs.
+  # Kill the whole process group (npx + java children).
+  kill -- -"$EMULATOR_PID" 2>/dev/null || kill "$EMULATOR_PID" 2>/dev/null || true
   wait "$EMULATOR_PID" 2>/dev/null || true
+  BACKGROUND_PIDS=()
 fi
 
 echo "Session start hook complete" >&2

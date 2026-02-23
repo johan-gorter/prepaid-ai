@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -51,7 +51,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - uses: actions/setup-java@v4
@@ -72,12 +72,7 @@ jobs:
         run: npx firebase emulators:start --project prepaid-ai-test &
 
       - name: Wait for emulators
-        run: |
-          for i in $(seq 1 30); do
-            curl -s http://127.0.0.1:4000 > /dev/null && break
-            echo "Waiting for emulators... ($i)"
-            sleep 1
-          done
+        run: node scripts/wait-for-emulators.mjs
 
       - name: Run E2E tests
         run: npx playwright test --config=playwright.config.ts
@@ -103,7 +98,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -136,7 +131,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -171,7 +166,7 @@ jobs:
   #
   #     - uses: actions/setup-node@v4
   #       with:
-  #         node-version: 20
+  #         node-version: 22
   #         cache: npm
   #
   #     - name: Download dist artifact
@@ -208,20 +203,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install functions dependencies
-        run: npm ci --prefix functions
+      - name: Build for experimental
+        run: npx vite build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY_EXPERIMENTAL }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN_EXPERIMENTAL }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID_EXPERIMENTAL }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET_EXPERIMENTAL }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID_EXPERIMENTAL }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID_EXPERIMENTAL }}
+
+      - name: Install and build Cloud Functions
+        run: npm ci --prefix functions && npm run --prefix functions build
 
       - name: Authenticate to Firebase
         run: |
@@ -230,31 +229,3 @@ jobs:
 
       - name: Deploy to experimental project
         run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project prepaid-ai-experimental
-
-      - name: Comment PR with experimental URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = `🔥 Experimental deployed: https://prepaid-ai-experimental.johangorter.com`;
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find(c => c.body.includes('Experimental deployed'));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
