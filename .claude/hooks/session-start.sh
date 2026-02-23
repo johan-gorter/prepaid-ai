@@ -6,9 +6,9 @@
 # stderr (>&2). Only intentional JSON or context text should go to stdout.
 
 # Only run in Claude Code remote environments
-#if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
-#  exit 0
-#fi
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  exit 0
+fi
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
