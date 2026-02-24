@@ -64,6 +64,19 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         navigateFallback: "index.html",
         cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern:
+              /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/.+/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "firebase-storage-images",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
     }),
   ],

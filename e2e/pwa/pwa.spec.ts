@@ -139,4 +139,25 @@ test.describe("PWA Requirements", () => {
     expect(swText).toContain("NavigationRoute");
     expect(swText).toContain('createHandlerBoundToURL("index.html")');
   });
+
+  test("app shell loads after going offline", async ({ page, context }) => {
+    // Wait for service worker to become active and control the page
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+
+    // Reload so the active SW controls this page (first load is uncontrolled)
+    await page.reload();
+
+    // Cut the network
+    await context.setOffline(true);
+
+    // Navigate to a new route — SW should serve the cached app shell
+    await page.goto("/login");
+    await expect(page.locator("body")).not.toBeEmpty();
+
+    // Client-side route should also work
+    await page.goto("/");
+    await expect(page.locator("body")).not.toBeEmpty();
+  });
 });
