@@ -2,8 +2,9 @@ import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
+    outDir: mode === "test" ? "dist-test" : "dist",
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -80,4 +81,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+}));

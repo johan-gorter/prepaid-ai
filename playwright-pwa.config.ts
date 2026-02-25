@@ -27,7 +27,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "vite build --mode test && vite preview --port 4173",
+    command: "vite build --mode test && vite preview --port 4173 --outDir dist-test",
     port: 4173,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,
