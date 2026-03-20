@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "npm install && npm run devservices",
+        "cwd": ".",
+        "timeout": 600
+      }
+    ]
+  }
+}

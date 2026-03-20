@@ -45,21 +45,16 @@ fi
 
 # --- 1. Install npm dependencies ------------------------------------------
 NPM_OK=false
-if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ]; then
-  echo "Installing npm dependencies..." >&2
-  if timeout 90 npm install >&2 2>&1; then
-    NPM_OK=true
-  else
-    echo "Warning: npm install failed or timed out" >&2
-  fi
-else
-  echo "npm dependencies already installed, skipping" >&2
+echo "Installing npm dependencies..." >&2
+if timeout 180 npm install >&2 2>&1; then
   NPM_OK=true
+else
+  echo "Warning: npm install failed or timed out" >&2
 fi
 
 # If npm install failed, skip steps that depend on installed packages
 if [ "$NPM_OK" != true ]; then
-  echo "Skipping Playwright and emulator setup (npm install failed)" >&2
+  echo "Skipping Playwright, emulator, and devservices setup (npm install failed)" >&2
   echo "Session start hook complete (with warnings)" >&2
   exit 0
 fi
@@ -113,6 +108,14 @@ else
   kill -- -"$EMULATOR_PID" 2>/dev/null || kill "$EMULATOR_PID" 2>/dev/null || true
   wait "$EMULATOR_PID" 2>/dev/null || true
   BACKGROUND_PIDS=()
+fi
+
+# --- 4. Start tracked development services --------------------------------
+echo "Starting tracked development services..." >&2
+if ! timeout 180 npm run devservices >&2 2>&1; then
+  echo "Warning: devservices failed or timed out" >&2
+  echo "Session start hook complete (with warnings)" >&2
+  exit 0
 fi
 
 echo "Session start hook complete" >&2
