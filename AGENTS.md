@@ -52,13 +52,28 @@ scripts/                # Developer utility scripts
 
 ### Build & Development
 
-| Command                 | Description                                                                                                    |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                                                  |
-| `npm run build:preview` | Build then preview the production bundle locally                                                               |
-| `npm run dev`           | Start Vite dev server on `localhost:5173` (requires real Firebase config in `.env`)                            |
-| `npm run dev:emulators` | Start Vite dev server on `localhost:5174` in emulator mode (uses `.env.emulator`, connects to local emulators) |
-| `npm run preview`       | Preview an already-built production bundle                                                                     |
+| Command                              | Description                                                                                                    |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `npm run build`                      | Type-check with `vue-tsc` then build for production with Vite                                                  |
+| `npm run build:preview`              | Build then preview the production bundle locally                                                               |
+| `npm run dev`                        | Start Vite dev server on `localhost:5173` (requires real Firebase config in `.env`)                            |
+| `npm run dev:emulators`              | Start Vite dev server on `localhost:5174` in emulator mode (uses `.env.emulator`, connects to local emulators) |
+| `npm run preview`                    | Preview an already-built production bundle                                                                     |
+| `npm run services:start -- <name>`   | Start one or more tracked background services or service groups                                                |
+| `npm run services:stop -- [name]`    | Stop one tracked service, one group, or all tracked services if omitted                                        |
+| `npm run services:restart -- [name]` | Restart one tracked service, one group, or all tracked services if omitted                                     |
+| `npm run services:status`            | Show tracked service status, ports, error counts, and last useful log line                                     |
+
+Tracked service names:
+
+- `dev` — Vite on port 5173
+- `dev:emulators` — Vite emulator mode on port 5174
+- `emulators` — Firebase Emulator Suite
+
+Tracked groups:
+
+- `dev-with-emulators` — both Vite dev servers
+- `all` — emulators plus both Vite dev servers
 
 ### Testing
 
@@ -106,6 +121,21 @@ npm run emulators
 
 # Terminal 2 — run E2E tests
 npm run test:e2e
+```
+
+**Tracked background services:**
+
+```bash
+# Start the emulator suite plus the emulator-mode Vite app separately
+npm run services:start -- emulators
+npm run services:start -- dev:emulators
+
+# Or start both Vite dev servers together
+npm run services:start -- dev-with-emulators
+
+# Inspect or stop everything that is being tracked
+npm run services:status
+npm run services:stop
 ```
 
 The Playwright config (`playwright.config.ts`) automatically:
@@ -182,3 +212,4 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - If you change Storage runtime caching, make sure the service worker matches both production Firebase Storage URLs and emulator Storage URLs.
 - The `NANO_BANANA_API_KEY` is server-side only and must never be exposed in client code.
 - Java must be installed for Firebase Emulators to run.
+- Tracked service logs and PID files are written under `logs/services/`.
