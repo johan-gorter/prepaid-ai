@@ -3,12 +3,12 @@
  * Clears data from the Firebase Emulators (Firestore and/or Auth).
  *
  * Usage:
- *   npm run emulators:clear            # clear both Firestore and Auth
- *   npm run emulators:clear:firestore  # clear Firestore only
- *   npm run emulators:clear:auth       # clear Auth only
+ *   npm -s run emulators:clear            # clear both Firestore and Auth
+ *   npm -s run emulators:clear:firestore  # clear Firestore only
+ *   npm -s run emulators:clear:auth       # clear Auth only
  *
  * Requires the Firebase emulators to be running first:
- *   npm run services:start -- emulators
+ *   npm -s run services:start -- emulators
  */
 
 import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
@@ -43,7 +43,7 @@ try {
 } catch (err) {
   console.error("❌ Clear failed:", err.message);
   console.error(
-    "\nMake sure the Firebase emulators are running: npm run services:start -- emulators",
+    "\nMake sure the Firebase emulators are running: npm -s run services:start -- emulators",
   );
   process.exit(1);
 }

@@ -8,49 +8,31 @@ import {
   stopAll,
   waitForServices,
 } from "./manager.mjs";
-import { groups, resolveServices, services } from "./registry.mjs";
+import { services } from "./registry.mjs";
 
 function printUsage() {
   console.log(`
 Renovision AI Dev Service Manager
 
 Commands:
-  start <name...>   Start one or more services/groups
-  wait <name...>    Wait until service/group ports are open
-  stop [name...]    Stop services/groups, or all if omitted
-  restart [name...] Restart services/groups, or all if omitted
+  start <name>      Start one service
+  wait <name>       Wait until one service port is open
+  stop [name]       Stop one service, or all if omitted
+  restart [name]    Restart one service, or all if omitted
   status            Show status of all tracked services
 
 Services:
   ${Object.keys(services).join(", ")}
-
-Groups:
-  ${Object.entries(groups)
-    .map(([name, members]) => `${name}: ${members.join(", ")}`)
-    .join("\n  ")}
 `);
 }
 
-function resolveTargets(names) {
-  const resolvedNames = [];
-  const seen = new Set();
-
-  for (const name of names) {
-    const resolved = resolveServices(name);
-    if (resolved.length === 0) {
-      console.error(`Unknown service or group: ${name}`);
-      process.exit(1);
-    }
-
-    for (const serviceName of resolved) {
-      if (!seen.has(serviceName)) {
-        seen.add(serviceName);
-        resolvedNames.push(serviceName);
-      }
-    }
+function resolveTarget(target) {
+  if (!services[target]) {
+    console.error(`Unknown service: ${target}`);
+    process.exit(1);
   }
 
-  return resolvedNames;
+  return target;
 }
 
 async function main() {
@@ -59,15 +41,13 @@ async function main() {
 
   switch (command) {
     case "start": {
-      if (targets.length === 0) {
-        console.error("Error: start requires a service or group name.\n");
+      if (targets.length !== 1) {
+        console.error("Error: start requires exactly one service name.\n");
         printUsage();
         process.exit(1);
       }
 
-      for (const name of resolveTargets(targets)) {
-        start(name);
-      }
+      start(resolveTarget(targets[0]));
       break;
     }
 
@@ -78,22 +58,27 @@ async function main() {
         break;
       }
 
-      for (const name of resolveTargets(targets)) {
-        await stop(name);
+      if (targets.length !== 1) {
+        console.error("Error: stop accepts at most one service name.\n");
+        printUsage();
+        process.exit(1);
       }
+
+      await stop(resolveTarget(targets[0]));
       break;
     }
 
     case "wait": {
-      if (targets.length === 0) {
-        console.error("Error: wait requires a service or group name.\n");
+      if (targets.length !== 1) {
+        console.error("Error: wait requires exactly one service name.\n");
         printUsage();
         process.exit(1);
       }
 
       try {
-        await waitForServices(resolveTargets(targets));
-        console.log(`Services ready: ${resolveTargets(targets).join(", ")}`);
+        const name = resolveTarget(targets[0]);
+        await waitForServices([name]);
+        console.log(`Service ready: ${name}`);
       } catch (error) {
         console.error(error.message);
         process.exit(1);
@@ -114,13 +99,15 @@ async function main() {
         break;
       }
 
-      const names = resolveTargets(targets);
-      for (const name of names) {
-        await stop(name);
+      if (targets.length !== 1) {
+        console.error("Error: restart accepts at most one service name.\n");
+        printUsage();
+        process.exit(1);
       }
-      for (const name of names) {
-        start(name);
-      }
+
+      const name = resolveTarget(targets[0]);
+      await stop(name);
+      start(name);
       break;
     }
 

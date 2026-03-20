@@ -17,7 +17,7 @@ A Vue 3 PWA that lets users take or upload a photo of a space, mark an area to c
 >
 > ```powershell
 > $env:PATH = "D:\tools\jdk-25.0.2\bin;$env:PATH"
-> npm run services:start -- emulators
+> npm -s run services:start -- emulators
 > ```
 
 ---
@@ -32,12 +32,13 @@ npm install
 npx playwright install chromium
 
 # 3. Start the tracked emulator-backed development services
-npm run services:start -- emulators
-npm run services:start -- dev:emulators
-npm run services:wait -- emulators dev:emulators
+npm -s run services:start -- emulators
+npm -s run services:start -- dev:emulators
+npm -s run services:wait -- emulators
+npm -s run services:wait -- dev:emulators
 
 # 5. Create a dev user in the emulator (first time, or after clearing auth)
-npm run emulators:seed
+npm -s run emulators:seed
 ```
 
 Open **http://localhost:5174** — click the **⚡ Dev Login** button to sign in instantly.
@@ -61,7 +62,7 @@ The Auth Emulator runs at `http://localhost:4000/auth`. Three ways to sign in:
 
 **Option A — Dev Login button (easiest)**
 
-1. Run `npm run emulators:seed` to create the dev user
+1. Run `npm -s run emulators:seed` to create the dev user
 2. Open the app and click **⚡ Dev Login** — it signs you in with `dev@prepaid.test`
 
 **Option B — Browser console**
@@ -114,13 +115,13 @@ See [e2e/fixtures.ts](e2e/fixtures.ts) and [e2e/helpers/auth.ts](e2e/helpers/aut
 
 ```bash
 # Clear everything (Firestore + Auth users)
-npm run emulators:clear
+npm -s run emulators:clear
 
 # Clear Firestore only (keep users)
-npm run emulators:clear:firestore
+npm -s run emulators:clear:firestore
 
 # Clear Auth only (keep Firestore data)
-npm run emulators:clear:auth
+npm -s run emulators:clear:auth
 ```
 
 The emulators must be running when you run these commands.
@@ -131,11 +132,11 @@ The simplest way to get a completely clean state is to **restart the emulators**
 
 ```bash
 # Restart the tracked emulator service
-npm run services:restart -- emulators
-npm run services:wait -- emulators
+npm -s run services:restart -- emulators
+npm -s run services:wait -- emulators
 
 # Re-create your dev user
-npm run emulators:seed
+npm -s run emulators:seed
 ```
 
 If you change Cloud Functions code in `functions/src/`, restart `emulators` so the updated functions are rebuilt and loaded before you continue testing.
@@ -144,10 +145,10 @@ If you change Cloud Functions code in `functions/src/`, restart `emulators` so t
 
 ```bash
 # Clear all data while keeping the emulators running
-npm run emulators:clear
+npm -s run emulators:clear
 
 # Re-seed dev user
-npm run emulators:seed
+npm -s run emulators:seed
 ```
 
 ### Clearing Production Firestore
@@ -163,12 +164,12 @@ Use the Firebase Console (**Firestore → Data → Delete collection**) or the
 
 ```bash
 # Type-check app + test files, then build for production
-npm run build
+npm -s run build
 
 # Type-check only (no build output)
 npx vue-tsc -b
-npm run typecheck:tests
-npm run typecheck:all
+npm -s run typecheck:tests
+npm -s run typecheck:all
 ```
 
 The build output goes to `dist/`. A service worker is generated for PWA support.
@@ -183,9 +184,10 @@ E2E tests require the Firebase Emulators to be running:
 
 ```bash
 # Start the tracked emulator service once and leave it running
-npm run services:start -- emulators
-npm run services:start -- dev:emulators
-npm run services:wait -- emulators dev:emulators
+npm -s run services:start -- emulators
+npm -s run services:start -- dev:emulators
+npm -s run services:wait -- emulators
+npm -s run services:wait -- dev:emulators
 ```
 
 The global setup waits for the emulator suite, and authenticated tests create their own isolated emulator user on demand.
@@ -194,24 +196,24 @@ The global setup waits for the emulator suite, and authenticated tests create th
 
 ```bash
 # Requires emulator and preview services already running
-npm run test
+npm -s run test
 ```
 
-`test:*` commands never start or stop services. For local runs, start the required services yourself and wait for them with `npm run services:wait`. In CI, GitHub Actions owns that startup and wait sequence.
+`test:*` commands never start or stop services. For local runs, start the required services yourself and wait for them with `npm -s run services:wait -- <name>`. In CI, GitHub Actions owns that startup and wait sequence.
 
-To run the full test matrix in parallel, start and wait for the required services first, then run `npm run test:all`.
+To run the full test matrix in parallel, start and wait for the required services first, then run `npm -s run test:all`.
 
 ### E2E Tests Only
 
 ```bash
 # Headless (default)
-npm run test:e2e
+npm -s run test:e2e
 
 # With browser visible
-npm run test:e2e:headed
+npm -s run test:e2e:headed
 
 # Interactive Playwright UI (great for debugging)
-npm run test:e2e:ui
+npm -s run test:e2e:ui
 ```
 
 Start the tracked `dev:emulators` service before running E2E. The Playwright config no longer starts or stops long-running services for you. Port 5174 must be free before you start the service.
@@ -220,7 +222,7 @@ Start the tracked `dev:emulators` service before running E2E. The Playwright con
 
 ```bash
 # No emulators needed
-npm run test:ct
+npm -s run test:ct
 ```
 
 Component tests use `@playwright/experimental-ct-vue` to mount individual Vue components in isolation.
@@ -240,18 +242,16 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## Service-Manager Reference
 
-| Command                                        | Description                                                                  |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| `npm run services:start -- dev`                | Start the tracked dev server against real Firebase on `localhost:5173`       |
-| `npm run services:start -- emulators`          | Start the tracked Firebase Emulator Suite                                    |
-| `npm run services:start -- dev:emulators`      | Start the tracked dev server against local emulators on `localhost:5174`     |
-| `npm run services:wait -- <name>`              | Wait up to 45 seconds until tracked service ports are open                   |
-| `npm run services:start -- preview:emulators`  | Build and start the tracked emulator-mode preview server on `localhost:4175` |
-| `npm run services:start -- dev-with-emulators` | Start both tracked Vite dev servers together                                 |
-| `npm run services:start -- pwa-with-emulators` | Start the emulators plus the tracked PWA preview server                      |
-| `npm run services:status`                      | Show tracked service status, ports, error counts, and recent log output      |
-| `npm run services:restart -- <name>`           | Restart one tracked service or tracked group                                 |
-| `npm run services:stop -- [name]`              | Stop one tracked service, one tracked group, or all tracked services         |
+| Command                                          | Description                                                                  |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `npm -s run services:start -- dev`               | Start the tracked dev server against real Firebase on `localhost:5173`       |
+| `npm -s run services:start -- emulators`         | Start the tracked Firebase Emulator Suite                                    |
+| `npm -s run services:start -- dev:emulators`     | Start the tracked dev server against local emulators on `localhost:5174`     |
+| `npm -s run services:wait -- <name>`             | Wait up to 45 seconds until one tracked service port is open                 |
+| `npm -s run services:start -- preview:emulators` | Build and start the tracked emulator-mode preview server on `localhost:4175` |
+| `npm -s run services:status`                     | Show tracked service status, ports, error counts, and recent log output      |
+| `npm -s run services:restart -- <name>`          | Restart one tracked service                                                  |
+| `npm -s run services:stop -- [name]`             | Stop one tracked service, or all tracked services if omitted                 |
 
 ---
 

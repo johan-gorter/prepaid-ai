@@ -47,9 +47,9 @@ function runCommand(args, label) {
 
 try {
   await Promise.all([
-    runCommand(["run", "test:e2e"], "test:e2e"),
-    runCommand(["run", "test:ct"], "test:ct"),
-    runCommand(["run", "test:pwa"], "test:pwa"),
+    runCommand(["-s", "run", "test:e2e"], "test:e2e"),
+    runCommand(["-s", "run", "test:ct"], "test:ct"),
+    runCommand(["-s", "run", "test:pwa"], "test:pwa"),
   ]);
 } catch (error) {
   console.error(error.message);

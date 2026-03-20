@@ -25,7 +25,7 @@ async function waitForEmulators(): Promise<void> {
   }
   throw new Error(
     `Firebase emulators did not start within ${MAX_RETRIES}s. ` +
-      `Make sure to run: npm run services:start -- emulators`,
+      `Make sure to run: npm -s run services:start -- emulators`,
   );
 }
 

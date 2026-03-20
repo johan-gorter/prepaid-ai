@@ -15,7 +15,7 @@ export const ERROR_PATTERNS = {
 export const services = {
   dev: {
     command: "npm",
-    args: ["run", "dev", "--", "--host", "localhost"],
+    args: ["-s", "run", "dev", "--", "--host", "localhost"],
     cwd: REPO_ROOT,
     port: 5173,
     type: "vite",
@@ -28,7 +28,7 @@ export const services = {
   },
   "dev:emulators": {
     command: "npm",
-    args: ["run", "dev:emulators", "--", "--host", "localhost"],
+    args: ["-s", "run", "dev:emulators", "--", "--host", "localhost"],
     cwd: REPO_ROOT,
     port: 5174,
     type: "vite",
@@ -41,7 +41,7 @@ export const services = {
   },
   "preview:emulators": {
     command: "npm",
-    args: ["run", "preview:emulators"],
+    args: ["-s", "run", "preview:emulators"],
     cwd: REPO_ROOT,
     port: 4175,
     type: "vite",
@@ -54,7 +54,7 @@ export const services = {
   },
   emulators: {
     command: "npm",
-    args: ["run", "emulators"],
+    args: ["-s", "run", "emulators"],
     cwd: REPO_ROOT,
     port: 4000,
     type: "firebase",
@@ -67,15 +67,3 @@ export const services = {
     },
   },
 };
-
-export const groups = {
-  "dev-with-emulators": ["dev", "dev:emulators"],
-  "pwa-with-emulators": ["emulators", "preview:emulators"],
-  all: ["emulators", "dev", "dev:emulators", "preview:emulators"],
-};
-
-export function resolveServices(name) {
-  if (groups[name]) return groups[name];
-  if (services[name]) return [name];
-  return [];
-}

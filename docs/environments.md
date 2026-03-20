@@ -8,19 +8,20 @@ Use this for normal local development against the Firebase Emulator Suite.
 
 ```bash
 # Terminal 1
-npm run services:start -- emulators
+npm -s run services:start -- emulators
 
 # Terminal 2
-npm run services:start -- dev:emulators
-npm run services:wait -- emulators dev:emulators
+npm -s run services:start -- dev:emulators
+npm -s run services:wait -- emulators
+npm -s run services:wait -- dev:emulators
 
 # Once per fresh emulator session
-npm run emulators:seed
+npm -s run emulators:seed
 ```
 
 How it works:
 
-- `npm run services:start -- dev:emulators` runs the tracked Vite emulator-mode dev service
+- `npm -s run services:start -- dev:emulators` runs the tracked Vite emulator-mode dev service
 - By default the emulator dev server runs on `http://localhost:5174`
 - Vite loads `.env.emulator`, normal `.env` file is ignored
 - `.env.emulator` sets `VITE_USE_EMULATORS=true`
@@ -35,17 +36,17 @@ This is the only mode where the `Dev Login` button should appear.
 Use this when you want to run the app locally against a real Firebase project.
 
 ```bash
-npm run services:start -- dev
+npm -s run services:start -- dev
 ```
 
 How it works:
 
-- `npm run services:start -- dev` runs the tracked Vite dev service in its default mode
+- `npm -s run services:start -- dev` runs the tracked Vite dev service in its default mode
 - By default the real-Firebase dev server runs on `http://localhost:5173`
 - Vite loads `.env`
 - `.env` should contain real Firebase web app configuration. This can be the prepaid-ai-experimental firebase project or a special one.
 - `VITE_USE_EMULATORS` should be unset
-- Normal hosted builds written with `vite build` or `npm run build` go to `dist/`
+- Normal hosted builds written with `vite build` or `npm -s run build` go to `dist/`
 
 In this mode the app uses real Firebase services and the emulator-only dev login stays hidden.
 
@@ -132,9 +133,9 @@ Consequence:
 
 ## Rules Of Thumb
 
-- Use `npm run services:start -- dev:emulators` for safe local development against emulators.
-- Use `npm run services:start -- dev` for local development against a real Firebase project.
-- Use plain `vite build` or `npm run build` for hosted builds that emit to `dist/`.
+- Use `npm -s run services:start -- dev:emulators` for safe local development against emulators.
+- Use `npm -s run services:start -- dev` for local development against a real Firebase project.
+- Use plain `vite build` or `npm -s run build` for hosted builds that emit to `dist/`.
 - Never deploy assets produced from emulator mode.
 - Treat `dist-emulator/` as emulator/test infrastructure output only.
 - If a hosted environment shows the emulator login panel, inspect the build inputs for `VITE_USE_EMULATORS=true`.
