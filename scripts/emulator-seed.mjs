@@ -9,7 +9,7 @@
  *   npm run emulators
  */
 
-import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config.mjs";
+import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
 
 const AUTH_URL = EMULATOR_URLS.auth;
 
@@ -73,7 +73,7 @@ async function seedDevUser() {
   console.log(`   Email:    ${DEV_USER.email}`);
   console.log(`   Password: ${DEV_USER.password}`);
   console.log(
-    "\nOpen http://localhost:5173 and use the 'Dev Login' button, or",
+    "\nOpen http://localhost:5174 and use the 'Dev Login' button, or",
   );
   console.log(
     "sign in manually with the credentials above via the login page.",

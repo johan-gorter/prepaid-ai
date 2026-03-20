@@ -15,7 +15,7 @@ export default defineConfig({
   globalTeardown: "./e2e/global-teardown.ts",
 
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://localhost:5174",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -51,7 +51,7 @@ export default defineConfig({
   /* Start Vite dev server before tests */
   webServer: {
     command: "npx vite --mode emulator",
-    port: 5173,
+    port: 5174,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,
   },

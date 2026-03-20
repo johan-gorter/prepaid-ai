@@ -2,7 +2,14 @@ import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const DEV_SERVER_PORT = 5173;
+const EMULATOR_DEV_SERVER_PORT = 5174;
+
 export default defineConfig(({ mode }) => ({
+  server: {
+    port: mode === "emulator" ? EMULATOR_DEV_SERVER_PORT : DEV_SERVER_PORT,
+    strictPort: true,
+  },
   build: {
     outDir: mode === "emulator" ? "dist-emulator" : "dist",
     rollupOptions: {

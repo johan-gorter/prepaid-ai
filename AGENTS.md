@@ -52,13 +52,13 @@ scripts/                # Developer utility scripts
 
 ### Build & Development
 
-| Command                 | Description                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                              |
-| `npm run build:preview` | Build then preview the production bundle locally                                           |
-| `npm run dev`           | Start Vite dev server (requires real Firebase config in `.env`)                            |
-| `npm run dev:emulators` | Start Vite dev server in emulator mode (uses `.env.emulator`, connects to local emulators) |
-| `npm run preview`       | Preview an already-built production bundle                                                 |
+| Command                 | Description                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                                                  |
+| `npm run build:preview` | Build then preview the production bundle locally                                                               |
+| `npm run dev`           | Start Vite dev server on `localhost:5173` (requires real Firebase config in `.env`)                            |
+| `npm run dev:emulators` | Start Vite dev server on `localhost:5174` in emulator mode (uses `.env.emulator`, connects to local emulators) |
+| `npm run preview`       | Preview an already-built production bundle                                                                     |
 
 ### Testing
 
@@ -110,7 +110,7 @@ npm run test:e2e
 
 The Playwright config (`playwright.config.ts`) automatically:
 
-- Starts a Vite dev server on port 5173 with emulator env vars
+- Starts a Vite dev server on port 5174 with emulator env vars
 - Runs global setup which waits for emulators, clears data, and creates a test user
 - Provides an `authenticatedPage` fixture for tests needing a signed-in user
 - Clears Firestore data before each test (in fixture setup) for parallel-safe isolation

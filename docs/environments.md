@@ -20,6 +20,7 @@ npm run emulators:seed
 How it works:
 
 - `npm run dev:emulators` runs `vite --mode emulator`
+- By default the emulator dev server runs on `http://localhost:5174`
 - Vite loads `.env.emulator`, normal `.env` file is ignored
 - `.env.emulator` sets `VITE_USE_EMULATORS=true`
 - Emulator builds written with `vite build --mode emulator` go to `dist-emulator/`
@@ -39,6 +40,7 @@ npm run dev
 How it works:
 
 - `npm run dev` runs Vite in its default mode
+- By default the real-Firebase dev server runs on `http://localhost:5173`
 - Vite loads `.env`
 - `.env` should contain real Firebase web app configuration. This can be the prepaid-ai-experimental firebase project or a special one.
 - `VITE_USE_EMULATORS` should be unset
@@ -87,7 +89,7 @@ The configured Firebase project aliases are:
 
 The automated test stack deliberately uses emulator mode.
 
-- E2E tests start Vite with `--mode emulator`
+- E2E tests start Vite with `--mode emulator` on `http://localhost:5174`
 - PWA tests build with `vite build --mode emulator` into `dist-emulator/`
 - Playwright also injects fake Firebase config for emulator-backed runs
 

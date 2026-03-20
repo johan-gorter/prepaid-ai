@@ -79,6 +79,7 @@ The functions directory has its own `package.json` and TypeScript config. After 
 Three separate Playwright configs — each is independent:
 
 - **E2E** ([playwright.config.ts](playwright.config.ts)) — Full app tests against Firebase Emulators (Auth, Firestore, Storage, Functions). Uses `authenticatedPage` fixture from [e2e/fixtures.ts](e2e/fixtures.ts). Auto-starts Vite dev server. Runs on chromium + mobile-chrome.
+- Local Vite defaults: `npm run dev` uses port 5173, `npm run dev:emulators` uses port 5174.
 - **CT** ([playwright-ct.config.ts](playwright-ct.config.ts)) — Component isolation tests, no emulators. Test harness in [playwright/](playwright/) installs a minimal router before mount.
 - **PWA** ([playwright-pwa.config.ts](playwright-pwa.config.ts)) — Runs against an emulator-backed build (`vite build --mode emulator && vite preview` on port 4173). Tests service worker, manifest, offline support.
 
