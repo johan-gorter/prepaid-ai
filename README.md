@@ -232,22 +232,22 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## Scripts Reference
 
-| Script                              | Description                                                  |
-| ----------------------------------- | ------------------------------------------------------------ |
-| `npm run dev`                       | Start dev server against production Firebase (needs `.env`)  |
-| `npm run dev:emulators`             | Start dev server against local emulators (uses `.env.emulator`)  |
-| `npm run build`                     | Type-check everything and build for production               |
-| `npm run preview`                   | Preview the production build locally                         |
-| `npm run emulators`                 | Start Firebase Emulator Suite (Auth, Firestore, Storage, UI) |
-| `npm run emulators:seed`            | Create a dev user in the Auth Emulator                       |
-| `npm run emulators:clear`           | Clear all emulator data (Firestore + Auth)                   |
-| `npm run emulators:clear:firestore` | Clear Firestore data only                                    |
-| `npm run emulators:clear:auth`      | Clear Auth users only                                        |
-| `npm run test`                      | Run all tests (E2E + component)                              |
-| `npm run test:e2e`                  | Run E2E tests (requires emulators)                           |
-| `npm run test:ct`                   | Run component tests (no emulators needed)                    |
-| `npm run test:e2e:ui`               | Open Playwright UI for E2E debugging                         |
-| `npm run test:e2e:headed`           | Run E2E tests with visible browser                           |
+| Script                              | Description                                                     |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `npm run dev`                       | Start dev server against production Firebase (needs `.env`)     |
+| `npm run dev:emulators`             | Start dev server against local emulators (uses `.env.emulator`) |
+| `npm run build`                     | Type-check everything and build for production                  |
+| `npm run preview`                   | Preview the production build locally                            |
+| `npm run emulators`                 | Start Firebase Emulator Suite (Auth, Firestore, Storage, UI)    |
+| `npm run emulators:seed`            | Create a dev user in the Auth Emulator                          |
+| `npm run emulators:clear`           | Clear all emulator data (Firestore + Auth)                      |
+| `npm run emulators:clear:firestore` | Clear Firestore data only                                       |
+| `npm run emulators:clear:auth`      | Clear Auth users only                                           |
+| `npm run test`                      | Run all tests (E2E + component)                                 |
+| `npm run test:e2e`                  | Run E2E tests (requires emulators)                              |
+| `npm run test:ct`                   | Run component tests (no emulators needed)                       |
+| `npm run test:e2e:ui`               | Open Playwright UI for E2E debugging                            |
+| `npm run test:e2e:headed`           | Run E2E tests with visible browser                              |
 
 ---
 

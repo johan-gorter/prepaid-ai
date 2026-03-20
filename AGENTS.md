@@ -46,41 +46,41 @@ scripts/                # Developer utility scripts
 
 ### Setup
 
-| Command         | Description                                                                |
-| --------------- | -------------------------------------------------------------------------- |
-| `npm run setup` | One-time setup: installs deps, Playwright browsers, and builds functions   |
+| Command         | Description                                                              |
+| --------------- | ------------------------------------------------------------------------ |
+| `npm run setup` | One-time setup: installs deps, Playwright browsers, and builds functions |
 
 ### Build & Development
 
-| Command                 | Description                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                      |
-| `npm run build:preview` | Build then preview the production bundle locally                                   |
-| `npm run dev`           | Start Vite dev server (requires real Firebase config in `.env`)                    |
+| Command                 | Description                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                              |
+| `npm run build:preview` | Build then preview the production bundle locally                                           |
+| `npm run dev`           | Start Vite dev server (requires real Firebase config in `.env`)                            |
 | `npm run dev:emulators` | Start Vite dev server in emulator mode (uses `.env.emulator`, connects to local emulators) |
-| `npm run preview`       | Preview an already-built production bundle                                         |
+| `npm run preview`       | Preview an already-built production bundle                                                 |
 
 ### Testing
 
-| Command                        | Description                                                                                                                                |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run emulators`            | Start Firebase Emulator Suite (Auth :9099, Functions :5001, Firestore :8080, Storage :9199, UI :4000). **Requires Java.** Must be running before E2E tests. |
-| `npm run emulators:wait`       | Wait for emulators to become ready (used by CI and standalone test runner)                                                                 |
-| `npm run test:e2e`             | Run Playwright E2E tests (requires emulators running separately)                                                                           |
-| `npm run test:e2e:standalone`  | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                              |
-| `npm run test:ct`              | Run Playwright Component Tests (no emulators needed)                                                                                       |
-| `npm run test:pwa`             | Run PWA tests (auto-builds production bundle)                                                                                              |
-| `npm run test`                 | Run E2E, Component, and PWA tests sequentially                                                                                             |
-| `npm run test:e2e:ui`          | Open Playwright UI mode for E2E tests (interactive debugging)                                                                              |
-| `npm run test:e2e:headed`      | Run E2E tests in a visible browser window                                                                                                  |
+| Command                       | Description                                                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run emulators`           | Start Firebase Emulator Suite (Auth :9099, Functions :5001, Firestore :8080, Storage :9199, UI :4000). **Requires Java.** Must be running before E2E tests. |
+| `npm run emulators:wait`      | Wait for emulators to become ready (used by CI and standalone test runner)                                                                                  |
+| `npm run test:e2e`            | Run Playwright E2E tests (requires emulators running separately)                                                                                            |
+| `npm run test:e2e:standalone` | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                                               |
+| `npm run test:ct`             | Run Playwright Component Tests (no emulators needed)                                                                                                        |
+| `npm run test:pwa`            | Run PWA tests (auto-builds production bundle)                                                                                                               |
+| `npm run test`                | Run E2E, Component, and PWA tests sequentially                                                                                                              |
+| `npm run test:e2e:ui`         | Open Playwright UI mode for E2E tests (interactive debugging)                                                                                               |
+| `npm run test:e2e:headed`     | Run E2E tests in a visible browser window                                                                                                                   |
 
 ### Type-checking
 
-| Command                  | Description                                                      |
-| ------------------------ | ---------------------------------------------------------------- |
-| `npx vue-tsc -b`        | Type-check app code only                                         |
-| `npm run typecheck:tests`| Type-check test code only                                        |
-| `npm run typecheck:all`  | Type-check app + tests + build Cloud Functions                   |
+| Command                   | Description                                    |
+| ------------------------- | ---------------------------------------------- |
+| `npx vue-tsc -b`          | Type-check app code only                       |
+| `npm run typecheck:tests` | Type-check test code only                      |
+| `npm run typecheck:all`   | Type-check app + tests + build Cloud Functions |
 
 ## How to Run Tests
 

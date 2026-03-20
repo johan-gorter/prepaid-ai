@@ -10,27 +10,27 @@ See [AGENTS.md](AGENTS.md) for detailed scripts and test conventions, and [docs/
 
 ### Common Commands
 
-| Task | Command |
-|------|---------|
-| First-time setup | `npm run setup` (installs deps, browsers, builds functions) |
-| Build (typecheck + bundle) | `npm run build` |
-| Build + preview | `npm run build:preview` |
-| Typecheck only | `npx vue-tsc -b` |
-| Typecheck everything | `npm run typecheck:all` (app + tests + functions) |
-| Dev server (emulators) | `npm run dev:emulators` |
-| Dev server (production Firebase) | `npm run dev` |
+| Task                             | Command                                                     |
+| -------------------------------- | ----------------------------------------------------------- |
+| First-time setup                 | `npm run setup` (installs deps, browsers, builds functions) |
+| Build (typecheck + bundle)       | `npm run build`                                             |
+| Build + preview                  | `npm run build:preview`                                     |
+| Typecheck only                   | `npx vue-tsc -b`                                            |
+| Typecheck everything             | `npm run typecheck:all` (app + tests + functions)           |
+| Dev server (emulators)           | `npm run dev:emulators`                                     |
+| Dev server (production Firebase) | `npm run dev`                                               |
 
 ### Running Tests
 
-| Task | Command |
-|------|---------|
-| Run all tests | `npm run test` (E2E + CT + PWA, sequentially) |
-| Run E2E tests (standalone) | `npm run test:e2e:standalone` (starts emulators automatically) |
-| Run E2E tests (manual) | `npm run emulators` (terminal 1) then `npm run test:e2e` (terminal 2) |
-| Run component tests | `npm run test:ct` (no emulators needed) |
-| Run PWA tests | `npm run test:pwa` (builds production bundle automatically) |
-| Run single E2E test | `npx playwright test --config=playwright.config.ts e2e/specs/home.spec.ts` |
-| Run single CT test | `npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts` |
+| Task                       | Command                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| Run all tests              | `npm run test` (E2E + CT + PWA, sequentially)                                  |
+| Run E2E tests (standalone) | `npm run test:e2e:standalone` (starts emulators automatically)                 |
+| Run E2E tests (manual)     | `npm run emulators` (terminal 1) then `npm run test:e2e` (terminal 2)          |
+| Run component tests        | `npm run test:ct` (no emulators needed)                                        |
+| Run PWA tests              | `npm run test:pwa` (builds production bundle automatically)                    |
+| Run single E2E test        | `npx playwright test --config=playwright.config.ts e2e/specs/home.spec.ts`     |
+| Run single CT test         | `npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts` |
 
 ### Prerequisites (one-time setup)
 
