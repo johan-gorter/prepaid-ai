@@ -11,7 +11,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: process.env.CI ? [["github"], ["html"]] : "html",
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }]]
+    : [["list"]],
 
   use: {
     baseURL: "http://localhost:4173",
@@ -27,7 +29,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "vite build --mode test && vite preview --port 4173 --outDir dist-test",
+    command:
+      "vite build --mode test && vite preview --port 4173 --outDir dist-test",
     port: 4173,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,

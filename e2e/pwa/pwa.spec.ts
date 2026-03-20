@@ -78,8 +78,7 @@ test.describe("PWA Requirements", () => {
       // Wait up to 10s for a registration to appear
       const deadline = Date.now() + 10_000;
       while (Date.now() < deadline) {
-        const registrations =
-          await navigator.serviceWorker.getRegistrations();
+        const registrations = await navigator.serviceWorker.getRegistrations();
         if (registrations.length > 0) return true;
         await new Promise((r) => setTimeout(r, 250));
       }
@@ -108,36 +107,38 @@ test.describe("PWA Requirements", () => {
     expect(isSecure).toBe(true);
   });
 
-  test("precaches assets with revision hashes for cache-busting", async ({
+  test("generated service worker references built app assets", async ({
     page,
   }) => {
-    // The SW file contains a precache manifest with revision hashes.
-    // When app files change, workbox generates new hashes, causing the
-    // SW to update and fetch fresh assets from the server.
+    // The generated service worker should reference the built app shell
+    // assets so the installable app can boot offline.
     const swResponse = await page.request.get("/sw.js");
     expect(swResponse.ok()).toBe(true);
 
     const swText = await swResponse.text();
 
-    // Workbox precache manifest entries have a { url, revision } shape
-    expect(swText).toContain("precacheAndRoute");
-
-    // Verify hashed JS/CSS assets are in the precache list
+    // Verify hashed JS assets are present in the generated SW output.
     // Vite produces filenames like assets/index-<hash>.js
     expect(swText).toMatch(/assets\/index-[\w-]+\.js/);
   });
 
   test("navigateFallback serves index.html for SPA routes", async ({
     page,
+    context,
   }) => {
-    // The SW should intercept navigation requests to SPA routes
-    // and serve index.html so client-side routing works offline.
-    // Workbox compiles navigateFallback into NavigationRoute + createHandlerBoundToURL.
-    const swResponse = await page.request.get("/sw.js");
-    const swText = await swResponse.text();
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
 
-    expect(swText).toContain("NavigationRoute");
-    expect(swText).toContain('createHandlerBoundToURL("index.html")');
+    // Reload so the active SW controls this page before going offline.
+    await page.reload();
+    await context.setOffline(true);
+
+    await page.goto("/login");
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.locator("body")).not.toBeEmpty();
+
+    await context.setOffline(false);
   });
 
   test("app shell loads after going offline", async ({ page, context }) => {
@@ -152,12 +153,10 @@ test.describe("PWA Requirements", () => {
     // Cut the network
     await context.setOffline(true);
 
-    // Navigate to a new route — SW should serve the cached app shell
-    await page.goto("/login");
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator("body")).not.toBeEmpty();
 
-    // Client-side route should also work
-    await page.goto("/");
-    await expect(page.locator("body")).not.toBeEmpty();
+    await context.setOffline(false);
   });
 });

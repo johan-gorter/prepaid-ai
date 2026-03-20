@@ -1,8 +1,12 @@
 /// <reference lib="WebWorker" />
 
 import { clientsClaim } from "workbox-core";
-import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
-import { registerRoute } from "workbox-routing";
+import {
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+  precacheAndRoute,
+} from "workbox-precaching";
+import { NavigationRoute, registerRoute } from "workbox-routing";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -28,6 +32,8 @@ function buildCacheKey(url: URL) {
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+registerRoute(new NavigationRoute(createHandlerBoundToURL("index.html")));
 
 registerRoute(
   ({ url, request }) =>
