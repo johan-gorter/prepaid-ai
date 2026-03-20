@@ -5,7 +5,7 @@
  * Imported by scripts, E2E helpers, and global setup/teardown.
  */
 
-export const PROJECT_ID = "prepaid-ai-test";
+export const PROJECT_ID = "prepaid-ai-emulator";
 
 export const EMULATOR_HOST = "127.0.0.1";
 

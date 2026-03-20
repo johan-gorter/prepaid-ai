@@ -3,15 +3,19 @@ import type { Timestamp } from "firebase/firestore";
 export interface Renovation {
   id: string;
   title: string;
-  originalImageUrl: string;
+  originalImagePath: string;
+  originalImageUrl?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 export interface Impression {
   id: string;
-  sourceImageUrl: string;
-  resultImageUrl: string;
+  sourceImagePath: string;
+  sourceImageUrl?: string;
+  resultImagePath?: string;
+  resultImageUrl?: string;
+  maskImagePath?: string;
   maskImageUrl?: string;
   prompt: string;
   status: "pending" | "processing" | "completed" | "failed";

@@ -36,6 +36,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
@@ -61,23 +64,8 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-        navigateFallback: "index.html",
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            urlPattern:
-              /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/.+/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "firebase-storage-images",
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
       },
     }),
   ],

@@ -1,11 +1,48 @@
 <script setup lang="ts">
-import { useRenovations } from "../composables/useRenovations";
-import { useAuth } from "../composables/useAuth";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useAuth } from "../composables/useAuth";
+import { useRenovations } from "../composables/useRenovations";
+import { resolveStorageUrl } from "../composables/useStorageUrl";
 
 const { renovations, loading: renovationsLoading, error } = useRenovations();
 const { currentUser, signOut } = useAuth();
 const router = useRouter();
+const thumbnailUrls = ref<Record<string, string>>({});
+
+watch(
+  renovations,
+  async (items, _oldValue, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => {
+      cancelled = true;
+    });
+
+    const urlEntries = await Promise.all(
+      items.map(async (renovation) => {
+        if (renovation.originalImagePath) {
+          try {
+            return [
+              renovation.id,
+              await resolveStorageUrl(renovation.originalImagePath),
+            ] as const;
+          } catch {
+            return [renovation.id, renovation.originalImageUrl ?? ""] as const;
+          }
+        }
+
+        return [renovation.id, renovation.originalImageUrl ?? ""] as const;
+      }),
+    );
+
+    if (!cancelled) {
+      thumbnailUrls.value = Object.fromEntries(
+        urlEntries.filter(([, url]) => Boolean(url)),
+      );
+    }
+  },
+  { immediate: true },
+);
 
 async function handleSignOut() {
   await signOut();
@@ -62,7 +99,9 @@ async function handleSignOut() {
           @click="router.push(`/renovation/${renovation.id}`)"
         >
           <img
-            :src="renovation.originalImageUrl"
+            :src="
+              thumbnailUrls[renovation.id] ?? renovation.originalImageUrl ?? ''
+            "
             :alt="renovation.title"
             class="renovation-thumbnail"
           />

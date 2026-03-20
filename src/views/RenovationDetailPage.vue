@@ -1,20 +1,55 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useImpressions } from "../composables/useImpressions";
+import { resolveStorageUrl } from "../composables/useStorageUrl";
 
 const route = useRoute();
 const router = useRouter();
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
+const resultImageUrls = ref<Record<string, string>>({});
 
 // Keep ref in sync with route param
-import { watch } from "vue";
 watch(renovationId, (val) => {
   renovationIdRef.value = val;
 });
 
 const { impressions, loading } = useImpressions(renovationIdRef);
+
+watch(
+  impressions,
+  async (items, _oldValue, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => {
+      cancelled = true;
+    });
+
+    const urlEntries = await Promise.all(
+      items.map(async (impression) => {
+        if (impression.resultImagePath) {
+          try {
+            return [
+              impression.id,
+              await resolveStorageUrl(impression.resultImagePath),
+            ] as const;
+          } catch {
+            return [impression.id, impression.resultImageUrl ?? ""] as const;
+          }
+        }
+
+        return [impression.id, impression.resultImageUrl ?? ""] as const;
+      }),
+    );
+
+    if (!cancelled) {
+      resultImageUrls.value = Object.fromEntries(
+        urlEntries.filter(([, url]) => Boolean(url)),
+      );
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -41,23 +76,33 @@ const { impressions, loading } = useImpressions(renovationIdRef);
         >
           <div class="impression-header">
             <span class="prompt-text">{{ impression.prompt }}</span>
-            <span
-              class="status-badge"
-              :class="'status-' + impression.status"
-            >
+            <span class="status-badge" :class="'status-' + impression.status">
               {{ impression.status }}
             </span>
           </div>
 
-          <div v-if="impression.status === 'completed' && impression.resultImageUrl" class="result-section">
+          <div
+            v-if="
+              impression.status === 'completed' &&
+              (resultImageUrls[impression.id] || impression.resultImageUrl)
+            "
+            class="result-section"
+          >
             <img
-              :src="impression.resultImageUrl"
+              :src="
+                resultImageUrls[impression.id] ??
+                impression.resultImageUrl ??
+                ''
+              "
               alt="Result"
               class="result-image"
             />
           </div>
 
-          <div v-else-if="impression.status === 'processing'" class="processing-section">
+          <div
+            v-else-if="impression.status === 'processing'"
+            class="processing-section"
+          >
             <p>Processing your renovation…</p>
           </div>
 

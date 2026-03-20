@@ -11,11 +11,13 @@
  *   npm run test:e2e:standalone -- e2e/specs/home.spec.ts
  */
 
-import { spawn, execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
 
 const TIMEOUT_S = 30;
 const RETRY_DELAY_MS = 1000;
+const PLAYWRIGHT_COMMAND = process.platform === "win32" ? "npx.cmd" : "npx";
+const EMULATOR_START_COMMAND = `npx firebase emulators:start --project ${PROJECT_ID}`;
 
 // Pass through extra args to Playwright (e.g. --headed, specific test files)
 const playwrightArgs = process.argv.slice(2);
@@ -59,11 +61,10 @@ async function waitForEmulators() {
 
 // Start emulators in background
 console.log("Starting Firebase Emulators...");
-emulatorProcess = spawn(
-  "npx",
-  ["firebase", "emulators:start", "--project", PROJECT_ID],
-  { stdio: "pipe" },
-);
+emulatorProcess = spawn(EMULATOR_START_COMMAND, {
+  stdio: "pipe",
+  shell: true,
+});
 
 emulatorProcess.stdout.on("data", (data) => {
   const line = data.toString();
@@ -80,7 +81,7 @@ try {
 
   console.log("\nRunning E2E tests...\n");
   const cmd = [
-    "npx",
+    PLAYWRIGHT_COMMAND,
     "playwright",
     "test",
     "--config=playwright.config.ts",

@@ -18,7 +18,9 @@ async function createGrayPng(): Promise<string> {
 // Run only on chromium — this integration test uses shared emulator state
 // and cannot safely run in parallel across multiple browser projects.
 test.describe("Impression processing", () => {
-  test.skip(({ browserName }) => browserName !== "chromium", "chromium only");
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== "chromium", "chromium only");
+  });
 
   test("uploads image, triggers Cloud Function, and produces PNG with PromptLog metadata", async ({
     authenticatedPage: page,

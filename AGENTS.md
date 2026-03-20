@@ -177,5 +177,8 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 
 - **Do not execute queries against production databases.** Use emulators for all testing.
 - The Firebase client config values (`VITE_*`) are public by design — they are secured by Firestore security rules and Auth.
+- Persist Firebase Storage object paths in Firestore, not long-lived download URLs. The client should resolve paths to URLs at render time through the authenticated Firebase Storage SDK.
+- Offline image access is handled by the custom PWA service worker runtime cache. Treat cached renovation images as device-local convenience data that may remain available after sign-out.
+- If you change Storage runtime caching, make sure the service worker matches both production Firebase Storage URLs and emulator Storage URLs.
 - The `NANO_BANANA_API_KEY` is server-side only and must never be exposed in client code.
 - Java must be installed for Firebase Emulators to run.

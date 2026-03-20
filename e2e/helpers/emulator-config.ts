@@ -5,7 +5,7 @@
  * (Separate file because Playwright TS files can't import .mjs directly.)
  */
 
-export const PROJECT_ID = "prepaid-ai-test";
+export const PROJECT_ID = "prepaid-ai-emulator";
 
 export const EMULATOR_HOST = "127.0.0.1";
 

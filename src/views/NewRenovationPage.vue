@@ -1,14 +1,10 @@
 <script setup lang="ts">
+import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import {
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
-import { storage } from "../firebase";
-import { useRenovations } from "../composables/useRenovations";
 import { useAuth } from "../composables/useAuth";
+import { useRenovations } from "../composables/useRenovations";
+import { storage } from "../firebase";
 
 const router = useRouter();
 const { createRenovation, createImpression } = useRenovations();
@@ -54,21 +50,18 @@ async function handleSubmit() {
   try {
     const uid = currentUser.value.uid;
     const timestamp = Date.now();
-    const imageRef = storageRef(
-      storage,
-      `users/${uid}/originals/${timestamp}.png`,
-    );
+    const originalImagePath = `users/${uid}/originals/${timestamp}.png`;
+    const imageRef = storageRef(storage, originalImagePath);
 
     await uploadBytes(imageRef, selectedFile.value);
-    const downloadUrl = await getDownloadURL(imageRef);
 
     const renovationId = await createRenovation({
       title: title.value.trim(),
-      originalImageUrl: downloadUrl,
+      originalImagePath,
     });
 
     await createImpression(renovationId, {
-      sourceImageUrl: downloadUrl,
+      sourceImagePath: originalImagePath,
       prompt: prompt.value.trim(),
     });
 

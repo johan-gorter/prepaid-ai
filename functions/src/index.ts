@@ -1,7 +1,5 @@
 import * as admin from "firebase-admin";
-import {
-  onDocumentCreated,
-} from "firebase-functions/v2/firestore";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { Jimp, loadFont } from "jimp";
 import { SANS_32_WHITE } from "jimp/fonts";
 
@@ -89,12 +87,16 @@ async function dummyProcess(
   const image = await Jimp.read(imageBuffer);
   const font = await loadFont(SANS_32_WHITE);
 
-  const textLines = promptLog.map(
-    (p: string, i: number) => `${i + 1}. ${p}`,
-  );
+  const textLines = promptLog.map((p: string, i: number) => `${i + 1}. ${p}`);
   const fullText = ["Modification Log:", ...textLines].join("\n");
 
-  image.print({ font, x: 20, y: 20, text: fullText, maxWidth: image.width - 40 });
+  image.print({
+    font,
+    x: 20,
+    y: 20,
+    text: fullText,
+    maxWidth: image.width - 40,
+  });
 
   // Get the processed image as a PNG buffer
   const resultBuffer = await image.getBuffer("image/png");
@@ -116,7 +118,10 @@ export const processImpression = onDocumentCreated(
     const { userId, renovationId, impressionId } = event.params;
     const impressionData = snapshot.data();
     const prompt = impressionData.prompt as string;
-    const sourceImageUrl = impressionData.sourceImageUrl as string;
+    const sourceImagePath = impressionData.sourceImagePath as
+      | string
+      | undefined;
+    const sourceImageUrl = impressionData.sourceImageUrl as string | undefined;
 
     const impressionRef = db.doc(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
@@ -126,7 +131,8 @@ export const processImpression = onDocumentCreated(
       await impressionRef.update({ status: "processing" });
 
       // Download source image from Storage
-      const storagePath = storagePathFromUrl(sourceImageUrl);
+      const storagePath =
+        sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(storagePath).download();
 
       let resultBuffer: Buffer;
@@ -153,22 +159,9 @@ export const processImpression = onDocumentCreated(
         metadata: { contentType: "image/png" },
       });
 
-      // Construct the download URL
-      // In the emulator, use the emulator URL format; in production, use the standard format
-      const storageHost = process.env.STORAGE_EMULATOR_HOST;
-      const encodedPath = encodeURIComponent(resultPath);
-      let resultImageUrl: string;
-      if (storageHost) {
-        // STORAGE_EMULATOR_HOST may include protocol (e.g. "http://127.0.0.1:9199")
-        const host = storageHost.replace(/^https?:\/\//, "");
-        resultImageUrl = `http://${host}/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
-      } else {
-        resultImageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
-      }
-
       await impressionRef.update({
         status: "completed",
-        resultImageUrl,
+        resultImagePath: resultPath,
       });
     } catch (err: unknown) {
       const errorMessage =

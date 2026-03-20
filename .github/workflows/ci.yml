@@ -69,7 +69,7 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Start Firebase emulators
-        run: npx firebase emulators:start --project prepaid-ai-test &
+        run: npx firebase emulators:start --project prepaid-ai-emulator &
 
       - name: Wait for emulators
         run: node scripts/wait-for-emulators.mjs
@@ -187,7 +187,7 @@ jobs:
   #         echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
   #
   #     - name: Deploy to Firebase
-  #       run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project renovision-ai
+  #       run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project renovision-ai
 
   deploy-experimental:
     name: Deploy to Experimental
@@ -228,4 +228,32 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
       - name: Deploy to experimental project
-        run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --project prepaid-ai-experimental
+        run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-experimental
+
+      - name: Comment PR with experimental URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `🔥 Experimental deployed: https://prepaid-ai-experimental.johangorter.com`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('Experimental deployed'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

@@ -20,12 +20,29 @@ export default defineConfig({
 
   projects: [
     {
-      name: "chromium",
+      name: "home-chromium",
+      testMatch: /home\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+      workers: 1,
+    },
+    {
+      name: "home-mobile-chrome",
+      testMatch: /home\.spec\.ts/,
+      use: { ...devices["Pixel 5"] },
+      workers: 1,
+      dependencies: ["home-chromium"],
+    },
+    {
+      name: "chromium",
+      testIgnore: /home\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["home-mobile-chrome"],
     },
     {
       name: "mobile-chrome",
+      testIgnore: /home\.spec\.ts/,
       use: { ...devices["Pixel 5"] },
+      dependencies: ["home-mobile-chrome"],
     },
   ],
 
