@@ -15,7 +15,7 @@
     "services:stop": "node devtools/services/cli.mjs stop",
     "services:restart": "node devtools/services/cli.mjs restart",
     "services:status": "node devtools/services/cli.mjs status",
-    "services:ready": "npm -s run services:start emulators dev:emulators && npm -s run services:wait emulators dev:emulators",
+    "devservices": "npm -s run services:start emulators dev:emulators && npm -s run services:wait emulators dev:emulators",
     "typecheck:tests": "vue-tsc --project tsconfig.test.json --noEmit",
     "typecheck:all": "vue-tsc -b && npm -s run typecheck:tests && npm --prefix functions exec tsc --noEmit",
     "build": "vue-tsc -b && npm -s run typecheck:tests && vite build",
