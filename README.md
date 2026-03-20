@@ -44,54 +44,13 @@ npm run emulators:seed
 Open **http://localhost:5173** — click the **⚡ Dev Login** button to sign in instantly.
 The Emulator Suite UI is available at **http://localhost:4000**.
 
+Environment and deployment details live in [docs/environments.md](docs/environments.md).
+
 ---
 
 ## Development Modes
 
-### Mode 1: Local Emulators (recommended for most development)
-
-The app runs against local Firebase Emulators — no internet needed, safe to experiment, easy to reset.
-
-```bash
-# Terminal 1 — emulators (keep running)
-npm run emulators
-
-# Terminal 2 — dev server
-npm run dev:emulators
-
-# Seed a dev user (once per emulator session)
-npm run emulators:seed
-```
-
-**How it works:** `dev:emulators` starts Vite in `test` mode, which loads `.env.test`.
-That file sets `VITE_USE_EMULATORS=true`, which makes `src/firebase.ts` connect all three
-Firebase services to local ports instead of production.
-
-Emulator ports:
-
-| Service   | Port | UI                              |
-| --------- | ---- | ------------------------------- |
-| Auth      | 9099 | http://localhost:4000/auth      |
-| Firestore | 8080 | http://localhost:4000/firestore |
-| Storage   | 9199 | http://localhost:4000/storage   |
-
-> **Note:** Emulator data is **ephemeral** — it resets every time you restart the emulators.
-> Use `npm run emulators:seed` after each restart to recreate your dev user.
-
-### Mode 2: Production Firebase
-
-The app connects to the real Firebase project. Requires a `.env` file with real credentials.
-
-```bash
-# 1. Copy the example env file and fill in your Firebase project credentials
-cp .env.example .env
-# Edit .env with your real Firebase config from the Firebase Console
-
-# 2. Start the dev server
-npm run dev
-```
-
-Get the config values from **Firebase Console → Project Settings → Your apps → Web app → SDK setup**.
+See [docs/environments.md](docs/environments.md) for the canonical breakdown of local emulator mode, local real Firebase mode, CI experimental deploys, and production deploys.
 
 ---
 
@@ -126,6 +85,8 @@ await __testSignIn("dev@prepaid.test", "dev-password");
 OAuth flows and shows a special emulator popup where you can pick or create a test
 identity. This fully simulates the production OAuth experience without needing real
 provider credentials.
+
+For the full environment matrix and hosted deployment rules, see [docs/environments.md](docs/environments.md).
 
 ### In Production
 
@@ -244,7 +205,7 @@ npm run test:e2e:headed
 npm run test:e2e:ui
 ```
 
-The Playwright config starts a Vite dev server automatically in test mode (`VITE_USE_EMULATORS=true`).
+The Playwright config starts a Vite dev server automatically in emulator mode (`VITE_USE_EMULATORS=true`).
 Port 5173 must be free.
 
 ### Component Tests Only
@@ -274,7 +235,7 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 | Script                              | Description                                                  |
 | ----------------------------------- | ------------------------------------------------------------ |
 | `npm run dev`                       | Start dev server against production Firebase (needs `.env`)  |
-| `npm run dev:emulators`             | Start dev server against local emulators (uses `.env.test`)  |
+| `npm run dev:emulators`             | Start dev server against local emulators (uses `.env.emulator`)  |
 | `npm run build`                     | Type-check everything and build for production               |
 | `npm run preview`                   | Preview the production build locally                         |
 | `npm run emulators`                 | Start Firebase Emulator Suite (Auth, Firestore, Storage, UI) |
@@ -303,7 +264,7 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 | `VITE_USE_EMULATORS`                | Emulator mode    | Set to `"true"` to connect to local emulators    |
 | `NANO_BANANA_API_KEY`               | Server-side only | AI service key — **never expose in client code** |
 
-Copy `.env.example` to `.env` for production credentials. The `.env.test` file is already configured for emulator use and committed to the repo (it contains only fake/placeholder values).
+Copy `.env.example` to `.env` for production credentials. The `.env.emulator` file is already configured for emulator mode and committed to the repo (it contains only fake/placeholder values). See [docs/environments.md](docs/environments.md) for which file each workflow uses.
 
 ---
 

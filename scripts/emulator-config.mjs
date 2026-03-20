@@ -25,7 +25,7 @@ export const EMULATOR_URLS = {
   ui: `http://${EMULATOR_HOST}:${EMULATOR_PORTS.ui}`,
 };
 
-/** Firebase config env vars used by Playwright webServer and Vite test mode */
+/** Firebase config env vars used by Playwright webServer and Vite emulator mode */
 export const TEST_FIREBASE_ENV = {
   VITE_FIREBASE_API_KEY: "fake-api-key",
   VITE_FIREBASE_AUTH_DOMAIN: "localhost",

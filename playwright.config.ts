@@ -50,7 +50,7 @@ export default defineConfig({
 
   /* Start Vite dev server before tests */
   webServer: {
-    command: "npx vite --mode test",
+    command: "npx vite --mode emulator",
     port: 5173,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,

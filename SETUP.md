@@ -41,7 +41,7 @@ users/{uid}
 2. Activate free trial ($300 credits / 90 days)
 3. Enable Firebase on the same project at console.firebase.google.com
 4. Select **Blaze plan** (pay-as-you-go — covered by GCP credits)
-5. Enable Firestore (start in **test mode**, lock down later with security rules)
+5. Enable Firestore (start with permissive rules temporarily, then lock it down with security rules)
 6. Enable Firebase Storage (default bucket)
 7. Enable Firebase Authentication with providers:
    - Google (built-in, just enable)
@@ -61,6 +61,8 @@ users/{uid}
 12. Create `.env` file (see below)
 13. Configure `vite.config.ts` with PWA plugin and env variables
 14. Set up Firebase SDK initialization using env variables
+
+See [docs/environments.md](docs/environments.md) for the current local, experimental, and production environment flows.
 
 ### Phase 3: Authentication
 

@@ -4,7 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   build: {
-    outDir: mode === "test" ? "dist-test" : "dist",
+    outDir: mode === "emulator" ? "dist-emulator" : "dist",
     rollupOptions: {
       output: {
         manualChunks(id) {

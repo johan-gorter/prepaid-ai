@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import { TEST_FIREBASE_ENV } from "./e2e/helpers/emulator-config";
 
 /**
- * PWA tests run against a production build (vite preview) so the
+ * PWA tests run against an emulator-backed build (vite preview) so the
  * service worker, manifest, and all PWA assets are generated for real.
  */
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
 
   webServer: {
     command:
-      "vite build --mode test && vite preview --port 4173 --outDir dist-test",
+      "vite build --mode emulator && vite preview --port 4173 --outDir dist-emulator",
     port: 4173,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,

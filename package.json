@@ -7,7 +7,7 @@
     "setup": "node scripts/setup.mjs",
     "build:functions": "npm --prefix functions run build",
     "dev": "vite",
-    "dev:emulators": "vite --mode test",
+    "dev:emulators": "vite --mode emulator",
     "typecheck:tests": "vue-tsc --project tsconfig.test.json --noEmit",
     "typecheck:all": "vue-tsc -b && npm run typecheck:tests && npm run --prefix functions build",
     "build": "vue-tsc -b && npm run typecheck:tests && vite build",

@@ -57,7 +57,7 @@ scripts/                # Developer utility scripts
 | `npm run build`         | Type-check with `vue-tsc` then build for production with Vite                      |
 | `npm run build:preview` | Build then preview the production bundle locally                                   |
 | `npm run dev`           | Start Vite dev server (requires real Firebase config in `.env`)                    |
-| `npm run dev:emulators` | Start Vite dev server in test mode (uses `.env.test`, connects to local emulators) |
+| `npm run dev:emulators` | Start Vite dev server in emulator mode (uses `.env.emulator`, connects to local emulators) |
 | `npm run preview`       | Preview an already-built production bundle                                         |
 
 ### Testing
@@ -158,12 +158,12 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 ## Environment & Configuration
 
 - **`.env`** — Real Firebase credentials for development (not committed, see `.env.example`)
-- **`.env.test`** — Fake Firebase config for test mode (committed, uses emulators)
+- **`.env.emulator`** — Fake Firebase config for emulator mode (committed, uses emulators)
 - **`firebase.json`** — Emulator port configuration (source of truth for ports)
 - **`scripts/emulator-config.mjs`** — Centralized emulator config (project ID, ports, URLs) used by all scripts
 - **`e2e/helpers/emulator-config.ts`** — TypeScript mirror of the above, used by Playwright test code and configs
 - **`.nvmrc`** — Pins Node.js version to 22 (matches Cloud Functions requirement)
-- When `VITE_USE_EMULATORS=true`, the app connects to local Firebase Emulators instead of production
+- When `VITE_USE_EMULATORS=true`, the app connects to local Firebase Emulators instead of production. See [docs/environments.md](docs/environments.md) for all environment and deploy paths.
 
 ## Test Conventions
 

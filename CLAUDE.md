@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-See [AGENTS.md](AGENTS.md) for detailed scripts, test conventions, and environment setup.
+See [AGENTS.md](AGENTS.md) for detailed scripts and test conventions, and [docs/environments.md](docs/environments.md) for environment and deployment setup.
 
 **Verify changes:** `npx vue-tsc -b` then `npm run build`. For full validation, also run tests.
 
@@ -80,6 +80,6 @@ Three separate Playwright configs — each is independent:
 
 - **E2E** ([playwright.config.ts](playwright.config.ts)) — Full app tests against Firebase Emulators (Auth, Firestore, Storage, Functions). Uses `authenticatedPage` fixture from [e2e/fixtures.ts](e2e/fixtures.ts). Auto-starts Vite dev server. Runs on chromium + mobile-chrome.
 - **CT** ([playwright-ct.config.ts](playwright-ct.config.ts)) — Component isolation tests, no emulators. Test harness in [playwright/](playwright/) installs a minimal router before mount.
-- **PWA** ([playwright-pwa.config.ts](playwright-pwa.config.ts)) — Runs against a production build (`vite build --mode test && vite preview` on port 4173). Tests service worker, manifest, offline support.
+- **PWA** ([playwright-pwa.config.ts](playwright-pwa.config.ts)) — Runs against an emulator-backed build (`vite build --mode emulator && vite preview` on port 4173). Tests service worker, manifest, offline support.
 
 E2E tests run in parallel (`fullyParallel: true`). The `authenticatedPage` fixture clears Firestore data **before** each test (not after) to avoid race conditions between parallel tests. The impression test (which exercises the full Cloud Function pipeline) is restricted to chromium only.
