@@ -12,6 +12,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
+import net from "node:net";
 import { dirname, join } from "node:path";
 import { Transform } from "node:stream";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -188,6 +189,68 @@ export function start(name) {
   writeFileSync(pidPath, String(pid), "utf-8");
   console.log(`  ${name} started. Log: ${logPath}`);
   return true;
+}
+
+function canConnect(port, host = "localhost") {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ port, host });
+
+    socket.once("connect", () => {
+      socket.end();
+      resolve(true);
+    });
+
+    socket.once("error", () => {
+      socket.destroy();
+      resolve(false);
+    });
+
+    socket.setTimeout(1000, () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
+
+export async function waitForServices(names, timeoutMs = 45_000) {
+  const pending = new Map();
+
+  for (const name of names) {
+    const service = services[name];
+    if (!service) {
+      throw new Error(`Unknown service: ${name}`);
+    }
+
+    if (!service.port) {
+      continue;
+    }
+
+    pending.set(name, service.port);
+  }
+
+  if (pending.size === 0) {
+    return;
+  }
+
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    for (const [name, port] of [...pending.entries()]) {
+      const ready = await canConnect(port, services[name]?.waitHost);
+      if (ready) {
+        pending.delete(name);
+      }
+    }
+
+    if (pending.size === 0) {
+      return;
+    }
+
+    await sleep(500);
+  }
+
+  const unresponsive = [...pending.keys()].join(", ");
+  throw new Error(`Unresponsive services after 45s: ${unresponsive}`);
 }
 
 export async function stop(name) {

@@ -35,9 +35,7 @@ functions/              # Firebase Cloud Functions
   lib/                  # Compiled output (git-ignored, must build before E2E)
 scripts/                # Developer utility scripts
   emulator-config.mjs   # Centralized emulator ports, project ID, URLs
-  wait-for-emulators.mjs # Waits for emulators to become ready
   setup.mjs             # One-time project setup
-  test-e2e-standalone.mjs # Self-contained E2E test runner (starts emulators)
   emulator-seed.mjs     # Seeds dev user into Auth Emulator
   emulator-clear.mjs    # Clears emulator data
 ```
@@ -46,20 +44,21 @@ scripts/                # Developer utility scripts
 
 ### Setup
 
-| Command         | Description                                                              |
-| --------------- | ------------------------------------------------------------------------ |
-| `npm run setup` | One-time setup: installs deps, Playwright browsers, and builds functions |
+| Command         | Description                                           |
+| --------------- | ----------------------------------------------------- |
+| `npm run setup` | One-time setup: installs deps and Playwright browsers |
 
 ### Build & Development
 
-| Command                              | Description                                                                |
-| ------------------------------------ | -------------------------------------------------------------------------- |
-| `npm run build`                      | Type-check with `vue-tsc` then build for production with Vite              |
-| `npm run build:preview`              | Build then preview the production bundle locally                           |
-| `npm run services:start -- <name>`   | Start one or more tracked background services or service groups            |
-| `npm run services:stop -- [name]`    | Stop one tracked service, one group, or all tracked services if omitted    |
-| `npm run services:restart -- [name]` | Restart one tracked service, one group, or all tracked services if omitted |
-| `npm run services:status`            | Show tracked service status, ports, error counts, and last useful log line |
+| Command                              | Description                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| `npm run build`                      | Type-check with `vue-tsc` then build for production with Vite                   |
+| `npm run build:preview`              | Build then preview the production bundle locally                                |
+| `npm run services:start -- <name>`   | Start one or more tracked background services or service groups                 |
+| `npm run services:wait -- <name>`    | Wait up to 45 seconds until one or more tracked service or group ports are open |
+| `npm run services:stop -- [name]`    | Stop one tracked service, one group, or all tracked services if omitted         |
+| `npm run services:restart -- [name]` | Restart one tracked service, one group, or all tracked services if omitted      |
+| `npm run services:status`            | Show tracked service status, ports, error counts, and last useful log line      |
 
 Tracked service names:
 
@@ -76,24 +75,23 @@ Tracked groups:
 
 ### Testing
 
-| Command                       | Description                                                                                                                                |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run emulators:wait`      | Wait for emulators to become ready (used by CI and standalone test runner)                                                                 |
-| `npm run test:e2e`            | Run Playwright E2E tests (requires emulators running separately)                                                                           |
-| `npm run test:e2e:standalone` | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                              |
-| `npm run test:ct`             | Run Playwright Component Tests (no emulators needed)                                                                                       |
-| `npm run test:pwa`            | Run PWA tests against a built emulator-mode bundle with `vite preview`; validates manifest, service worker, and offline app-shell behavior |
-| `npm run test`                | Run E2E, Component, and PWA tests sequentially                                                                                             |
-| `npm run test:e2e:ui`         | Open Playwright UI mode for E2E tests (interactive debugging)                                                                              |
-| `npm run test:e2e:headed`     | Run E2E tests in a visible browser window                                                                                                  |
+| Command                   | Description                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run test:e2e`        | Run Playwright E2E tests (requires emulators running separately)                                                                           |
+| `npm run test:ct`         | Run Playwright Component Tests (no emulators needed)                                                                                       |
+| `npm run test:pwa`        | Run PWA tests against a built emulator-mode bundle with `vite preview`; validates manifest, service worker, and offline app-shell behavior |
+| `npm run test:all`        | Run E2E, Component, and PWA suites in parallel; assumes required services are already running                                              |
+| `npm run test`            | Run E2E, Component, and PWA tests sequentially                                                                                             |
+| `npm run test:e2e:ui`     | Open Playwright UI mode for E2E tests (interactive debugging)                                                                              |
+| `npm run test:e2e:headed` | Run E2E tests in a visible browser window                                                                                                  |
 
 ### Type-checking
 
-| Command                   | Description                                    |
-| ------------------------- | ---------------------------------------------- |
-| `npx vue-tsc -b`          | Type-check app code only                       |
-| `npm run typecheck:tests` | Type-check test code only                      |
-| `npm run typecheck:all`   | Type-check app + tests + build Cloud Functions |
+| Command                   | Description                                                              |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `npx vue-tsc -b`          | Type-check app code only                                                 |
+| `npm run typecheck:tests` | Type-check test code only                                                |
+| `npm run typecheck:all`   | Type-check app, tests, and Cloud Functions without emitting build output |
 
 ## How to Run Tests
 
@@ -101,7 +99,7 @@ Tracked groups:
 
 E2E tests use real Firebase Emulators for Auth, Firestore, Storage, and Functions.
 
-**One-time setup:** Run `npm run setup` (or manually install deps, browsers, and build functions).
+**One-time setup:** Run `npm run setup` (or manually install deps and browsers).
 
 Start the tracked services first, then run the test command you need.
 
@@ -111,6 +109,7 @@ Start the tracked services first, then run the test command you need.
 # Start the emulator suite plus the emulator-mode Vite app separately
 npm run services:start -- emulators
 npm run services:start -- dev:emulators
+npm run services:wait -- emulators dev:emulators
 
 # Then run Playwright in another terminal
 npm run test:e2e
@@ -118,15 +117,17 @@ npm run test:e2e
 
 The Playwright config (`playwright.config.ts`) automatically:
 
-- Runs global setup which waits for emulators, clears data, and creates a test user
+- Runs global setup which waits for emulators to be ready
 - Provides an `authenticatedPage` fixture for tests needing a signed-in user
-- Clears Firestore data before each test (in fixture setup) for parallel-safe isolation
+- Creates a unique `test-xxxxxxxx@prepaid.test` emulator user per authenticated test so suites can run concurrently without shared-user coupling
 
 Playwright no longer starts or stops long-running services. Start `emulators` and `dev:emulators` through the service manager before the test run and leave them running until you stop them explicitly.
 
+Test commands never start or stop services. In CI, GitHub Actions is responsible for starting the required services and waiting for them with `npm run services:wait` before invoking any `test:*` command.
+
 **No `.env` file is needed for tests** — the Playwright config injects fake Firebase config values directly. The emulators accept any project configuration.
 
-**Important:** If you change Cloud Function code in `functions/src/`, rebuild with `cd functions && npm run build` and restart the emulators.
+**Important:** If you change Cloud Function code in `functions/src/`, restart the `emulators` service. Emulator startup rebuilds the functions before launching Firebase.
 
 ### Component Tests (no emulators needed)
 
@@ -175,7 +176,9 @@ After making code changes, run these commands in order:
 1. **Type-check:** `npm run typecheck:all` — checks app, tests, and Cloud Functions
 2. **Build:** `npm run build` — runs type-check + Vite production build, must complete without errors
 3. **Component tests:** `npm run test:ct` — no emulators needed
-4. **E2E tests:** `npm run test:e2e:standalone` — runs with auto-managed emulators
+4. **E2E tests:** `npm run services:start -- emulators dev:emulators && npm run services:wait -- emulators dev:emulators && npm run test:e2e`
+
+To validate the full matrix in one command, start and wait for the required services first, then run `npm run test:all`.
 
 For a quick validation without emulators, steps 1-2 are sufficient.
 
@@ -202,7 +205,7 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - Component test files go in `ct/` with the pattern `*.ct.ts`
 - Use the `authenticatedPage` fixture from `e2e/fixtures.ts` for tests that need a logged-in user
 - Use standard `page` from `@playwright/test` for unauthenticated tests (e.g., login page)
-- Each E2E test gets a clean Firestore state (data is cleared before each test in the fixture setup, not after, to avoid race conditions with parallel tests)
+- Each authenticated E2E test gets its own emulator-backed user, so tests can run concurrently without shared-user coupling
 
 ## Important Notes
 

@@ -12,6 +12,7 @@ npm run services:start -- emulators
 
 # Terminal 2
 npm run services:start -- dev:emulators
+npm run services:wait -- emulators dev:emulators
 
 # Once per fresh emulator session
 npm run emulators:seed
@@ -95,7 +96,7 @@ The automated test stack deliberately uses emulator mode.
 
 Important distinction:
 
-- E2E tests require a live Firebase Emulator Suite and manage it through Playwright global setup/teardown helpers
+- E2E tests require a live Firebase Emulator Suite and manage readiness through Playwright global setup; authenticated tests create their own emulator-backed users on demand
 - PWA tests do **not** start or manage the Emulator Suite; they only build and serve the frontend in emulator mode
 - If the PWA test app reaches Firebase APIs during runtime, it will target emulator endpoints because `VITE_USE_EMULATORS=true`, but no emulator lifecycle is orchestrated by the PWA suite itself
 

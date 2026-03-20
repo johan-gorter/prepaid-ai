@@ -6,6 +6,7 @@ import {
   start,
   stop,
   stopAll,
+  waitForServices,
 } from "./manager.mjs";
 import { groups, resolveServices, services } from "./registry.mjs";
 
@@ -15,6 +16,7 @@ Renovision AI Dev Service Manager
 
 Commands:
   start <name...>   Start one or more services/groups
+  wait <name...>    Wait until service/group ports are open
   stop [name...]    Stop services/groups, or all if omitted
   restart [name...] Restart services/groups, or all if omitted
   status            Show status of all tracked services
@@ -78,6 +80,23 @@ async function main() {
 
       for (const name of resolveTargets(targets)) {
         await stop(name);
+      }
+      break;
+    }
+
+    case "wait": {
+      if (targets.length === 0) {
+        console.error("Error: wait requires a service or group name.\n");
+        printUsage();
+        process.exit(1);
+      }
+
+      try {
+        await waitForServices(resolveTargets(targets));
+        console.log(`Services ready: ${resolveTargets(targets).join(", ")}`);
+      } catch (error) {
+        console.error(error.message);
+        process.exit(1);
       }
       break;
     }

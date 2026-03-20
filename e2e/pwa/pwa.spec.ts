@@ -3,30 +3,23 @@ import { Jimp } from "jimp";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { clearFirestoreData, createTestUser, TEST_USER } from "../helpers/auth";
+import {
+  createTestUser,
+  deleteTestUser,
+  signInTestUser,
+} from "../helpers/auth";
 import { EMULATOR_URLS } from "../helpers/emulator-config";
 
-async function signInOnPage(page: import("@playwright/test").Page) {
+async function signInOnPage(
+  page: import("@playwright/test").Page,
+  user: { email: string; password: string },
+) {
   await page.goto("/login");
-  await page.waitForFunction(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    () => typeof (window as any).__testSignIn === "function",
-    { timeout: 5000 },
-  );
-
-  await page.evaluate(
-    async (user: { email: string; password: string }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const signIn = (window as any).__testSignIn as (
-        email: string,
-        password: string,
-      ) => Promise<unknown>;
-      await signIn(user.email, user.password);
-    },
-    { email: TEST_USER.email, password: TEST_USER.password },
-  );
-
-  await page.waitForTimeout(500);
+  await signInTestUser(page, {
+    email: user.email,
+    password: user.password,
+    displayName: "PWA Test User",
+  });
 }
 
 async function areEmulatorsAvailable() {
@@ -217,13 +210,12 @@ test.describe("PWA Requirements", () => {
       "requires live Firebase emulators for auth, firestore, and storage",
     );
 
-    await createTestUser();
-    await clearFirestoreData();
+    const user = await createTestUser();
 
     const uploadPath = await createGrayPng();
 
     try {
-      await signInOnPage(page);
+      await signInOnPage(page, user);
       await page.goto("/");
       await page.waitForURL("/");
       await page.getByRole("link", { name: "+ New Renovation" }).click();
@@ -286,6 +278,7 @@ test.describe("PWA Requirements", () => {
 
       await context.setOffline(false);
     } finally {
+      await deleteTestUser(user);
       if (fs.existsSync(uploadPath)) {
         fs.unlinkSync(uploadPath);
       }

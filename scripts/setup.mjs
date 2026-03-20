@@ -2,7 +2,7 @@
 /**
  * One-time project setup script.
  *
- * Installs all dependencies, Playwright browsers, and builds Cloud Functions.
+ * Installs all dependencies and Playwright browsers.
  *
  * Usage:
  *   npm run setup
@@ -21,7 +21,6 @@ run(
   "npm install --prefix functions",
   "Installing Cloud Functions dependencies",
 );
-run("npm run --prefix functions build", "Building Cloud Functions");
 
 console.log("\n✅ Setup complete!");
 console.log("\nNext steps:");

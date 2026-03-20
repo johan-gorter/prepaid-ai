@@ -6,39 +6,26 @@
  */
 
 import { test as base, type Page } from "@playwright/test";
-import { clearFirestoreData, TEST_USER } from "./helpers/auth";
+import {
+  createTestUser,
+  deleteTestUser,
+  signInTestUser,
+  type TestUser,
+} from "./helpers/auth";
 
 type TestFixtures = {
   authenticatedPage: Page;
+  testUser: TestUser;
 };
 
 /**
  * Sign in by navigating to the app, then using the Auth Emulator
  * signInWithPassword REST endpoint and injecting the session.
  */
-async function signInOnPage(page: Page): Promise<void> {
+async function signInOnPage(page: Page, user: TestUser): Promise<void> {
   // Navigate to the app first so Firebase SDK is loaded
   await page.goto("/login");
-
-  // Wait for the test sign-in helper to be exposed by firebase.ts
-  await page.waitForFunction(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    () => typeof (window as any).__testSignIn === "function",
-    { timeout: 5000 },
-  );
-
-  // Sign in via the exposed helper (avoids bare module import issues in evaluate)
-  await page.evaluate(
-    async (user: { email: string; password: string }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const signIn = (window as any).__testSignIn as (
-        email: string,
-        password: string,
-      ) => Promise<unknown>;
-      await signIn(user.email, user.password);
-    },
-    { email: TEST_USER.email, password: TEST_USER.password },
-  );
+  await signInTestUser(page, user);
 
   // Navigate to home after sign-in and wait for auth guard to allow it
   await page.goto("/");
@@ -46,11 +33,18 @@ async function signInOnPage(page: Page): Promise<void> {
 }
 
 export const test = base.extend<TestFixtures>({
-  authenticatedPage: async ({ page }, use) => {
-    // Clean Firestore data before each test for isolation.
-    // Done before (not after) so parallel tests don't wipe each other's data.
-    await clearFirestoreData();
-    await signInOnPage(page);
+  testUser: async ({}, use) => {
+    const user = await createTestUser();
+
+    try {
+      await use(user);
+    } finally {
+      await deleteTestUser(user);
+    }
+  },
+
+  authenticatedPage: async ({ page, testUser }, use) => {
+    await signInOnPage(page, testUser);
     await use(page);
   },
 });

@@ -37,7 +37,7 @@ Security rules enforce user-scoped access: users can only read/write their own s
 
 A `processImpression` Firestore trigger ([functions/src/index.ts](functions/src/index.ts)) fires on impression creation. Currently uses a dummy jimp-based processor that overlays prompt text on the image and writes PromptLog metadata into PNG tEXt chunks. When `NANO_BANANA_API_KEY` is configured, it will call the real inpainting API (not yet implemented).
 
-The functions directory has its own `package.json` and TypeScript config. After changes, rebuild with `cd functions && npm run build`. The emulator loads the compiled output from `functions/lib/index.js`.
+The functions directory has its own `package.json` and TypeScript config. Emulator startup rebuilds the functions before launch, and Firebase deploy uses the configured predeploy hook. The emulator loads the compiled output from `functions/lib/index.js`.
 
 ### Test Architecture
 
@@ -50,4 +50,4 @@ Three separate Playwright configs — each is independent:
 
 The service worker precaches the built app shell and runtime-caches Firebase Storage image requests for both production Storage URLs and local emulator Storage URLs. It does not cache Firestore/Auth/Functions traffic.
 
-E2E tests run in parallel (`fullyParallel: true`). The `authenticatedPage` fixture clears Firestore data **before** each test (not after) to avoid race conditions between parallel tests. The impression test (which exercises the full Cloud Function pipeline) is restricted to chromium only.
+E2E tests run in parallel (`fullyParallel: true`). The `authenticatedPage` fixture creates a unique emulator user per authenticated test, so auth-dependent scenarios do not share Firestore or Auth state. The impression test (which exercises the full Cloud Function pipeline) is restricted to chromium only.

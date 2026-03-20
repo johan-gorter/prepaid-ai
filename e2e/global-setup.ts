@@ -3,14 +3,8 @@
  *
  * Runs once before all tests:
  * 1. Waits for Firebase emulators to be ready
- * 2. Creates the test user in the Auth Emulator
  */
 
-import {
-  clearAuthUsers,
-  clearFirestoreData,
-  createTestUser,
-} from "./helpers/auth";
 import { EMULATOR_URLS } from "./helpers/emulator-config";
 
 const MAX_RETRIES = 30;
@@ -37,8 +31,5 @@ async function waitForEmulators(): Promise<void> {
 
 export default async function globalSetup(): Promise<void> {
   await waitForEmulators();
-  await clearAuthUsers();
-  await clearFirestoreData();
-  await createTestUser();
-  console.log("Global setup complete: emulators ready, test user created");
+  console.log("Global setup complete: emulators ready");
 }

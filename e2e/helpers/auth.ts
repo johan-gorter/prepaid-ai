@@ -1,56 +1,63 @@
 /**
  * Test utilities for Firebase Auth Emulator.
  *
- * Uses the Auth Emulator REST API to create a test user
- * and obtain an ID token, which is then signed in via
- * the Firebase client SDK on the page.
+ * Authenticated tests create their own emulator-backed user so they can run
+ * concurrently without clearing shared Firestore state between tests.
  */
 
 import type { Page } from "@playwright/test";
-import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config";
+import { randomBytes } from "node:crypto";
+import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config";
 
-export const TEST_USER = {
-  uid: "test-user-001",
-  email: "testuser@prepaid.test",
-  displayName: "Test User",
-  password: "test-password-123",
-};
+const RANDOM_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-interface EmulatorSignInResponse {
-  idToken: string;
-  refreshToken: string;
+export interface TestUser {
+  uid?: string;
+  email: string;
+  displayName: string;
+  password: string;
+}
+
+interface EmulatorSignUpResponse {
   localId: string;
+}
+
+function createRandomId(length: number): string {
+  const bytes = randomBytes(length);
+  let result = "";
+
+  for (const value of bytes) {
+    result += RANDOM_ID_ALPHABET[value % RANDOM_ID_ALPHABET.length];
+  }
+
+  return result;
+}
+
+export function createRandomTestUser(): TestUser {
+  const randomId = createRandomId(8);
+
+  return {
+    email: `test-${randomId}@prepaid.test`,
+    displayName: `Test User ${randomId}`,
+    password: `test-password-${randomId}`,
+  };
 }
 
 /**
  * Create a test user in the Auth Emulator via REST API.
- * Idempotent — deletes existing user first if present.
  */
-export async function createTestUser(): Promise<void> {
-  // Delete user if exists (ignore errors)
-  try {
-    await fetch(
-      `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ localIds: [TEST_USER.uid] }),
-      },
-    );
-  } catch {
-    // Ignore — user may not exist
-  }
-
-  // Create user via the emulator's signUp endpoint
+export async function createTestUser(
+  user: TestUser = createRandomTestUser(),
+): Promise<TestUser> {
   const signUpRes = await fetch(
     `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: TEST_USER.email,
-        password: TEST_USER.password,
-        displayName: TEST_USER.displayName,
+        email: user.email,
+        password: user.password,
+        displayName: user.displayName,
         returnSecureToken: true,
       }),
     },
@@ -60,42 +67,47 @@ export async function createTestUser(): Promise<void> {
     const err = await signUpRes.text();
     throw new Error(`Failed to create test user: ${err}`);
   }
+
+  const data = (await signUpRes.json()) as EmulatorSignUpResponse;
+
+  return {
+    ...user,
+    uid: data.localId,
+  };
 }
 
 /**
- * Get an ID token for the test user via the Auth Emulator.
+ * Delete a specific test user from the Auth emulator.
  */
-export async function getTestUserToken(): Promise<string> {
-  const res = await fetch(
-    `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
+export async function deleteTestUser(user: TestUser): Promise<void> {
+  if (!user.uid) {
+    return;
+  }
+
+  const response = await fetch(
+    `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
     {
-      method: "POST",
+      method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: TEST_USER.email,
-        password: TEST_USER.password,
-        returnSecureToken: true,
-      }),
+      body: JSON.stringify({ localIds: [user.uid] }),
     },
   );
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Failed to sign in test user: ${err}`);
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Failed to delete test user: ${err}`);
   }
-
-  const data = (await res.json()) as EmulatorSignInResponse;
-  return data.idToken;
 }
 
 /**
- * Sign in the test user on a Playwright page by executing
- * Firebase signInWithCustomToken in the browser context.
+ * Sign in a specific test user on a Playwright page.
  *
  * Call this AFTER page.goto() so the Firebase SDK is loaded.
  */
-export async function signInTestUser(page: Page): Promise<void> {
-  // Wait for the test sign-in helper to be exposed by firebase.ts
+export async function signInTestUser(
+  page: Page,
+  user: TestUser,
+): Promise<void> {
   await page.waitForFunction(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () => typeof (window as any).__testSignIn === "function",
@@ -111,10 +123,9 @@ export async function signInTestUser(page: Page): Promise<void> {
       ) => Promise<unknown>;
       await signIn(user.email, user.password);
     },
-    { email: TEST_USER.email, password: TEST_USER.password },
+    { email: user.email, password: user.password },
   );
 
-  // Wait for auth state to propagate
   await page.waitForTimeout(500);
 }
 

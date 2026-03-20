@@ -1,8 +1,6 @@
 import { expect, test } from "../fixtures";
 
 test.describe("Home Page", () => {
-  test.describe.configure({ mode: "serial" });
-
   test("shows empty state when user has no renovations", async ({
     authenticatedPage: page,
   }) => {
