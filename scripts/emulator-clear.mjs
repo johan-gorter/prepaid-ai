@@ -8,10 +8,10 @@
  *   npm run emulators:clear:auth       # clear Auth only
  *
  * Requires the Firebase emulators to be running first:
- *   npm run emulators
+ *   npm run services:start -- emulators
  */
 
-import { PROJECT_ID, EMULATOR_URLS } from "./emulator-config.mjs";
+import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
 
 async function clearFirestore() {
   const res = await fetch(
@@ -43,7 +43,7 @@ try {
 } catch (err) {
   console.error("❌ Clear failed:", err.message);
   console.error(
-    "\nMake sure the Firebase emulators are running: npm run emulators",
+    "\nMake sure the Firebase emulators are running: npm run services:start -- emulators",
   );
   process.exit(1);
 }

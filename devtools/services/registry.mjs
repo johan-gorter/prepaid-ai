@@ -15,7 +15,7 @@ export const ERROR_PATTERNS = {
 export const services = {
   dev: {
     command: "npm",
-    args: ["run", "dev", "--", "--host", "127.0.0.1"],
+    args: ["run", "dev", "--", "--host", "localhost"],
     cwd: REPO_ROOT,
     port: 5173,
     type: "vite",
@@ -28,7 +28,7 @@ export const services = {
   },
   "dev:emulators": {
     command: "npm",
-    args: ["run", "dev:emulators", "--", "--host", "127.0.0.1"],
+    args: ["run", "dev:emulators", "--", "--host", "localhost"],
     cwd: REPO_ROOT,
     port: 5174,
     type: "vite",

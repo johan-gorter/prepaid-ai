@@ -8,10 +8,10 @@ Use this for normal local development against the Firebase Emulator Suite.
 
 ```bash
 # Terminal 1
-npm run emulators
+npm run services:start -- emulators
 
 # Terminal 2
-npm run dev:emulators
+npm run services:start -- dev:emulators
 
 # Once per fresh emulator session
 npm run emulators:seed
@@ -19,7 +19,7 @@ npm run emulators:seed
 
 How it works:
 
-- `npm run dev:emulators` runs `vite --mode emulator`
+- `npm run services:start -- dev:emulators` runs the tracked Vite emulator-mode dev service
 - By default the emulator dev server runs on `http://localhost:5174`
 - Vite loads `.env.emulator`, normal `.env` file is ignored
 - `.env.emulator` sets `VITE_USE_EMULATORS=true`
@@ -34,12 +34,12 @@ This is the only mode where the `Dev Login` button should appear.
 Use this when you want to run the app locally against a real Firebase project.
 
 ```bash
-npm run dev
+npm run services:start -- dev
 ```
 
 How it works:
 
-- `npm run dev` runs Vite in its default mode
+- `npm run services:start -- dev` runs the tracked Vite dev service in its default mode
 - By default the real-Firebase dev server runs on `http://localhost:5173`
 - Vite loads `.env`
 - `.env` should contain real Firebase web app configuration. This can be the prepaid-ai-experimental firebase project or a special one.
@@ -89,8 +89,8 @@ The configured Firebase project aliases are:
 
 The automated test stack deliberately uses emulator mode.
 
-- E2E tests start Vite with `--mode emulator` on `http://localhost:5174`
-- PWA tests build with `vite build --mode emulator` into `dist-emulator/` and serve that build with `vite preview` on `http://localhost:4175`
+- Start the tracked `dev:emulators` service before E2E tests; it serves the app on `http://localhost:5174`
+- Start the tracked `preview:emulators` service before PWA tests; it builds with `vite build --mode emulator` into `dist-emulator/` and serves that build on `http://localhost:4175`
 - Playwright also injects fake Firebase config for emulator-backed runs
 
 Important distinction:
@@ -131,8 +131,8 @@ Consequence:
 
 ## Rules Of Thumb
 
-- Use `npm run dev:emulators` for safe local development against emulators.
-- Use `npm run dev` for local development against a real Firebase project.
+- Use `npm run services:start -- dev:emulators` for safe local development against emulators.
+- Use `npm run services:start -- dev` for local development against a real Firebase project.
 - Use plain `vite build` or `npm run build` for hosted builds that emit to `dist/`.
 - Never deploy assets produced from emulator mode.
 - Treat `dist-emulator/` as emulator/test infrastructure output only.

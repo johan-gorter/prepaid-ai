@@ -17,7 +17,7 @@ A Vue 3 PWA that lets users take or upload a photo of a space, mark an area to c
 >
 > ```powershell
 > $env:PATH = "D:\tools\jdk-25.0.2\bin;$env:PATH"
-> npm run emulators
+> npm run services:start -- emulators
 > ```
 
 ---
@@ -31,11 +31,9 @@ npm install
 # 2. Install Playwright browsers (first time only)
 npx playwright install chromium
 
-# 3. Start Firebase Emulators in a terminal and keep it running
-npm run emulators
-
-# 4. In a second terminal, start the dev server connected to the emulators
-npm run dev:emulators
+# 3. Start the tracked emulator-backed development services
+npm run services:start -- emulators
+npm run services:start -- dev:emulators
 
 # 5. Create a dev user in the emulator (first time, or after clearing auth)
 npm run emulators:seed
@@ -131,8 +129,8 @@ The emulators must be running when you run these commands.
 The simplest way to get a completely clean state is to **restart the emulators** — they start empty every time:
 
 ```bash
-# Stop emulators (Ctrl+C in their terminal), then restart
-npm run emulators
+# Restart the tracked emulator service
+npm run services:restart -- emulators
 
 # Re-create your dev user
 npm run emulators:seed
@@ -179,8 +177,8 @@ The build output goes to `dist/`. A service worker is generated for PWA support.
 E2E tests require the Firebase Emulators to be running:
 
 ```bash
-# Terminal 1 — keep running during tests
-npm run emulators
+# Start the tracked emulator service once and leave it running
+npm run services:start -- emulators
 ```
 
 The emulator data is cleared and a test user is created automatically by the global setup before each test run.
@@ -205,8 +203,7 @@ npm run test:e2e:headed
 npm run test:e2e:ui
 ```
 
-The Playwright config starts a Vite dev server automatically in emulator mode (`VITE_USE_EMULATORS=true`).
-Port 5174 must be free.
+Start the tracked `dev:emulators` service before running E2E. The Playwright config no longer starts or stops long-running services for you. Port 5174 must be free before you start the service.
 
 ### Component Tests Only
 
@@ -230,24 +227,19 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ---
 
-## Scripts Reference
+## Service-Manager Reference
 
-| Script                              | Description                                                                         |
-| ----------------------------------- | ----------------------------------------------------------------------------------- |
-| `npm run dev`                       | Start dev server against production Firebase on `localhost:5173` (needs `.env`)     |
-| `npm run dev:emulators`             | Start dev server against local emulators on `localhost:5174` (uses `.env.emulator`) |
-| `npm run build`                     | Type-check everything and build for production                                      |
-| `npm run preview`                   | Preview the production build locally                                                |
-| `npm run emulators`                 | Start Firebase Emulator Suite (Auth, Firestore, Storage, UI)                        |
-| `npm run emulators:seed`            | Create a dev user in the Auth Emulator                                              |
-| `npm run emulators:clear`           | Clear all emulator data (Firestore + Auth)                                          |
-| `npm run emulators:clear:firestore` | Clear Firestore data only                                                           |
-| `npm run emulators:clear:auth`      | Clear Auth users only                                                               |
-| `npm run test`                      | Run all tests (E2E + component)                                                     |
-| `npm run test:e2e`                  | Run E2E tests (requires emulators)                                                  |
-| `npm run test:ct`                   | Run component tests (no emulators needed)                                           |
-| `npm run test:e2e:ui`               | Open Playwright UI for E2E debugging                                                |
-| `npm run test:e2e:headed`           | Run E2E tests with visible browser                                                  |
+| Command                                        | Description                                                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| `npm run services:start -- dev`                | Start the tracked dev server against real Firebase on `localhost:5173`       |
+| `npm run services:start -- emulators`          | Start the tracked Firebase Emulator Suite                                    |
+| `npm run services:start -- dev:emulators`      | Start the tracked dev server against local emulators on `localhost:5174`     |
+| `npm run services:start -- preview:emulators`  | Build and start the tracked emulator-mode preview server on `localhost:4175` |
+| `npm run services:start -- dev-with-emulators` | Start both tracked Vite dev servers together                                 |
+| `npm run services:start -- pwa-with-emulators` | Start the emulators plus the tracked PWA preview server                      |
+| `npm run services:status`                      | Show tracked service status, ports, error counts, and recent log output      |
+| `npm run services:restart -- <name>`           | Restart one tracked service or tracked group                                 |
+| `npm run services:stop -- [name]`              | Stop one tracked service, one tracked group, or all tracked services         |
 
 ---
 

@@ -1,5 +1,4 @@
 import { defineConfig, devices } from "@playwright/test";
-import { TEST_FIREBASE_ENV } from "./e2e/helpers/emulator-config";
 
 /**
  * PWA tests run against an emulator-backed build (vite preview) so the
@@ -27,11 +26,4 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-
-  webServer: {
-    command: "npm run preview:emulators",
-    port: 4175,
-    reuseExistingServer: !process.env.CI,
-    env: TEST_FIREBASE_ENV,
-  },
 });

@@ -1,5 +1,4 @@
 import { defineConfig, devices } from "@playwright/test";
-import { TEST_FIREBASE_ENV } from "./e2e/helpers/emulator-config";
 
 export default defineConfig({
   testDir: "./e2e/specs",
@@ -47,12 +46,4 @@ export default defineConfig({
       dependencies: ["home-mobile-chrome"],
     },
   ],
-
-  /* Start Vite dev server before tests */
-  webServer: {
-    command: "npx vite --mode emulator",
-    port: 5174,
-    reuseExistingServer: !process.env.CI,
-    env: TEST_FIREBASE_ENV,
-  },
 });

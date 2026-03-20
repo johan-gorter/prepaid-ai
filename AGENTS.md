@@ -52,17 +52,14 @@ scripts/                # Developer utility scripts
 
 ### Build & Development
 
-| Command                              | Description                                                                                                    |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `npm run build`                      | Type-check with `vue-tsc` then build for production with Vite                                                  |
-| `npm run build:preview`              | Build then preview the production bundle locally                                                               |
-| `npm run dev`                        | Start Vite dev server on `localhost:5173` (requires real Firebase config in `.env`)                            |
-| `npm run dev:emulators`              | Start Vite dev server on `localhost:5174` in emulator mode (uses `.env.emulator`, connects to local emulators) |
-| `npm run preview`                    | Preview an already-built production bundle                                                                     |
-| `npm run services:start -- <name>`   | Start one or more tracked background services or service groups                                                |
-| `npm run services:stop -- [name]`    | Stop one tracked service, one group, or all tracked services if omitted                                        |
-| `npm run services:restart -- [name]` | Restart one tracked service, one group, or all tracked services if omitted                                     |
-| `npm run services:status`            | Show tracked service status, ports, error counts, and last useful log line                                     |
+| Command                              | Description                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| `npm run build`                      | Type-check with `vue-tsc` then build for production with Vite              |
+| `npm run build:preview`              | Build then preview the production bundle locally                           |
+| `npm run services:start -- <name>`   | Start one or more tracked background services or service groups            |
+| `npm run services:stop -- [name]`    | Stop one tracked service, one group, or all tracked services if omitted    |
+| `npm run services:restart -- [name]` | Restart one tracked service, one group, or all tracked services if omitted |
+| `npm run services:status`            | Show tracked service status, ports, error counts, and last useful log line |
 
 Tracked service names:
 
@@ -79,17 +76,16 @@ Tracked groups:
 
 ### Testing
 
-| Command                       | Description                                                                                                                                                 |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run emulators`           | Start Firebase Emulator Suite (Auth :9099, Functions :5001, Firestore :8080, Storage :9199, UI :4000). **Requires Java.** Must be running before E2E tests. |
-| `npm run emulators:wait`      | Wait for emulators to become ready (used by CI and standalone test runner)                                                                                  |
-| `npm run test:e2e`            | Run Playwright E2E tests (requires emulators running separately)                                                                                            |
-| `npm run test:e2e:standalone` | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                                               |
-| `npm run test:ct`             | Run Playwright Component Tests (no emulators needed)                                                                                                        |
-| `npm run test:pwa`            | Run PWA tests against a built emulator-mode bundle with `vite preview`; validates manifest, service worker, and offline app-shell behavior                  |
-| `npm run test`                | Run E2E, Component, and PWA tests sequentially                                                                                                              |
-| `npm run test:e2e:ui`         | Open Playwright UI mode for E2E tests (interactive debugging)                                                                                               |
-| `npm run test:e2e:headed`     | Run E2E tests in a visible browser window                                                                                                                   |
+| Command                       | Description                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run emulators:wait`      | Wait for emulators to become ready (used by CI and standalone test runner)                                                                 |
+| `npm run test:e2e`            | Run Playwright E2E tests (requires emulators running separately)                                                                           |
+| `npm run test:e2e:standalone` | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                              |
+| `npm run test:ct`             | Run Playwright Component Tests (no emulators needed)                                                                                       |
+| `npm run test:pwa`            | Run PWA tests against a built emulator-mode bundle with `vite preview`; validates manifest, service worker, and offline app-shell behavior |
+| `npm run test`                | Run E2E, Component, and PWA tests sequentially                                                                                             |
+| `npm run test:e2e:ui`         | Open Playwright UI mode for E2E tests (interactive debugging)                                                                              |
+| `npm run test:e2e:headed`     | Run E2E tests in a visible browser window                                                                                                  |
 
 ### Type-checking
 
@@ -107,45 +103,26 @@ E2E tests use real Firebase Emulators for Auth, Firestore, Storage, and Function
 
 **One-time setup:** Run `npm run setup` (or manually install deps, browsers, and build functions).
 
-**Easiest way — single command:**
+Start the tracked services first, then run the test command you need.
 
-```bash
-npm run test:e2e:standalone
-```
-
-This starts the emulators, waits for them, runs tests, and stops the emulators. Extra args are passed through to Playwright (e.g. `npm run test:e2e:standalone -- --headed`).
-
-**Two-terminal way (for repeated runs):**
-
-```bash
-# Terminal 1 — start emulators (keep running)
-npm run emulators
-
-# Terminal 2 — run E2E tests
-npm run test:e2e
-```
-
-**Tracked background services:**
+**Recommended tracked-service workflow:**
 
 ```bash
 # Start the emulator suite plus the emulator-mode Vite app separately
 npm run services:start -- emulators
 npm run services:start -- dev:emulators
 
-# Or start both Vite dev servers together
-npm run services:start -- dev-with-emulators
-
-# Inspect or stop everything that is being tracked
-npm run services:status
-npm run services:stop
+# Then run Playwright in another terminal
+npm run test:e2e
 ```
 
 The Playwright config (`playwright.config.ts`) automatically:
 
-- Starts a Vite dev server on port 5174 with emulator env vars
 - Runs global setup which waits for emulators, clears data, and creates a test user
 - Provides an `authenticatedPage` fixture for tests needing a signed-in user
 - Clears Firestore data before each test (in fixture setup) for parallel-safe isolation
+
+Playwright no longer starts or stops long-running services. Start `emulators` and `dev:emulators` through the service manager before the test run and leave them running until you stop them explicitly.
 
 **No `.env` file is needed for tests** — the Playwright config injects fake Firebase config values directly. The emulators accept any project configuration.
 
@@ -170,7 +147,7 @@ npm run test:pwa
 How it works:
 
 - `npm run test:pwa` runs `playwright test --config=playwright-pwa.config.ts`
-- The PWA Playwright config runs `npm run preview:emulators`, which first builds the app with `vite build --mode emulator` into `dist-emulator/` and then serves that built output with `vite preview` on `http://localhost:4175`
+- Start `npm run services:start -- preview:emulators` before running the suite; it builds the app with `vite build --mode emulator` into `dist-emulator/` and starts the tracked preview server on `http://localhost:4175`
 - Playwright injects emulator-mode Firebase env vars (`VITE_USE_EMULATORS=true` and fake Firebase web config)
 - The suite verifies the real generated manifest and generated service worker, plus offline navigation/app-shell behavior
 

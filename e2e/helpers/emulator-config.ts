@@ -7,7 +7,7 @@
 
 export const PROJECT_ID = "prepaid-ai-emulator";
 
-export const EMULATOR_HOST = "127.0.0.1";
+export const EMULATOR_HOST = "localhost";
 
 export const EMULATOR_PORTS = {
   auth: 9099,

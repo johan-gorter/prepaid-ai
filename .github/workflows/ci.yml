@@ -68,8 +68,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Start Firebase emulators
-        run: npx firebase emulators:start --project prepaid-ai-emulator &
+      - name: Start tracked E2E services
+        run: |
+          npm run services:start -- emulators
+          npm run services:start -- dev:emulators
 
       - name: Wait for emulators
         run: node scripts/wait-for-emulators.mjs
@@ -106,6 +108,9 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
+
+      - name: Start tracked PWA preview service
+        run: npm run services:start -- preview:emulators
 
       - name: Run PWA tests
         run: npx playwright test --config=playwright-pwa.config.ts
