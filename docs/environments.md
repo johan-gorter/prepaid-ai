@@ -90,10 +90,44 @@ The configured Firebase project aliases are:
 The automated test stack deliberately uses emulator mode.
 
 - E2E tests start Vite with `--mode emulator` on `http://localhost:5174`
-- PWA tests build with `vite build --mode emulator` into `dist-emulator/`
+- PWA tests build with `vite build --mode emulator` into `dist-emulator/` and serve that build with `vite preview` on `http://localhost:4175`
 - Playwright also injects fake Firebase config for emulator-backed runs
 
+Important distinction:
+
+- E2E tests require a live Firebase Emulator Suite and manage it through Playwright global setup/teardown helpers
+- PWA tests do **not** start or manage the Emulator Suite; they only build and serve the frontend in emulator mode
+- If the PWA test app reaches Firebase APIs during runtime, it will target emulator endpoints because `VITE_USE_EMULATORS=true`, but no emulator lifecycle is orchestrated by the PWA suite itself
+
 This is test infrastructure only. Do not reuse emulator-mode output for hosted environments.
+
+## Service Worker And Backends
+
+The generated service worker has two relevant jobs:
+
+- Precache the built app shell assets emitted by Vite/Workbox so the app can boot offline
+- Runtime-cache Firebase Storage image GET responses
+
+Storage caching behavior:
+
+- Production backend: matches Storage object downloads from `https://firebasestorage.googleapis.com/v0/b/.../o/...`
+- Local emulator backend: matches Storage object downloads from `http://localhost:9199/v0/b/.../o/...` or `http://127.0.0.1:9199/v0/b/.../o/...`
+- The cache key strips query parameters and keeps only `origin + pathname`, so token changes on Storage download URLs do not create duplicate cache entries for the same object path
+
+What it does not do:
+
+- It does not cache Firestore reads/writes, Auth traffic, or Cloud Functions calls
+
+Client-side URL persistence:
+
+- The app persists resolved `getDownloadURL()` results in `localStorage`, keyed by Firebase Storage path
+- On later renders, the client checks that persisted mapping before calling `getDownloadURL()` again
+- This reduces redundant download-URL resolution requests and helps previously seen images render again after a full offline refresh
+
+Consequence:
+
+- Offline route refresh works because the app shell is precached
+- Offline image redisplay after a full refresh can work for previously seen images because the client can recover the same Storage object URL from local persistence and then let the service worker serve the cached bytes
 
 ## Rules Of Thumb
 

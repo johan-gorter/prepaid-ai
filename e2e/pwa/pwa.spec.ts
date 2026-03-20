@@ -1,4 +1,50 @@
 import { expect, test } from "@playwright/test";
+import { Jimp } from "jimp";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { clearFirestoreData, createTestUser, TEST_USER } from "../helpers/auth";
+import { EMULATOR_URLS } from "../helpers/emulator-config";
+
+async function signInOnPage(page: import("@playwright/test").Page) {
+  await page.goto("/login");
+  await page.waitForFunction(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    () => typeof (window as any).__testSignIn === "function",
+    { timeout: 5000 },
+  );
+
+  await page.evaluate(
+    async (user: { email: string; password: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const signIn = (window as any).__testSignIn as (
+        email: string,
+        password: string,
+      ) => Promise<unknown>;
+      await signIn(user.email, user.password);
+    },
+    { email: TEST_USER.email, password: TEST_USER.password },
+  );
+
+  await page.waitForTimeout(500);
+}
+
+async function areEmulatorsAvailable() {
+  try {
+    const response = await fetch(EMULATOR_URLS.ui);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function createGrayPng() {
+  const image = new Jimp({ width: 300, height: 300, color: 0x808080ff });
+  const buffer = await image.getBuffer("image/png");
+  const filePath = path.join(os.tmpdir(), `pwa-upload-${Date.now()}.png`);
+  fs.writeFileSync(filePath, buffer);
+  return filePath;
+}
 
 test.describe("PWA Requirements", () => {
   test.beforeEach(async ({ page }) => {
@@ -158,5 +204,91 @@ test.describe("PWA Requirements", () => {
     await expect(page.locator("body")).not.toBeEmpty();
 
     await context.setOffline(false);
+  });
+
+  test("previously viewed uploaded PNG still renders after offline refresh", async ({
+    page,
+    context,
+  }) => {
+    test.setTimeout(60000);
+
+    test.skip(
+      !(await areEmulatorsAvailable()),
+      "requires live Firebase emulators for auth, firestore, and storage",
+    );
+
+    await createTestUser();
+    await clearFirestoreData();
+
+    const uploadPath = await createGrayPng();
+
+    try {
+      await signInOnPage(page);
+      await page.goto("/");
+      await page.waitForURL("/");
+      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.waitForURL("/renovation/new");
+
+      await page.getByLabel("Title").fill("Offline cached thumbnail");
+      await page.getByLabel("Photo (PNG)").setInputFiles(uploadPath);
+      await expect(page.getByAltText("Preview")).toBeVisible();
+      await page
+        .getByLabel("Describe your renovation")
+        .fill("verify cached image survives refresh");
+
+      await page.getByRole("button", { name: "Create Renovation" }).click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/, { timeout: 15000 });
+
+      await expect(page.locator(".status-completed")).toBeVisible({
+        timeout: 30000,
+      });
+      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
+
+      await page.goto("/");
+      await page.waitForURL("/");
+
+      const thumbnail = page.locator(".renovation-thumbnail").first();
+      await expect(
+        page.getByRole("heading", { name: "Offline cached thumbnail" }),
+      ).toBeVisible({ timeout: 30000 });
+      await expect(thumbnail).toBeVisible({ timeout: 30000 });
+      await expect
+        .poll(async () => {
+          return thumbnail.evaluate((img) => {
+            const image = img as HTMLImageElement;
+            return image.complete && image.naturalWidth > 0;
+          });
+        })
+        .toBe(true);
+
+      const srcBeforeOffline = await thumbnail.getAttribute("src");
+      expect(srcBeforeOffline).toBeTruthy();
+
+      await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+      });
+
+      await context.setOffline(true);
+      await page.reload();
+      await page.waitForURL("/");
+
+      const offlineThumbnail = page.locator(".renovation-thumbnail").first();
+      await expect(offlineThumbnail).toBeVisible({ timeout: 15000 });
+      await expect
+        .poll(async () => {
+          return offlineThumbnail.evaluate((img) => {
+            const image = img as HTMLImageElement;
+            return image.complete && image.naturalWidth > 0;
+          });
+        })
+        .toBe(true);
+      await expect(offlineThumbnail).toHaveAttribute("src", srcBeforeOffline!);
+
+      await context.setOffline(false);
+    } finally {
+      if (fs.existsSync(uploadPath)) {
+        fs.unlinkSync(uploadPath);
+      }
+    }
   });
 });

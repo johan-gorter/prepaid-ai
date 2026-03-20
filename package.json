@@ -6,8 +6,11 @@
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "build:functions": "npm --prefix functions run build",
+    "build:emulator": "vite build --mode emulator",
     "dev": "vite",
     "dev:emulators": "vite --mode emulator",
+    "prepreview:emulators": "npm run build:emulator",
+    "preview:emulators": "vite preview --port 4175 --outDir dist-emulator --host 127.0.0.1",
     "services:start": "node devtools/services/cli.mjs start",
     "services:stop": "node devtools/services/cli.mjs stop",
     "services:restart": "node devtools/services/cli.mjs restart",

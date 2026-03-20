@@ -9,8 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
-dist-test
-dist-ssr
+dist-emulator
 *.local
 
 # Environment variables

@@ -4,9 +4,67 @@ import { storage } from "../firebase";
 
 const resolvedUrlCache = new Map<string, string>();
 const inflightUrlCache = new Map<string, Promise<string>>();
+const STORAGE_URL_CACHE_KEY = "storage-download-url-cache-v1";
+
+function readPersistedUrlCache(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const rawValue = window.localStorage.getItem(STORAGE_URL_CACHE_KEY);
+    if (!rawValue) return {};
+
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (!parsed || typeof parsed !== "object") return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([path, url]) => typeof path === "string" && typeof url === "string",
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function writePersistedUrlCache(cacheEntries: Record<string, string>) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      STORAGE_URL_CACHE_KEY,
+      JSON.stringify(cacheEntries),
+    );
+  } catch {
+    // Ignore storage quota and serialization failures.
+  }
+}
+
+function getPersistedUrl(path: string): string | null {
+  const persistedEntries = readPersistedUrlCache();
+  return persistedEntries[path] ?? null;
+}
+
+function persistResolvedUrl(path: string, url: string) {
+  const persistedEntries = readPersistedUrlCache();
+  persistedEntries[path] = url;
+  writePersistedUrlCache(persistedEntries);
+}
+
+function getCachedUrl(path: string): string | null {
+  const inMemoryUrl = resolvedUrlCache.get(path);
+  if (inMemoryUrl) return inMemoryUrl;
+
+  const persistedUrl = getPersistedUrl(path);
+  if (persistedUrl) {
+    resolvedUrlCache.set(path, persistedUrl);
+    return persistedUrl;
+  }
+
+  return null;
+}
 
 async function fetchStorageUrl(path: string): Promise<string> {
-  const cachedUrl = resolvedUrlCache.get(path);
+  const cachedUrl = getCachedUrl(path);
   if (cachedUrl) return cachedUrl;
 
   const inflightRequest = inflightUrlCache.get(path);
@@ -15,6 +73,7 @@ async function fetchStorageUrl(path: string): Promise<string> {
   const request = getDownloadURL(storageRef(storage, path)).then(
     (url) => {
       resolvedUrlCache.set(path, url);
+      persistResolvedUrl(path, url);
       inflightUrlCache.delete(path);
       return url;
     },
@@ -56,7 +115,7 @@ export function useStorageUrl(
         return;
       }
 
-      const cachedUrl = resolvedUrlCache.get(path);
+      const cachedUrl = getCachedUrl(path);
       if (cachedUrl) {
         url.value = cachedUrl;
         loading.value = false;

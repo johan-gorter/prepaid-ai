@@ -16,7 +16,7 @@ export default defineConfig({
     : [["list"]],
 
   use: {
-    baseURL: "http://localhost:4173",
+    baseURL: "http://localhost:4175",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -29,9 +29,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command:
-      "vite build --mode emulator && vite preview --port 4173 --outDir dist-emulator",
-    port: 4173,
+    command: "npm run preview:emulators",
+    port: 4175,
     reuseExistingServer: !process.env.CI,
     env: TEST_FIREBASE_ENV,
   },

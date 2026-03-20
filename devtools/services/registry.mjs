@@ -39,6 +39,19 @@ export const services = {
       return undefined;
     },
   },
+  "preview:emulators": {
+    command: "npm",
+    args: ["run", "preview:emulators"],
+    cwd: REPO_ROOT,
+    port: 4175,
+    type: "vite",
+    shell: true,
+    lastLogMapper: (line) => {
+      if (/Local:/i.test(line) || /ready in/i.test(line)) return line.trim();
+      if (/error/i.test(line)) return line.trim();
+      return undefined;
+    },
+  },
   emulators: {
     command: "npm",
     args: ["run", "emulators"],
@@ -57,7 +70,8 @@ export const services = {
 
 export const groups = {
   "dev-with-emulators": ["dev", "dev:emulators"],
-  all: ["emulators", "dev", "dev:emulators"],
+  "pwa-with-emulators": ["emulators", "preview:emulators"],
+  all: ["emulators", "dev", "dev:emulators", "preview:emulators"],
 };
 
 export function resolveServices(name) {

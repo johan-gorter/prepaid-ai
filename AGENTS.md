@@ -68,12 +68,14 @@ Tracked service names:
 
 - `dev` — Vite on port 5173
 - `dev:emulators` — Vite emulator mode on port 5174
+- `preview:emulators` — built emulator-mode preview server on port 4175 for PWA testing
 - `emulators` — Firebase Emulator Suite
 
 Tracked groups:
 
 - `dev-with-emulators` — both Vite dev servers
-- `all` — emulators plus both Vite dev servers
+- `pwa-with-emulators` — Firebase emulators plus the PWA preview server
+- `all` — emulators plus both Vite dev servers and the PWA preview server
 
 ### Testing
 
@@ -84,7 +86,7 @@ Tracked groups:
 | `npm run test:e2e`            | Run Playwright E2E tests (requires emulators running separately)                                                                                            |
 | `npm run test:e2e:standalone` | Run E2E tests with auto-managed emulators (single command, no extra terminal)                                                                               |
 | `npm run test:ct`             | Run Playwright Component Tests (no emulators needed)                                                                                                        |
-| `npm run test:pwa`            | Run PWA tests (auto-builds production bundle)                                                                                                               |
+| `npm run test:pwa`            | Run PWA tests against a built emulator-mode bundle with `vite preview`; validates manifest, service worker, and offline app-shell behavior                  |
 | `npm run test`                | Run E2E, Component, and PWA tests sequentially                                                                                                              |
 | `npm run test:e2e:ui`         | Open Playwright UI mode for E2E tests (interactive debugging)                                                                                               |
 | `npm run test:e2e:headed`     | Run E2E tests in a visible browser window                                                                                                                   |
@@ -157,6 +159,28 @@ Component tests mount individual Vue components in isolation. They do not need F
 npm run test:ct
 ```
 
+### PWA Tests
+
+PWA tests validate the built app shell, manifest, and service worker behavior.
+
+```bash
+npm run test:pwa
+```
+
+How it works:
+
+- `npm run test:pwa` runs `playwright test --config=playwright-pwa.config.ts`
+- The PWA Playwright config runs `npm run preview:emulators`, which first builds the app with `vite build --mode emulator` into `dist-emulator/` and then serves that built output with `vite preview` on `http://localhost:4175`
+- Playwright injects emulator-mode Firebase env vars (`VITE_USE_EMULATORS=true` and fake Firebase web config)
+- The suite verifies the real generated manifest and generated service worker, plus offline navigation/app-shell behavior
+
+Important distinctions:
+
+- PWA tests use emulator mode, but they do **not** start, seed, clear, or wait for the Firebase Emulator Suite
+- If `preview:emulators` is already running via `npm run services:start -- preview:emulators` or `npm run services:start -- pwa-with-emulators`, Playwright reuses that same preview server instead of starting another one
+- E2E tests are the target that manages live emulator dependencies through global setup/teardown
+- PWA tests therefore validate PWA behavior of the built frontend, not end-to-end Firebase flows
+
 ### Running a single test file
 
 ```bash
@@ -209,7 +233,12 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - The Firebase client config values (`VITE_*`) are public by design — they are secured by Firestore security rules and Auth.
 - Persist Firebase Storage object paths in Firestore, not long-lived download URLs. The client should resolve paths to URLs at render time through the authenticated Firebase Storage SDK.
 - Offline image access is handled by the custom PWA service worker runtime cache. Treat cached renovation images as device-local convenience data that may remain available after sign-out.
-- If you change Storage runtime caching, make sure the service worker matches both production Firebase Storage URLs and emulator Storage URLs.
+- The service worker precaches the built app shell and uses SPA navigation fallback for offline route refreshes.
+- The service worker also runtime-caches Firebase Storage image responses for both production Storage URLs (`firebasestorage.googleapis.com`) and local emulator Storage URLs (`localhost`/`127.0.0.1` with `/v0/b/.../o/...`).
+- The service worker does **not** cache Auth, Firestore, or Cloud Functions traffic. Offline data access there depends on the Firebase SDKs, not Workbox routing.
+- The client persists resolved Firebase Storage download URLs in `localStorage` keyed by Storage path, and reuses them before calling `getDownloadURL()` again. This reduces redundant URL-resolution requests and makes image rendering after refresh more likely to stay offline-capable once an image has been seen online.
+- If you change Storage runtime caching, make sure the service worker still matches both production Firebase Storage URLs and emulator Storage URLs.
+- Cached image bytes plus the persisted path-to-URL mapping are what allow image rendering after a full offline refresh. If either side changes, re-check the PWA image-loading behavior.
 - The `NANO_BANANA_API_KEY` is server-side only and must never be exposed in client code.
 - Java must be installed for Firebase Emulators to run.
 - Tracked service logs and PID files are written under `logs/services/`.
