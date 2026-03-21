@@ -16,7 +16,7 @@ Renovision AI Dev Service Manager
 
 Commands:
   start <name>      Start one service
-  wait <name>       Wait until one service port is open
+  wait <name...>    Wait until one or more service ports are open
   stop [name]       Stop one service, or all if omitted
   restart [name]    Restart one service, or all if omitted
   status            Show status of all tracked services
@@ -69,16 +69,16 @@ async function main() {
     }
 
     case "wait": {
-      if (targets.length !== 1) {
-        console.error("Error: wait requires exactly one service name.\n");
+      if (targets.length === 0) {
+        console.error("Error: wait requires at least one service name.\n");
         printUsage();
         process.exit(1);
       }
 
       try {
-        const name = resolveTarget(targets[0]);
-        await waitForServices([name]);
-        console.log(`Service ready: ${name}`);
+        const names = targets.map(resolveTarget);
+        await waitForServices(names);
+        console.log(`Services ready: ${names.join(", ")}`);
       } catch (error) {
         console.error(error.message);
         process.exit(1);
