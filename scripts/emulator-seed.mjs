@@ -6,7 +6,7 @@
  *   npm -s run emulators:seed
  *
  * Requires the Firebase emulators to be running first:
- *   npm -s run services:start -- emulators
+ *   npm -s run services:start emulators
  */
 
 import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
@@ -64,7 +64,7 @@ async function seedDevUser() {
     const err = await res.text();
     console.error("❌ Failed to create dev user:", err);
     console.error(
-      "\nMake sure the Firebase emulators are running: npm -s run services:start -- emulators",
+      "\nMake sure the Firebase emulators are running: npm -s run services:start emulators",
     );
     process.exit(1);
   }

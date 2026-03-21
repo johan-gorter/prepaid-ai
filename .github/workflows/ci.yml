@@ -70,11 +70,11 @@ jobs:
 
       - name: Start tracked E2E services
         run: |
-          npm run services:start -- emulators
-          npm run services:start -- dev:emulators
+          npm run services:start emulators
+          npm run services:start dev:emulators
 
       - name: Wait for tracked E2E services
-        run: npm run services:wait -- emulators dev:emulators
+        run: npm run services:wait emulators dev:emulators
 
       - name: Run E2E tests
         run: npx playwright test --config=playwright.config.ts
@@ -110,10 +110,10 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Start tracked PWA preview service
-        run: npm run services:start -- preview:emulators
+        run: npm run services:start preview:emulators
 
       - name: Wait for tracked PWA preview service
-        run: npm run services:wait -- preview:emulators
+        run: npm run services:wait preview:emulators
 
       - name: Run PWA tests
         run: npx playwright test --config=playwright-pwa.config.ts

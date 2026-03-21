@@ -17,7 +17,7 @@ A Vue 3 PWA that lets users take or upload a photo of a space, mark an area to c
 >
 > ```powershell
 > $env:PATH = "D:\tools\jdk-25.0.2\bin;$env:PATH"
-> npm -s run services:start -- emulators
+> npm -s run services:start emulators
 > ```
 
 ---
@@ -32,10 +32,10 @@ npm install
 npx playwright install chromium
 
 # 3. Start the tracked emulator-backed development services
-npm -s run services:start -- emulators
-npm -s run services:start -- dev:emulators
-npm -s run services:wait -- emulators
-npm -s run services:wait -- dev:emulators
+npm -s run services:start emulators
+npm -s run services:start dev:emulators
+npm -s run services:wait emulators
+npm -s run services:wait dev:emulators
 
 # 5. Create a dev user in the emulator (first time, or after clearing auth)
 npm -s run emulators:seed
@@ -132,8 +132,8 @@ The simplest way to get a completely clean state is to **restart the emulators**
 
 ```bash
 # Restart the tracked emulator service
-npm -s run services:restart -- emulators
-npm -s run services:wait -- emulators
+npm -s run services:restart emulators
+npm -s run services:wait emulators
 
 # Re-create your dev user
 npm -s run emulators:seed
@@ -184,10 +184,10 @@ E2E tests require the Firebase Emulators to be running:
 
 ```bash
 # Start the tracked emulator service once and leave it running
-npm -s run services:start -- emulators
-npm -s run services:start -- dev:emulators
-npm -s run services:wait -- emulators
-npm -s run services:wait -- dev:emulators
+npm -s run services:start emulators
+npm -s run services:start dev:emulators
+npm -s run services:wait emulators
+npm -s run services:wait dev:emulators
 ```
 
 The global setup waits for the emulator suite, and authenticated tests create their own isolated emulator user on demand.
@@ -199,7 +199,7 @@ The global setup waits for the emulator suite, and authenticated tests create th
 npm -s run test
 ```
 
-`test:*` commands never start or stop services. For local runs, start the required services yourself and wait for them with `npm -s run services:wait -- <name>`. In CI, GitHub Actions owns that startup and wait sequence.
+`test:*` commands never start or stop services. For local runs, start the required services yourself and wait for them with `npm -s run services:wait <name>`. In CI, GitHub Actions owns that startup and wait sequence.
 
 To run the full test matrix in parallel, start and wait for the required services first, then run `npm -s run test:all`.
 
@@ -244,14 +244,14 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 | Command                                          | Description                                                                  |
 | ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `npm -s run services:start -- dev`               | Start the tracked dev server against real Firebase on `localhost:5173`       |
-| `npm -s run services:start -- emulators`         | Start the tracked Firebase Emulator Suite                                    |
-| `npm -s run services:start -- dev:emulators`     | Start the tracked dev server against local emulators on `localhost:5174`     |
-| `npm -s run services:wait -- <name>`             | Wait up to 45 seconds until one tracked service port is open                 |
-| `npm -s run services:start -- preview:emulators` | Build and start the tracked emulator-mode preview server on `localhost:4175` |
+| `npm -s run services:start dev`               | Start the tracked dev server against real Firebase on `localhost:5173`       |
+| `npm -s run services:start emulators`         | Start the tracked Firebase Emulator Suite                                    |
+| `npm -s run services:start dev:emulators`     | Start the tracked dev server against local emulators on `localhost:5174`     |
+| `npm -s run services:wait <name>`             | Wait up to 45 seconds until one tracked service port is open                 |
+| `npm -s run services:start preview:emulators` | Build and start the tracked emulator-mode preview server on `localhost:4175` |
 | `npm -s run services:status`                     | Show tracked service status, ports, error counts, and recent log output      |
-| `npm -s run services:restart -- <name>`          | Restart one tracked service                                                  |
-| `npm -s run services:stop -- [name]`             | Stop one tracked service, or all tracked services if omitted                 |
+| `npm -s run services:restart <name>`          | Restart one tracked service                                                  |
+| `npm -s run services:stop [name]`             | Stop one tracked service, or all tracked services if omitted                 |
 
 ---
 

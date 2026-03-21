@@ -101,10 +101,10 @@ Start the tracked services first, then run the test command you need.
 
 ```bash
 # Start the emulator suite plus the emulator-mode Vite app separately
-npm -s run services:start -- emulators
-npm -s run services:start -- dev:emulators
-npm -s run services:wait -- emulators
-npm -s run services:wait -- dev:emulators
+npm -s run services:start emulators
+npm -s run services:start dev:emulators
+npm -s run services:wait emulators
+npm -s run services:wait dev:emulators
 
 # Then run Playwright
 npm -s run test:e2e
@@ -118,7 +118,7 @@ The Playwright config (`playwright.config.ts`) automatically:
 
 Playwright no longer starts or stops long-running services. Start `emulators` and `dev:emulators` through the service manager before the test run and leave them running until you stop them explicitly.
 
-Test commands never start or stop services. In CI, GitHub Actions is responsible for starting the required services and waiting for them with `npm -s run services:wait -- <name>` before invoking any `test:*` command.
+Test commands never start or stop services. In CI, GitHub Actions is responsible for starting the required services and waiting for them with `npm -s run services:wait <name>` before invoking any `test:*` command.
 
 **No `.env` file is needed for tests** — the Playwright config injects fake Firebase config values directly. The emulators accept any project configuration.
 
@@ -143,14 +143,14 @@ npm -s run test:pwa
 How it works:
 
 - `npm -s run test:pwa` runs `playwright test --config=playwright-pwa.config.ts`
-- Start `npm -s run services:start -- preview:emulators` before running the suite; it builds the app with `vite build --mode emulator` into `dist-emulator/` and starts the tracked preview server on `http://localhost:4175`
+- Start `npm -s run services:start preview:emulators` before running the suite; it builds the app with `vite build --mode emulator` into `dist-emulator/` and starts the tracked preview server on `http://localhost:4175`
 - Playwright injects emulator-mode Firebase env vars (`VITE_USE_EMULATORS=true` and fake Firebase web config)
 - The suite verifies the real generated manifest and generated service worker, plus offline navigation/app-shell behavior
 
 Important distinctions:
 
 - PWA tests use emulator mode, but they do **not** start, seed, clear, or wait for the Firebase Emulator Suite
-- If `preview:emulators` is already running via `npm -s run services:start -- preview:emulators`, Playwright reuses that same preview server instead of starting another one
+- If `preview:emulators` is already running via `npm -s run services:start preview:emulators`, Playwright reuses that same preview server instead of starting another one
 - E2E tests are the target that manages live emulator dependencies through global setup/teardown
 - PWA tests therefore validate PWA behavior of the built frontend, not end-to-end Firebase flows
 
@@ -171,7 +171,7 @@ After making code changes, run these commands in order:
 1. **Type-check:** `npm -s run typecheck:all` — checks app, tests, and Cloud Functions
 2. **Build:** `npm -s run build` — runs type-check + Vite production build, must complete without errors
 3. **Component tests:** `npm -s run test:ct` — no emulators needed
-4. **E2E tests:** `npm -s run services:start -- emulators && npm -s run services:start -- dev:emulators && npm -s run services:wait -- emulators && npm -s run services:wait -- dev:emulators && npm -s run test:e2e`
+4. **E2E tests:** `npm -s run services:start emulators && npm -s run services:start dev:emulators && npm -s run services:wait emulators && npm -s run services:wait dev:emulators && npm -s run test:e2e`
 
 To validate the full matrix in one command, start and wait for the required services first, then run `npm -s run test:all`.
 

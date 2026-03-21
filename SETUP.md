@@ -52,7 +52,7 @@ users/{uid}
 
 8. Install Firebase CLI: `npm install -g firebase-tools`
 9. `firebase login` and `firebase init` (select Firestore, Functions, Hosting, Storage)
-10. Scaffold Vue project: `npm create vite@latest prepaid-ai -- --template vue-ts`
+10. Scaffold Vue project: `npm create vite@latest prepaid-ai --template vue-ts`
 11. Install dependencies:
     ```bash
     npm install firebase vuefire vue-router pinia
