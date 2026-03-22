@@ -21,7 +21,16 @@ Vue 3 (Composition API, `<script setup lang="ts">`) + Vite 7 + TypeScript (stric
 - **No path aliases** — All imports use relative paths.
 - **Composables as singletons** — `useAuth` and `useRenovations` use module-level `ref`s, not Pinia stores (Pinia is installed but unused).
 - **VueFire integration** — `VueFire` + `VueFireAuth()` plugins in [main.ts](src/main.ts). Router guard uses VueFire's `getCurrentUser()` (not the composable) for async-safe auth resolution.
-- **Emulator wiring** — [firebase.ts](src/firebase.ts) conditionally connects to emulators when `VITE_USE_EMULATORS=true` and exposes `window.__testSignIn` for Playwright automation.
+- **Emulator wiring** — [firebase.ts](src/firebase.ts) conditionally connects to emulators when `VITE_USE_EMULATORS=true` and exposes `window.__testSignIn` and `window.__testSignUp` for Playwright automation.
+
+### User Flow
+
+NewRenovationPage uses a 4-step wizard:
+
+1. **Capture Image** — Title input + photo upload/capture
+2. **Mark Area** — Canvas-based mask painting over the uploaded image
+3. **Describe Change** — Text prompt for what should change in the masked area
+4. **Processing** — Submits renovation + impression, navigates to detail page
 
 ### Data Model (Firestore)
 
@@ -31,11 +40,16 @@ users/{uid}                                    # UserProfile
     impressions/{impressionId}                 # Impression (status: pending|processing|completed|failed)
 ```
 
+Storage paths: `users/{uid}/renovations/{timestamp}.png` (originals), `users/{uid}/masks/{timestamp}.png` (masks).
+
 Security rules enforce user-scoped access: users can only read/write their own subtree.
 
 ### Cloud Functions (`functions/`)
 
-A `processImpression` Firestore trigger ([functions/src/index.ts](functions/src/index.ts)) fires on impression creation. Currently uses a dummy jimp-based processor that overlays prompt text on the image and writes PromptLog metadata into PNG tEXt chunks. When `NANO_BANANA_API_KEY` is configured, it will call the real inpainting API (not yet implemented).
+A `processImpression` Firestore trigger ([functions/src/index.ts](functions/src/index.ts)) fires on impression creation. When `GEMINI_API_KEY` is configured, it calls the Gemini API (`gemini-2.0-flash-exp`) for AI-powered image editing using the mask and prompt. Falls back to a dummy jimp-based processor that overlays prompt text on the image and writes PromptLog metadata into PNG tEXt chunks.
+
+- **`GEMINI_API_KEY`** — Server-side only. Set via `firebase functions:config` or as an environment variable in the functions runtime. Never exposed to the client.
+- The legacy `NANO_BANANA_API_KEY` variable is no longer used.
 
 The functions directory has its own `package.json` and TypeScript config. Emulator startup rebuilds the functions before launch, and Firebase deploy uses the configured predeploy hook. The emulator loads the compiled output from `functions/lib/index.js`.
 
@@ -50,4 +64,4 @@ Three separate Playwright configs — each is independent:
 
 The service worker precaches the built app shell and runtime-caches Firebase Storage image requests for both production Storage URLs and local emulator Storage URLs. It does not cache Firestore/Auth/Functions traffic.
 
-E2E tests run in parallel (`fullyParallel: true`). The `authenticatedPage` fixture creates a unique emulator user per authenticated test, so auth-dependent scenarios do not share Firestore or Auth state. The impression test (which exercises the full Cloud Function pipeline) is restricted to chromium only.
+E2E tests run in parallel (`fullyParallel: true`). The `authenticatedPage` fixture creates a fresh browser context and a unique emulator user per test via `createUserWithEmailAndPassword` in the browser. This avoids cross-test auth contamination from stale IndexedDB state. The impression test (which exercises the full Cloud Function pipeline) is restricted to chromium only.

@@ -200,7 +200,8 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - Component test files go in `ct/` with the pattern `*.ct.ts`
 - Use the `authenticatedPage` fixture from `e2e/fixtures.ts` for tests that need a logged-in user
 - Use standard `page` from `@playwright/test` for unauthenticated tests (e.g., login page)
-- Each authenticated E2E test gets its own emulator-backed user, so tests can run concurrently without shared-user coupling
+- Each authenticated E2E test gets a fresh browser context and a unique emulator user created via `createUserWithEmailAndPassword` in the browser. This avoids IndexedDB auth state leaking between tests and eliminates the REST-vs-SDK consistency gap that previously caused `auth/user-not-found` flakes
+- The fixture uses SPA navigation (`history.pushState` + `popstate`) after sign-up to avoid a full page reload that can race with IndexedDB auth persistence
 
 ## Important Notes
 
@@ -214,6 +215,6 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - The client persists resolved Firebase Storage download URLs in `localStorage` keyed by Storage path, and reuses them before calling `getDownloadURL()` again. This reduces redundant URL-resolution requests and makes image rendering after refresh more likely to stay offline-capable once an image has been seen online.
 - If you change Storage runtime caching, make sure the service worker still matches both production Firebase Storage URLs and emulator Storage URLs.
 - Cached image bytes plus the persisted path-to-URL mapping are what allow image rendering after a full offline refresh. If either side changes, re-check the PWA image-loading behavior.
-- The `NANO_BANANA_API_KEY` is server-side only and must never be exposed in client code.
+- The `GEMINI_API_KEY` is server-side only (Cloud Functions) and must never be exposed in client code. The legacy `NANO_BANANA_API_KEY` is no longer used.
 - Java must be installed for Firebase Emulators to run.
 - Tracked service logs and PID files are written under `logs/services/`.
