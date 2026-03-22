@@ -36,22 +36,41 @@ test.describe("Impression processing", () => {
       await page.getByRole("link", { name: "+ New Renovation" }).click();
       await page.waitForURL("/renovation/new");
 
-      // 3. Fill in the form
+      // Step 1: Image capture — fill title and select file
       await page.getByLabel("Title").fill("Test Renovation");
 
-      const fileInput = page.getByLabel("Photo (PNG)");
+      const fileInput = page.locator('input[type="file"]');
       await fileInput.setInputFiles(grayPngPath);
 
       await expect(page.getByAltText("Preview")).toBeVisible();
 
+      // Advance to Step 2: Mask
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+
+      // Draw a small mask stroke on the canvas
+      const canvas = page.locator("canvas");
+      await expect(canvas).toBeVisible();
+      const box = await canvas.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(box.x + box.width / 2 + 50, box.y + box.height / 2 + 50);
+        await page.mouse.up();
+      }
+
+      // Advance to Step 3: Prompt
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(
+        page.getByLabel("What should change in the masked area?"),
+      ).toBeVisible();
+
       await page
-        .getByLabel("Describe your renovation")
+        .getByLabel("What should change in the masked area?")
         .fill(promptText);
 
-      // 4. Submit — navigates to detail page
-      await page
-        .getByRole("button", { name: "Create Renovation" })
-        .click();
+      // Click Generate — triggers submit and navigates to detail page
+      await page.getByRole("button", { name: "Generate" }).click();
 
       // 5. Should navigate to the renovation detail page
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/, { timeout: 15000 });
