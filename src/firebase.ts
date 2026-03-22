@@ -42,6 +42,12 @@ if (import.meta.env.VITE_USE_EMULATORS === "true") {
     (window as any).__testSignIn = (email: string, password: string) =>
       authModule.signInWithEmailAndPassword(auth, email, password);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__testSignUp = async (email: string, password: string, displayName: string) => {
+      const cred = await authModule.createUserWithEmailAndPassword(auth, email, password);
+      await authModule.updateProfile(cred.user, { displayName });
+      return cred.user.uid;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__testGetUid = () => auth.currentUser?.uid ?? null;
   });
 }
