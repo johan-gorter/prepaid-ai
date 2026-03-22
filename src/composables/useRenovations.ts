@@ -77,7 +77,11 @@ export function useRenovations() {
 
   async function createImpression(
     renovationId: string,
-    data: { sourceImagePath: string; prompt: string },
+    data: {
+      sourceImagePath: string;
+      prompt: string;
+      maskImagePath?: string;
+    },
   ): Promise<string> {
     if (!currentUser.value) throw new Error("Not authenticated");
     const impressionsRef = collection(
@@ -88,12 +92,16 @@ export function useRenovations() {
       renovationId,
       "impressions",
     );
-    const docRef = await addDoc(impressionsRef, {
+    const docData: Record<string, unknown> = {
       sourceImagePath: data.sourceImagePath,
       prompt: data.prompt,
       status: "pending",
       createdAt: serverTimestamp(),
-    });
+    };
+    if (data.maskImagePath) {
+      docData.maskImagePath = data.maskImagePath;
+    }
+    const docRef = await addDoc(impressionsRef, docData);
     return docRef.id;
   }
 

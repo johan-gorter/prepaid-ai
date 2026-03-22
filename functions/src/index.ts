@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Jimp, loadFont } from "jimp";
 import { SANS_32_WHITE } from "jimp/fonts";
 
@@ -70,7 +71,7 @@ function writePromptLog(
 
 /**
  * Dummy image processing: overlay prompt log as white text on the image.
- * Used when NANO_BANANA_API_KEY is not configured.
+ * Used when GEMINI_API_KEY is not configured.
  */
 async function dummyProcess(
   imageBuffer: Buffer,
@@ -109,6 +110,70 @@ async function dummyProcess(
   return Buffer.from(encodeChunks(finalChunks));
 }
 
+/**
+ * Process image using Gemini API with mask-based inpainting.
+ * Sends the source image and mask to Gemini, asking it to modify
+ * the masked (white) area according to the prompt.
+ */
+async function geminiProcess(
+  apiKey: string,
+  imageBuffer: Buffer,
+  maskBuffer: Buffer | null,
+  prompt: string,
+): Promise<Buffer> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+  const imagePart = {
+    inlineData: {
+      mimeType: "image/png" as const,
+      data: imageBuffer.toString("base64"),
+    },
+  };
+
+  const parts: Parameters<typeof model.generateContent>[0] = [];
+
+  if (maskBuffer) {
+    const maskPart = {
+      inlineData: {
+        mimeType: "image/png" as const,
+        data: maskBuffer.toString("base64"),
+      },
+    };
+    parts.push(
+      `Edit this image. Use the provided mask image as a guide: the white areas in the mask indicate the regions to modify. Task: ${prompt}. Return ONLY the full modified image, nothing else.`,
+      imagePart,
+      maskPart,
+    );
+  } else {
+    parts.push(
+      `Edit this image. Task: ${prompt}. Return ONLY the full modified image, nothing else.`,
+      imagePart,
+    );
+  }
+
+  const result = await model.generateContent(parts);
+  const response = result.response;
+  const candidates = response.candidates;
+
+  if (!candidates || candidates.length === 0) {
+    throw new Error("Gemini returned no candidates");
+  }
+
+  const responseParts = candidates[0].content.parts;
+  for (const part of responseParts) {
+    if (part.inlineData?.data) {
+      return Buffer.from(part.inlineData.data, "base64");
+    }
+  }
+
+  throw new Error(
+    "Gemini response did not contain an image. Response text: " +
+      (responseParts.map((p) => p.text).filter(Boolean).join(" ") ||
+        "(empty)"),
+  );
+}
+
 export const processImpression = onDocumentCreated(
   "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
   async (event) => {
@@ -122,6 +187,7 @@ export const processImpression = onDocumentCreated(
       | string
       | undefined;
     const sourceImageUrl = impressionData.sourceImageUrl as string | undefined;
+    const maskImagePath = impressionData.maskImagePath as string | undefined;
 
     const impressionRef = db.doc(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
@@ -135,19 +201,28 @@ export const processImpression = onDocumentCreated(
         sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(storagePath).download();
 
+      // Download mask image if present
+      let maskBuffer: Buffer | null = null;
+      if (maskImagePath) {
+        const [downloaded] = await bucket.file(maskImagePath).download();
+        maskBuffer = downloaded;
+      }
+
       let resultBuffer: Buffer;
 
-      const nanoBananaKey = process.env.NANO_BANANA_API_KEY;
-      if (nanoBananaKey) {
-        // TODO: Call real Nano Banana inpainting API
-        // For now, fall through to dummy implementation
-        console.warn(
-          "Nano Banana API integration not yet implemented, using dummy",
+      const geminiApiKey =
+        process.env.GEMINI_API_KEY ?? process.env.NANO_BANANA_API_KEY;
+      if (geminiApiKey) {
+        console.log("Processing with Gemini API");
+        resultBuffer = await geminiProcess(
+          geminiApiKey,
+          fileBuffer,
+          maskBuffer,
+          prompt,
         );
-        resultBuffer = await dummyProcess(fileBuffer, prompt);
       } else {
         console.warn(
-          "NANO_BANANA_API_KEY not configured, using dummy jimp implementation",
+          "GEMINI_API_KEY not configured, using dummy jimp implementation",
         );
         resultBuffer = await dummyProcess(fileBuffer, prompt);
       }
