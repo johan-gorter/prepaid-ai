@@ -12,6 +12,11 @@ locals {
     "cloudbuild.googleapis.com",
     "artifactregistry.googleapis.com",
     "run.googleapis.com",
+    "cloudbilling.googleapis.com",
+    "eventarc.googleapis.com",
+    "pubsub.googleapis.com",
+    "storage.googleapis.com",
+    "firebaseextensions.googleapis.com",
   ]
 }
 
