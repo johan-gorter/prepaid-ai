@@ -110,6 +110,7 @@ locals {
     "roles/iam.serviceAccountUser",
     "roles/firebaserules.admin",
     "roles/serviceusage.serviceUsageConsumer",
+    "roles/firebasestorage.admin",
   ]
 }
 
