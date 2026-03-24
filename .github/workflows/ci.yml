@@ -26,12 +26,12 @@ jobs:
       - name: Type-check & build
         run: npm run build
         env:
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY_DEV }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN_DEV }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID_DEV }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET_DEV }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID_DEV }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID_DEV }}
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
@@ -161,48 +161,45 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-  # TEMP: Production deploy disabled — main pushes go to experimental instead
-  # deploy:
-  #   name: Deploy to Production
-  #   needs: [build, test-e2e, test-pwa, test-ct]
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 10
-  #
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: npm
-  #
-  #     - name: Download dist artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: dist
-  #         path: dist/
-  #
-  #     - name: Install dependencies
-  #       run: npm ci
-  #
-  #     - name: Install functions dependencies
-  #       run: npm ci --prefix functions
-  #
-  #     - name: Authenticate to Firebase
-  #       run: |
-  #         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa-key.json"
-  #         echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
-  #
-  #     - name: Deploy to Firebase
-  #       run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project renovision-ai
+  deploy-dev:
+    name: Deploy to Dev
+    needs: [build, test-e2e, test-pwa, test-ct]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install and build Cloud Functions
+        run: npm ci --prefix functions && npm run --prefix functions build
+
+      - name: Authenticate to Firebase
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa-key.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
+
+      - name: Deploy to dev project
+        run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-dev
 
   deploy-experimental:
     name: Deploy to Experimental
     needs: [build, test-e2e, test-pwa, test-ct]
-    # TEMP: was pull_request only — now also deploys on push to main
-    # if: github.event_name == 'pull_request'
-    if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       issues: write

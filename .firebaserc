@@ -1,6 +1,7 @@
 {
   "projects": {
     "default": "prepaid-ai-experimental",
-    "production": "renovision-ai"
+    "dev": "prepaid-ai-dev",
+    "production": "prepaid-ai-production"
   }
 }

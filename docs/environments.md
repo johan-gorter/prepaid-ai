@@ -85,7 +85,7 @@ The production deploy job is currently commented out in `.github/workflows/ci.ym
 The configured Firebase project aliases are:
 
 - `default` -> `prepaid-ai-experimental`
-- `production` -> `renovision-ai`
+- `production` -> `prepaid-ai-production`
 
 ## Automated Tests
 

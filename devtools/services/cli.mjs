@@ -12,7 +12,7 @@ import { services } from "./registry.mjs";
 
 function printUsage() {
   console.log(`
-Renovision AI Dev Service Manager
+Prepaid AI Dev Service Manager
 
 Commands:
   start <name>      Start one service

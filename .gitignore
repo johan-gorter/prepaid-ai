@@ -32,6 +32,11 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate*
+terraform/*.auto.tfvars
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
