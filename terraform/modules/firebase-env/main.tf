@@ -111,6 +111,7 @@ locals {
     "roles/firebaserules.admin",
     "roles/serviceusage.serviceUsageConsumer",
     "roles/firebasestorage.admin",
+    "roles/firebaseextensions.admin",
   ]
 }
 
