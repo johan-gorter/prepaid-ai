@@ -109,6 +109,7 @@ locals {
     "roles/storage.admin",
     "roles/iam.serviceAccountUser",
     "roles/firebaserules.admin",
+    "roles/serviceusage.serviceUsageConsumer",
   ]
 }
 
