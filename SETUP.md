@@ -134,9 +134,8 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123
 # Microsoft: Azure AD app credentials (configured in Firebase Console)
 # Apple: configured in Firebase Console + Apple Developer Portal
 
-# --- Nano Banana API (server-side only, used in Cloud Functions) ---
-NANO_BANANA_API_KEY=nb_live_...
-NANO_BANANA_API_URL=https://api.nanobanana.com/v1/inpaint
+# --- Gemini API (server-side only, used in Cloud Functions) ---
+GEMINI_API_KEY=your-gemini-api-key
 
 # --- Cloud Functions local emulator (optional) ---
 FIRESTORE_EMULATOR_HOST=localhost:8080
@@ -147,6 +146,6 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 ### Notes on secrets
 
 - `VITE_` prefixed vars are bundled into the client — these are **public** Firebase config values (safe to expose, secured by Firestore rules + Auth)
-- `NANO_BANANA_API_KEY` is **private** — only used in Cloud Functions, never exposed to the client
-- In production, store `NANO_BANANA_API_KEY` in **GCP Secret Manager** and access it from Cloud Functions via `defineSecret()`
+- `GEMINI_API_KEY` is **private** — only used in Cloud Functions, never exposed to the client
+- In production, store `GEMINI_API_KEY` in **GCP Secret Manager** and access it from Cloud Functions via `defineSecret()`
 - Firebase client config values don't need Secret Manager — they're public by design

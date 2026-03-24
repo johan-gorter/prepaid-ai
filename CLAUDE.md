@@ -49,7 +49,6 @@ Security rules enforce user-scoped access: users can only read/write their own s
 A `processImpression` Firestore trigger ([functions/src/index.ts](functions/src/index.ts)) fires on impression creation. When `GEMINI_API_KEY` is configured, it calls the Gemini API (`gemini-2.0-flash-exp`) for AI-powered image editing using the mask and prompt. Falls back to a dummy jimp-based processor that overlays prompt text on the image and writes PromptLog metadata into PNG tEXt chunks.
 
 - **`GEMINI_API_KEY`** — Server-side only. Set via `firebase functions:config` or as an environment variable in the functions runtime. Never exposed to the client.
-- The legacy `NANO_BANANA_API_KEY` variable is no longer used.
 
 The functions directory has its own `package.json` and TypeScript config. Emulator startup rebuilds the functions before launch, and Firebase deploy uses the configured predeploy hook. The emulator loads the compiled output from `functions/lib/index.js`.
 

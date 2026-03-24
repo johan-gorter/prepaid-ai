@@ -215,6 +215,6 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - The client persists resolved Firebase Storage download URLs in `localStorage` keyed by Storage path, and reuses them before calling `getDownloadURL()` again. This reduces redundant URL-resolution requests and makes image rendering after refresh more likely to stay offline-capable once an image has been seen online.
 - If you change Storage runtime caching, make sure the service worker still matches both production Firebase Storage URLs and emulator Storage URLs.
 - Cached image bytes plus the persisted path-to-URL mapping are what allow image rendering after a full offline refresh. If either side changes, re-check the PWA image-loading behavior.
-- The `GEMINI_API_KEY` is server-side only (Cloud Functions) and must never be exposed in client code. The legacy `NANO_BANANA_API_KEY` is no longer used.
+- The `GEMINI_API_KEY` is server-side only (Cloud Functions) and must never be exposed in client code.
 - Java must be installed for Firebase Emulators to run.
 - Tracked service logs and PID files are written under `logs/services/`.

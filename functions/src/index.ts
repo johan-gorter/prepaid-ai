@@ -169,7 +169,7 @@ async function geminiProcess(
 
   throw new Error(
     "Gemini response did not contain an image. Response text: " +
-      (responseParts.map((p) => p.text).filter(Boolean).join(" ") ||
+      (responseParts.map((p: { text?: string }) => p.text).filter(Boolean).join(" ") ||
         "(empty)"),
   );
 }
@@ -210,8 +210,7 @@ export const processImpression = onDocumentCreated(
 
       let resultBuffer: Buffer;
 
-      const geminiApiKey =
-        process.env.GEMINI_API_KEY ?? process.env.NANO_BANANA_API_KEY;
+      const geminiApiKey = process.env.GEMINI_API_KEY;
       if (geminiApiKey) {
         console.log("Processing with Gemini API");
         resultBuffer = await geminiProcess(

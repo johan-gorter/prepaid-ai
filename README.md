@@ -266,7 +266,7 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Production       | Firebase messaging sender ID                     |
 | `VITE_FIREBASE_APP_ID`              | Production       | Firebase app ID                                  |
 | `VITE_USE_EMULATORS`                | Emulator mode    | Set to `"true"` to connect to local emulators    |
-| `NANO_BANANA_API_KEY`               | Server-side only | AI service key — **never expose in client code** |
+| `GEMINI_API_KEY`                    | Server-side only | Gemini API key — **never expose in client code** |
 
 Copy `.env.example` to `.env` for production credentials. The `.env.emulator` file is already configured for emulator mode and committed to the repo (it contains only fake/placeholder values). See [docs/environments.md](docs/environments.md) for which file each workflow uses.
 
