@@ -17,6 +17,7 @@ locals {
     "pubsub.googleapis.com",
     "storage.googleapis.com",
     "firebaseextensions.googleapis.com",
+    "identitytoolkit.googleapis.com",
   ]
 }
 
@@ -126,4 +127,73 @@ resource "google_project_iam_member" "ci_deployer" {
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+# ---------------------------------------------------------------------------
+# Identity Platform (Firebase Auth) — authorized domains + sign-in providers
+# ---------------------------------------------------------------------------
+resource "google_identity_platform_config" "auth" {
+  provider = google-beta
+  project  = var.project_id
+
+  authorized_domains = [
+    "localhost",
+    "${var.project_id}.firebaseapp.com",
+    "${var.project_id}.web.app",
+  ]
+
+  sign_in {
+    allow_duplicate_emails = false
+
+    email {
+      enabled           = true
+      password_required  = true
+    }
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+# Google sign-in (auto-configured OAuth client from Firebase project)
+resource "google_identity_platform_default_supported_idp_config" "google" {
+  provider = google-beta
+  project  = var.project_id
+  idp_id   = "google.com"
+
+  client_id     = var.google_oauth_client_id
+  client_secret = var.google_oauth_client_secret
+
+  enabled = true
+
+  depends_on = [google_identity_platform_config.auth]
+}
+
+# Microsoft sign-in
+resource "google_identity_platform_default_supported_idp_config" "microsoft" {
+  count    = var.microsoft_oauth_client_id != "" ? 1 : 0
+  provider = google-beta
+  project  = var.project_id
+  idp_id   = "microsoft.com"
+
+  client_id     = var.microsoft_oauth_client_id
+  client_secret = var.microsoft_oauth_client_secret
+
+  enabled = true
+
+  depends_on = [google_identity_platform_config.auth]
+}
+
+# Apple sign-in
+resource "google_identity_platform_default_supported_idp_config" "apple" {
+  count    = var.apple_services_id != "" ? 1 : 0
+  provider = google-beta
+  project  = var.project_id
+  idp_id   = "apple.com"
+
+  client_id     = var.apple_services_id
+  client_secret = var.apple_private_key
+
+  enabled = true
+
+  depends_on = [google_identity_platform_config.auth]
 }

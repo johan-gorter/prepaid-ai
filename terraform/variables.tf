@@ -24,3 +24,43 @@ variable "firestore_location" {
   type        = string
   default     = "eur3"
 }
+
+# ---------------------------------------------------------------------------
+# OAuth provider credentials
+# ---------------------------------------------------------------------------
+variable "google_oauth_client_id" {
+  description = "Google OAuth 2.0 client ID"
+  type        = string
+}
+
+variable "google_oauth_client_secret" {
+  description = "Google OAuth 2.0 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "microsoft_oauth_client_id" {
+  description = "Microsoft (Azure AD) application client ID — leave empty to skip"
+  type        = string
+  default     = ""
+}
+
+variable "microsoft_oauth_client_secret" {
+  description = "Microsoft application client secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "apple_services_id" {
+  description = "Apple Services ID — leave empty to skip"
+  type        = string
+  default     = ""
+}
+
+variable "apple_private_key" {
+  description = "Apple private key (PEM) for Sign in with Apple"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
