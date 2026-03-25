@@ -77,15 +77,20 @@ async function dummyProcess(
   imageBuffer: Buffer,
   prompt: string,
 ): Promise<Buffer> {
+  // Ensure we have a valid PNG (input may be JPEG/WebP/etc.)
+  const pngBuffer = await Jimp.read(imageBuffer).then((img) =>
+    img.getBuffer("image/png"),
+  );
+
   // Extract PNG chunks to read/write metadata
-  const chunks = extractChunks(new Uint8Array(imageBuffer));
+  const chunks = extractChunks(new Uint8Array(pngBuffer));
 
   // Read existing prompt log and append current prompt
   const promptLog = readPromptLog(chunks);
   promptLog.push(prompt);
 
   // Use jimp to overlay text on the image
-  const image = await Jimp.read(imageBuffer);
+  const image = await Jimp.read(pngBuffer);
   const font = await loadFont(SANS_32_WHITE);
 
   const textLines = promptLog.map((p: string, i: number) => `${i + 1}. ${p}`);
@@ -122,7 +127,12 @@ async function geminiProcess(
   prompt: string,
 ): Promise<Buffer> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      responseModalities: ["TEXT", "IMAGE"],
+    } as Record<string, unknown>,
+  });
 
   const imagePart = {
     inlineData: {
@@ -157,10 +167,13 @@ async function geminiProcess(
   const candidates = response.candidates;
 
   if (!candidates || candidates.length === 0) {
-    throw new Error("Gemini returned no candidates");
+    throw new Error(
+      "Gemini returned no candidates. Response: " +
+        JSON.stringify(response).substring(0, 500),
+    );
   }
 
-  const responseParts = candidates[0].content.parts;
+  const responseParts = candidates[0].content?.parts ?? [];
   for (const part of responseParts) {
     if (part.inlineData?.data) {
       return Buffer.from(part.inlineData.data, "base64");
@@ -168,14 +181,17 @@ async function geminiProcess(
   }
 
   throw new Error(
-    "Gemini response did not contain an image. Response text: " +
-      (responseParts.map((p: { text?: string }) => p.text).filter(Boolean).join(" ") ||
-        "(empty)"),
+    "Gemini response did not contain an image. Response: " +
+      JSON.stringify(candidates[0]).substring(0, 500),
   );
 }
 
 export const processImpression = onDocumentCreated(
-  "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
+  {
+    document:
+      "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
+    secrets: ["GEMINI_API_KEY"],
+  },
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;

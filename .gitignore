@@ -35,7 +35,7 @@ ui-debug.log
 # Terraform
 terraform/.terraform/
 terraform/*.tfstate*
-terraform/*.auto.tfvars
+terraform/**/*.auto.tfvars
 
 # Editor directories and files
 .vscode/*

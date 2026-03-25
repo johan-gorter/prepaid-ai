@@ -18,6 +18,7 @@ locals {
     "storage.googleapis.com",
     "firebaseextensions.googleapis.com",
     "identitytoolkit.googleapis.com",
+    "aiplatform.googleapis.com",
   ]
 }
 
