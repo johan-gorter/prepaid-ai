@@ -2,69 +2,44 @@
  * Custom Playwright fixture that provides a pre-authenticated page.
  *
  * Each test using `authenticatedPage` gets a fresh browser context
- * where the test user is created and signed in via a single
- * `createUserWithEmailAndPassword` call inside the browser.
- *
- * Using a fresh context per test and doing all auth in-browser avoids:
- * - Stale IndexedDB auth state from a previous test's deleted user
- * - Cross-process consistency gaps between Node REST and browser SDK
+ * with a unique emulator user. User creation happens via the Auth
+ * Emulator REST API (Node-side), then the browser signs in with
+ * `__testSignIn`. This avoids the `auth/user-token-expired` errors
+ * that occurred when multiple parallel workers called
+ * `createUserWithEmailAndPassword` + `updateProfile` in-browser.
  */
 
 import { test as base, type Page } from "@playwright/test";
-import { randomBytes } from "node:crypto";
-import { deleteTestUser, type TestUser } from "./helpers/auth";
+import {
+  createRandomTestUser,
+  createTestUser,
+  deleteTestUser,
+  signInTestUser,
+  type TestUser,
+} from "./helpers/auth";
 
 type TestFixtures = {
   authenticatedPage: Page;
   testUser: TestUser;
 };
 
-function createRandomId(length: number): string {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const bytes = randomBytes(length);
-  let result = "";
-  for (const value of bytes) {
-    result += alphabet[value % alphabet.length];
-  }
-  return result;
-}
-
 export const test = base.extend<TestFixtures>({
   authenticatedPage: [
     async ({ browser }, use, testInfo) => {
-      const randomId = createRandomId(8);
-      const user: TestUser = {
-        email: `test-${randomId}@prepaid.test`,
-        displayName: `Test User ${randomId}`,
-        password: `test-password-${randomId}`,
-      };
+      // Create the user server-side via the Auth Emulator REST API.
+      // This is safe under parallel load — no browser token management involved.
+      const user = await createTestUser(createRandomTestUser());
 
       const context = await browser.newContext({
         ...testInfo.project.use,
       });
       const page = await context.newPage();
 
-      // Navigate so Firebase SDK loads and __testSignUp is available
+      // Navigate so Firebase SDK loads and __testSignIn is available
       await page.goto("/login");
-      await page.waitForFunction(
-        () => typeof (window as any).__testSignUp === "function",
-        { timeout: 5000 },
-      );
 
-      // Create and sign in the user atomically in the browser
-      const uid = await page.evaluate(
-        async (u: { email: string; password: string; displayName: string }) => {
-          const signUp = (window as any).__testSignUp as (
-            email: string,
-            password: string,
-            displayName: string,
-          ) => Promise<string>;
-          return signUp(u.email, u.password, u.displayName);
-        },
-        { email: user.email, password: user.password, displayName: user.displayName },
-      );
-
-      user.uid = uid;
+      // Sign in the pre-created user in the browser
+      await signInTestUser(page, user);
 
       // Use SPA navigation instead of page.goto("/") to avoid a full
       // page reload that races with IndexedDB auth persistence.

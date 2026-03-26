@@ -61,13 +61,10 @@ test.describe("Impression processing", () => {
 
       // Advance to Step 3: Prompt
       await page.getByRole("button", { name: "Next" }).click();
-      await expect(
-        page.getByLabel("What should change in the masked area?"),
-      ).toBeVisible();
+      const promptInput = page.getByTestId("prompt");
+      await expect(promptInput).toBeVisible();
 
-      await page
-        .getByLabel("What should change in the masked area?")
-        .fill(promptText);
+      await promptInput.fill(promptText);
 
       // Click Generate — triggers submit and navigates to detail page
       await page.getByRole("button", { name: "Generate" }).click();

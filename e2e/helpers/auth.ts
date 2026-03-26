@@ -20,6 +20,7 @@ export interface TestUser {
 
 interface EmulatorSignUpResponse {
   localId: string;
+  idToken: string;
 }
 
 function createRandomId(length: number): string {
@@ -69,6 +70,27 @@ export async function createTestUser(
   }
 
   const data = (await signUpRes.json()) as EmulatorSignUpResponse;
+
+  // The signUp endpoint doesn't reliably set displayName.
+  // Use accounts:update with the idToken to set it.
+  if (user.displayName) {
+    const updateRes = await fetch(
+      `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:update?key=fake-api-key`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idToken: data.idToken,
+          displayName: user.displayName,
+        }),
+      },
+    );
+
+    if (!updateRes.ok) {
+      const err = await updateRes.text();
+      throw new Error(`Failed to update displayName: ${err}`);
+    }
+  }
 
   return {
     ...user,

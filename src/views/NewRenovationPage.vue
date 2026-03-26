@@ -406,6 +406,7 @@ onUnmounted(() => {
           <label for="prompt-input">What should change in the red area?</label>
           <textarea
             id="prompt-input"
+            data-testid="prompt"
             v-model="prompt"
             rows="4"
             placeholder="e.g. Replace with white marble countertops"
