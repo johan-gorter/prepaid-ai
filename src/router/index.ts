@@ -26,6 +26,12 @@ const routes = [
     component: () => import("../views/RenovationDetailPage.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/renovation/:id/new",
+    name: "new-impression",
+    component: () => import("../views/NewImpressionPage.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

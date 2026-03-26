@@ -4,7 +4,6 @@ test.describe("Home Page", () => {
   test("shows empty state when user has no renovations", async ({
     authenticatedPage: page,
   }) => {
-    // The authenticated fixture already navigated to /
     await expect(page.getByText("No renovations yet")).toBeVisible();
     await expect(
       page.getByText("Take or upload a photo of your space"),
@@ -25,7 +24,6 @@ test.describe("Home Page", () => {
     await page.getByRole("link", { name: "+ New Renovation" }).click();
     await page.waitForURL("/renovation/new");
     await expect(page.getByText("1. Capture Image")).toBeVisible();
-    await expect(page.getByLabel("Title")).toBeVisible();
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {

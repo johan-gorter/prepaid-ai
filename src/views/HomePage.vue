@@ -1,43 +1,147 @@
 <script setup lang="ts">
+import { doc, getDoc } from "firebase/firestore";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
+import { db } from "../firebase";
 
 const { renovations, loading: renovationsLoading, error } = useRenovations();
 const { currentUser, signOut } = useAuth();
 const router = useRouter();
-const thumbnailUrls = ref<Record<string, string>>({});
+const cardDataUrls = ref<Record<string, string>>({});
+
+/**
+ * Draw a diagonal before/after composite on a canvas.
+ * 15-degree line divides: upper-left 30%, lower-right 70%.
+ */
+function drawBeforeAfterComposite(
+  beforeImg: HTMLImageElement,
+  afterImg: HTMLImageElement | null,
+  size: number,
+): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  if (!afterImg) {
+    // No after image, show only before
+    ctx.drawImage(beforeImg, 0, 0, size, size);
+    return canvas.toDataURL();
+  }
+
+  const theta = (15 * Math.PI) / 180;
+  // Compute y-intercept so upper-left polygon is ~30% of area
+  // For a line y = tan(theta)*x + b intersecting the square,
+  // we need the area above-left to be 0.3 * S^2
+  // Using trial: offset the line from the center
+  const tanTheta = Math.tan(theta);
+  // The diagonal line: y = tanTheta * x + b
+  // We shift b so that the area of the polygon above the line is 30% of S*S
+  // For a line crossing the square from left to right:
+  // At x=0, y=b; at x=S, y=tanTheta*S + b
+  // Area above = S*b + 0.5*S*(tanTheta*S) = S*b + 0.5*tanTheta*S^2
+  // Set = 0.3*S^2: b = (0.3*S - 0.5*tanTheta*S)
+  const b = size * (0.3 - 0.5 * tanTheta);
+
+  // Clip region for "before" (upper-left polygon — above the line)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size, 0);
+  ctx.lineTo(size, tanTheta * size + b);
+  ctx.lineTo(0, b);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(beforeImg, 0, 0, size, size);
+  ctx.restore();
+
+  // Clip region for "after" (lower-right — below the line)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, b);
+  ctx.lineTo(size, tanTheta * size + b);
+  ctx.lineTo(size, size);
+  ctx.lineTo(0, size);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(afterImg, 0, 0, size, size);
+  ctx.restore();
+
+  // Draw the dividing line
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, b);
+  ctx.lineTo(size, tanTheta * size + b);
+  ctx.stroke();
+
+  return canvas.toDataURL();
+}
+
+async function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = url;
+  });
+}
 
 watch(
   renovations,
   async (items, _oldValue, onCleanup) => {
     let cancelled = false;
-    onCleanup(() => {
-      cancelled = true;
-    });
+    onCleanup(() => { cancelled = true; });
 
-    const urlEntries = await Promise.all(
+    const uid = currentUser.value?.uid;
+    if (!uid) return;
+
+    const entries = await Promise.all(
       items.map(async (renovation) => {
-        if (renovation.originalImagePath) {
+        try {
+          // Resolve before image
+          const beforeUrl = await resolveStorageUrl(renovation.originalImagePath);
+          const beforeImg = await loadImage(beforeUrl);
+
+          let afterImg: HTMLImageElement | null = null;
+          if (renovation.afterImpressionId) {
+            // Fetch after impression's resultImagePath
+            const impDoc = await getDoc(
+              doc(
+                db, "users", uid, "renovations", renovation.id,
+                "impressions", renovation.afterImpressionId,
+              ),
+            );
+            if (impDoc.exists()) {
+              const resultPath = impDoc.data().resultImagePath as string | undefined;
+              if (resultPath) {
+                const afterUrl = await resolveStorageUrl(resultPath);
+                afterImg = await loadImage(afterUrl);
+              }
+            }
+          }
+
+          const dataUrl = drawBeforeAfterComposite(beforeImg, afterImg, 400);
+          return [renovation.id, dataUrl] as const;
+        } catch {
+          // Fallback: try to show just the before image
           try {
-            return [
-              renovation.id,
-              await resolveStorageUrl(renovation.originalImagePath),
-            ] as const;
+            const beforeUrl = await resolveStorageUrl(renovation.originalImagePath);
+            return [renovation.id, beforeUrl] as const;
           } catch {
             return [renovation.id, renovation.originalImageUrl ?? ""] as const;
           }
         }
-
-        return [renovation.id, renovation.originalImageUrl ?? ""] as const;
       }),
     );
 
     if (!cancelled) {
-      thumbnailUrls.value = Object.fromEntries(
-        urlEntries.filter(([, url]) => Boolean(url)),
+      cardDataUrls.value = Object.fromEntries(
+        entries.filter(([, url]) => Boolean(url)),
       );
     }
   },
@@ -75,7 +179,7 @@ async function handleSignOut() {
       </div>
 
       <div v-if="renovationsLoading" class="state-message">
-        <p>Loading renovations…</p>
+        <p>Loading renovations...</p>
       </div>
 
       <div v-else-if="error" class="state-message error">
@@ -91,7 +195,7 @@ async function handleSignOut() {
         </router-link>
       </div>
 
-      <div v-else class="renovation-list">
+      <div v-else class="renovation-grid">
         <div
           v-for="renovation in renovations"
           :key="renovation.id"
@@ -99,18 +203,10 @@ async function handleSignOut() {
           @click="router.push(`/renovation/${renovation.id}`)"
         >
           <img
-            :src="
-              thumbnailUrls[renovation.id] ?? renovation.originalImageUrl ?? ''
-            "
-            :alt="renovation.title"
+            :src="cardDataUrls[renovation.id] ?? ''"
+            alt="Renovation"
             class="renovation-thumbnail"
           />
-          <div class="renovation-info">
-            <h3>{{ renovation.title }}</h3>
-            <p class="renovation-date">
-              {{ renovation.createdAt?.toDate?.()?.toLocaleDateString() ?? "" }}
-            </p>
-          </div>
         </div>
       </div>
     </main>
@@ -234,10 +330,10 @@ async function handleSignOut() {
   margin-bottom: 1.5rem;
 }
 
-.renovation-list {
+.renovation-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
 
 .renovation-card {
@@ -258,23 +354,8 @@ async function handleSignOut() {
 
 .renovation-thumbnail {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
-}
-
-.renovation-info {
-  padding: 0.75rem 1rem;
-}
-
-.renovation-info h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #1a1a2e;
-}
-
-.renovation-date {
-  margin: 0.25rem 0 0;
-  font-size: 0.82rem;
-  color: #999;
+  display: block;
 }
 </style>

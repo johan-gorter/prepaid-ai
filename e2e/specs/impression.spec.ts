@@ -36,9 +36,7 @@ test.describe("Impression processing", () => {
       await page.getByRole("link", { name: "+ New Renovation" }).click();
       await page.waitForURL("/renovation/new");
 
-      // Step 1: Image capture — fill title and select file
-      await page.getByLabel("Title").fill("Test Renovation");
-
+      // Step 1: Image capture — select file (no title)
       const fileInput = page.locator('input[type="file"]');
       await fileInput.setInputFiles(grayPngPath);
 
@@ -66,23 +64,29 @@ test.describe("Impression processing", () => {
 
       await promptInput.fill(promptText);
 
-      // Click Generate — triggers submit and navigates to detail page
+      // Click Generate — triggers submit, stays on page at step 4 (Result)
       await page.getByRole("button", { name: "Generate" }).click();
 
-      // 5. Should navigate to the renovation detail page
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/, { timeout: 15000 });
-
-      // 6. Wait for the "completed" status badge to appear (Cloud Function processing)
+      // 5. Should show the three-button bar (Timeline, Trash, Next Change)
       await expect(
-        page.locator(".status-completed"),
-      ).toBeVisible({ timeout: 30000 });
+        page.getByRole("button", { name: "Timeline" }),
+      ).toBeVisible({ timeout: 15000 });
 
-      // 7. Wait for the result image to appear
+      // 6. Wait for the result image to appear (Cloud Function processing)
       const resultImage = page.getByAltText("Result");
-      await expect(resultImage).toBeVisible({ timeout: 5000 });
+      await expect(resultImage).toBeVisible({ timeout: 30000 });
 
-      // 8. Download the result image via its src URL and verify PNG metadata
-      const resultSrc = await resultImage.getAttribute("src");
+      // 7. Click Timeline to navigate to the renovation detail page
+      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, { timeout: 5000 });
+
+      // 8. Verify the timeline page shows the result
+      await expect(page.getByText("Timeline")).toBeVisible();
+      const timelineResultImage = page.getByAltText("Result");
+      await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
+
+      // 9. Download the result image via its src URL and verify PNG metadata
+      const resultSrc = await timelineResultImage.getAttribute("src");
       expect(resultSrc).toBeTruthy();
 
       const res = await fetch(resultSrc!, {
@@ -91,7 +95,7 @@ test.describe("Impression processing", () => {
       expect(res.ok).toBe(true);
       const resultBuffer = Buffer.from(await res.arrayBuffer());
 
-      // 9. Verify the PNG has PromptLog tEXt metadata
+      // 10. Verify the PNG has PromptLog tEXt metadata
       const extractChunks = (await import("png-chunks-extract")).default;
       const textChunk = (await import("png-chunk-text")).default;
 
@@ -108,7 +112,7 @@ test.describe("Impression processing", () => {
       );
       expect(promptLogChunk).toBeTruthy();
 
-      // 10. Verify the prompt log contains our prompt
+      // 11. Verify the prompt log contains our prompt
       const promptLog = JSON.parse(promptLogChunk!.text) as string[];
       expect(promptLog).toContain(promptText);
     } finally {
