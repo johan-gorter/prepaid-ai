@@ -99,11 +99,19 @@ resource "google_secret_manager_secret_iam_member" "functions_accessor" {
   member    = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
 }
 
-# CI deployer needs to validate secret versions during firebase deploy
+# CI deployer needs to read secret payloads at function runtime
 resource "google_secret_manager_secret_iam_member" "ci_deployer_secret_accessor" {
   project   = var.project_id
   secret_id = google_secret_manager_secret.gemini_api_key.secret_id
   role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+# CI deployer needs secretmanager.versions.get to validate secret versions during firebase deploy
+resource "google_secret_manager_secret_iam_member" "ci_deployer_secret_viewer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.gemini_api_key.secret_id
+  role      = "roles/secretmanager.viewer"
   member    = "serviceAccount:${google_service_account.ci_deployer.email}"
 }
 
