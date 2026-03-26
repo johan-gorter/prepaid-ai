@@ -27,9 +27,17 @@ const canvasWrapperRef = ref<HTMLElement | null>(null);
 const mainCanvasRef = ref<HTMLCanvasElement | null>(null);
 let maskCanvas: HTMLCanvasElement | null = null;
 let maskCtx: CanvasRenderingContext2D | null = null;
+// Canvas that holds the square-fitted source image (no overlay)
+let sourceCanvas: HTMLCanvasElement | null = null;
 let isDrawing = false;
 const brushSize = 30;
 const CANVAS_SIZE = 1000;
+
+// How to make non-square images square:
+// 0 = pure letterbox (black bars, no crop)
+// 1 = pure crop (no bars, cuts edges)
+// 0.5 = 50/50 blend of both
+const SQUARE_CROP_RATIO = 0.5;
 
 // Resize observer for canvas
 let resizeObserver: ResizeObserver | null = null;
@@ -69,36 +77,107 @@ function onFileSelected(event: Event) {
   reader.readAsDataURL(file);
 }
 
-function initMaskCanvas() {
+/**
+ * Compute the source rect (crop) and dest rect (position in square canvas)
+ * for fitting a non-square image into a square, blending letterbox and crop.
+ *
+ * SQUARE_CROP_RATIO controls the blend:
+ *   0 = pure letterbox, 1 = pure crop, 0.5 = half and half
+ */
+function computeSquareFit(imgW: number, imgH: number, size: number) {
+  const aspect = imgW / imgH;
+  const r = SQUARE_CROP_RATIO;
+
+  if (Math.abs(aspect - 1) < 0.01) {
+    // Already square
+    return { sx: 0, sy: 0, sw: imgW, sh: imgH, dx: 0, dy: 0, dw: size, dh: size };
+  }
+
+  if (aspect > 1) {
+    // Landscape: letterbox adds top/bottom bars, crop cuts left/right
+    // Effective scale blends between fit-width (letterbox) and fit-height (crop)
+    const letterboxScale = size / imgW; // fit width → bars top/bottom
+    const cropScale = size / imgH;      // fit height → crop left/right
+    const scale = letterboxScale + r * (cropScale - letterboxScale);
+
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+
+    // Source: crop if drawing is larger than canvas
+    const sx = drawW > size ? ((drawW - size) / 2) / scale : 0;
+    const sy = drawH > size ? ((drawH - size) / 2) / scale : 0;
+    const sw = Math.min(imgW, size / scale);
+    const sh = Math.min(imgH, size / scale);
+
+    // Dest: center in canvas
+    const dw = Math.min(drawW, size);
+    const dh = Math.min(drawH, size);
+    const dx = (size - dw) / 2;
+    const dy = (size - dh) / 2;
+
+    return { sx, sy, sw, sh, dx, dy, dw, dh };
+  } else {
+    // Portrait: letterbox adds left/right bars, crop cuts top/bottom
+    const letterboxScale = size / imgH;
+    const cropScale = size / imgW;
+    const scale = letterboxScale + r * (cropScale - letterboxScale);
+
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+
+    const sx = drawW > size ? ((drawW - size) / 2) / scale : 0;
+    const sy = drawH > size ? ((drawH - size) / 2) / scale : 0;
+    const sw = Math.min(imgW, size / scale);
+    const sh = Math.min(imgH, size / scale);
+
+    const dw = Math.min(drawW, size);
+    const dh = Math.min(drawH, size);
+    const dx = (size - dw) / 2;
+    const dy = (size - dh) / 2;
+
+    return { sx, sy, sw, sh, dx, dy, dw, dh };
+  }
+}
+
+function initCanvases() {
+  const img = loadedImage.value;
+  if (!img) return;
+
+  // Source canvas: the square-fitted image (no overlay)
+  sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = CANVAS_SIZE;
+  sourceCanvas.height = CANVAS_SIZE;
+  const srcCtx = sourceCanvas.getContext("2d")!;
+  srcCtx.fillStyle = "black";
+  srcCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  const fit = computeSquareFit(img.naturalWidth, img.naturalHeight, CANVAS_SIZE);
+  srcCtx.drawImage(img, fit.sx, fit.sy, fit.sw, fit.sh, fit.dx, fit.dy, fit.dw, fit.dh);
+
+  // Mask canvas: transparent by default, red where user paints
   maskCanvas = document.createElement("canvas");
   maskCanvas.width = CANVAS_SIZE;
   maskCanvas.height = CANVAS_SIZE;
   maskCtx = maskCanvas.getContext("2d");
-  if (maskCtx) {
-    maskCtx.fillStyle = "black";
-    maskCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  }
 }
 
 function renderCanvas() {
   const canvas = mainCanvasRef.value;
-  const img = loadedImage.value;
-  if (!canvas || !img || !maskCanvas) return;
+  if (!canvas || !sourceCanvas || !maskCanvas) return;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
+  // Draw the source image
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  ctx.globalAlpha = 0.45;
+  ctx.drawImage(sourceCanvas, 0, 0);
+
+  // Draw the red mask overlay on top
   ctx.drawImage(maskCanvas, 0, 0);
-  ctx.globalAlpha = 1.0;
 }
 
 function clearMask() {
   if (!maskCtx) return;
-  maskCtx.fillStyle = "black";
-  maskCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  maskCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   renderCanvas();
 }
 
@@ -132,7 +211,8 @@ function drawAt(e: PointerEvent) {
   if (!maskCtx) return;
   const coords = getCanvasCoords(e);
   if (!coords) return;
-  maskCtx.fillStyle = "white";
+  // Semi-transparent red — what the user sees is what gets sent
+  maskCtx.fillStyle = "rgba(255, 0, 0, 0.4)";
   maskCtx.beginPath();
   maskCtx.arc(coords.x, coords.y, brushSize, 0, Math.PI * 2);
   maskCtx.fill();
@@ -144,7 +224,7 @@ function goNext() {
   if (step.value === 1 && !maskCanvas) return;
   step.value++;
   if (step.value === 1) {
-    initMaskCanvas();
+    initCanvases();
     requestAnimationFrame(renderCanvas);
   }
   if (step.value === 3) {
@@ -160,14 +240,43 @@ function goPrev() {
   }
 }
 
-function getMaskDataUrl(): string {
-  if (!maskCanvas) return "";
-  return maskCanvas.toDataURL("image/png");
+/**
+ * Build the composite image: source + red overlay baked in.
+ * This is exactly what gets sent to Gemini.
+ */
+function getCompositeBlob(): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx || !sourceCanvas || !maskCanvas) {
+      reject(new Error("Canvas not initialized"));
+      return;
+    }
+    ctx.drawImage(sourceCanvas, 0, 0);
+    ctx.drawImage(maskCanvas, 0, 0);
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
+      "image/png",
+    );
+  });
 }
 
-async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  const res = await fetch(dataUrl);
-  return res.blob();
+/**
+ * Get the original (square-fitted, no overlay) as a blob for archival.
+ */
+function getOriginalBlob(): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (!sourceCanvas) {
+      reject(new Error("Source canvas not initialized"));
+      return;
+    }
+    sourceCanvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
+      "image/png",
+    );
+  });
 }
 
 async function handleSubmit() {
@@ -188,16 +297,16 @@ async function handleSubmit() {
   try {
     const uid = currentUser.value.uid;
     const timestamp = Date.now();
+
+    // Upload the square-fitted original (no overlay) for archival
     const originalImagePath = `users/${uid}/originals/${timestamp}.png`;
-    const imageRef = storageRef(storage, originalImagePath);
+    const originalBlob = await getOriginalBlob();
+    await uploadBytes(storageRef(storage, originalImagePath), originalBlob);
 
-    await uploadBytes(imageRef, selectedFile.value);
-
-    // Upload mask image
-    const maskImagePath = `users/${uid}/masks/${timestamp}.png`;
-    const maskRef = storageRef(storage, maskImagePath);
-    const maskBlob = await dataUrlToBlob(getMaskDataUrl());
-    await uploadBytes(maskRef, maskBlob);
+    // Upload the composite (source + red overlay) for AI processing
+    const compositeImagePath = `users/${uid}/composites/${timestamp}.png`;
+    const compositeBlob = await getCompositeBlob();
+    await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
     const renovationId = await createRenovation({
       title: title.value.trim(),
@@ -206,7 +315,7 @@ async function handleSubmit() {
 
     await createImpression(renovationId, {
       sourceImagePath: originalImagePath,
-      maskImagePath,
+      compositeImagePath,
       prompt: prompt.value.trim(),
     });
 
@@ -277,7 +386,7 @@ onUnmounted(() => {
 
       <!-- Step 1: Mask Drawing -->
       <div v-show="step === 1" class="step-panel step-mask">
-        <p class="step-hint">Paint the area you want to change</p>
+        <p class="step-hint">Paint the area you want to change (shown in red)</p>
         <div ref="canvasWrapperRef" class="canvas-wrapper">
           <canvas
             ref="mainCanvasRef"
@@ -294,7 +403,7 @@ onUnmounted(() => {
       <!-- Step 2: Prompt -->
       <div v-show="step === 2" class="step-panel">
         <div class="form-group">
-          <label for="prompt-input">What should change in the masked area?</label>
+          <label for="prompt-input">What should change in the red area?</label>
           <textarea
             id="prompt-input"
             v-model="prompt"

@@ -1,16 +1,30 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { VertexAI } from "@google-cloud/vertexai";
-import { Jimp, loadFont } from "jimp";
-import { SANS_32_WHITE } from "jimp/fonts";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const extractChunks = require("png-chunks-extract");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const encodeChunks = require("png-chunks-encode");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const textChunk = require("png-chunk-text");
+// Jimp and PNG chunk packages are devDependencies (emulator-only).
+// They are lazy-imported inside dummyProcess() to avoid crashing in production.
+type TextChunkModule = {
+  encode(keyword: string, text: string): { name: string; data: Uint8Array };
+  decode(data: Uint8Array): { keyword: string; text: string };
+};
+
+async function loadDummyDeps() {
+  const { Jimp, loadFont } = await import("jimp");
+  const { SANS_32_WHITE } = await import("jimp/fonts");
+  const extractChunks = (await import("png-chunks-extract")).default;
+  const encodeChunks = (await import("png-chunks-encode")).default;
+  const textChunk = (await import(
+    "png-chunk-text"
+  )) as unknown as TextChunkModule;
+  return {
+    Jimp,
+    loadFont,
+    SANS_32_WHITE,
+    extractChunks,
+    encodeChunks,
+    textChunk,
+  };
+}
 
 admin.initializeApp();
 
@@ -29,19 +43,16 @@ type AiBackend = "vertex" | "google-ai" | "dummy";
 function getAiBackend(): AiBackend {
   const raw = process.env.AI_BACKEND?.toLowerCase();
   if (raw === "vertex" || raw === "google-ai" || raw === "dummy") return raw;
-  // Default: use google-ai if key is present, otherwise dummy
   if (process.env.GEMINI_API_KEY) return "google-ai";
   return "dummy";
 }
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-image";
 
 /**
  * Extract the Storage path from a Firebase Storage download URL.
- * Handles both emulator and production URL formats.
  */
 function storagePathFromUrl(url: string): string {
-  // Both formats contain /o/<encoded-path>
   const match = url.match(/\/o\/([^?]+)/);
   if (!match) throw new Error(`Cannot parse storage path from URL: ${url}`);
   return decodeURIComponent(match[1]);
@@ -51,6 +62,7 @@ function storagePathFromUrl(url: string): string {
  * Read the PromptLog from PNG tEXt metadata chunks.
  */
 function readPromptLog(
+  textChunk: TextChunkModule,
   chunks: Array<{ name: string; data: Uint8Array }>,
 ): string[] {
   for (const chunk of chunks) {
@@ -70,20 +82,17 @@ function readPromptLog(
 
 /**
  * Replace or insert a PromptLog tEXt chunk in the PNG chunks array.
- * Inserts before the IEND chunk to maintain valid PNG structure.
  */
 function writePromptLog(
+  textChunk: TextChunkModule,
   chunks: Array<{ name: string; data: Uint8Array }>,
   promptLog: string[],
 ): Array<{ name: string; data: Uint8Array }> {
-  // Remove any existing PromptLog tEXt chunk
   const filtered = chunks.filter((chunk) => {
     if (chunk.name !== "tEXt") return true;
     const decoded = textChunk.decode(chunk.data);
     return decoded.keyword !== "PromptLog";
   });
-
-  // Insert new PromptLog chunk before IEND (last chunk)
   const newChunk = textChunk.encode("PromptLog", JSON.stringify(promptLog));
   filtered.splice(-1, 0, newChunk);
   return filtered;
@@ -91,28 +100,30 @@ function writePromptLog(
 
 /**
  * Dummy image processing: overlay prompt log as white text on the image.
- * Used when no AI backend is configured.
+ * Used when no AI backend is configured (emulator only).
  */
 async function dummyProcess(
   imageBuffer: Buffer,
   prompt: string,
 ): Promise<Buffer> {
-  // Ensure we have a valid PNG (input may be JPEG/WebP/etc.)
+  const {
+    Jimp,
+    loadFont,
+    SANS_32_WHITE,
+    extractChunks,
+    encodeChunks,
+    textChunk,
+  } = await loadDummyDeps();
+
   const pngBuffer = await Jimp.read(imageBuffer).then((img) =>
     img.getBuffer("image/png"),
   );
-
-  // Extract PNG chunks to read/write metadata
   const chunks = extractChunks(new Uint8Array(pngBuffer));
-
-  // Read existing prompt log and append current prompt
-  const promptLog = readPromptLog(chunks);
+  const promptLog = readPromptLog(textChunk, chunks);
   promptLog.push(prompt);
 
-  // Use jimp to overlay text on the image
   const image = await Jimp.read(pngBuffer);
   const font = await loadFont(SANS_32_WHITE);
-
   const textLines = promptLog.map((p: string, i: number) => `${i + 1}. ${p}`);
   const fullText = ["Modification Log:", ...textLines].join("\n");
 
@@ -124,147 +135,87 @@ async function dummyProcess(
     maxWidth: image.width - 40,
   });
 
-  // Get the processed image as a PNG buffer
   const resultBuffer = await image.getBuffer("image/png");
-
-  // Re-extract chunks from the jimp output (to get the image data chunks)
-  // then write our metadata into them
   const resultChunks = extractChunks(new Uint8Array(resultBuffer));
-  const finalChunks = writePromptLog(resultChunks, promptLog);
-
+  const finalChunks = writePromptLog(textChunk, resultChunks, promptLog);
   return Buffer.from(encodeChunks(finalChunks));
 }
 
 // ---------------------------------------------------------------------------
-// Shared types and helpers for Gemini response parsing
+// Gemini image editing — the client sends a pre-composited image with a
+// semi-transparent red overlay on the edit area. No server-side image
+// processing needed.
 // ---------------------------------------------------------------------------
-interface GeminiPart {
-  text?: string;
-  inlineData?: { mimeType: string; data: string };
+
+async function loadGenAI() {
+  const { GoogleGenAI } = await import("@google/genai");
+  return GoogleGenAI;
 }
 
-function buildPromptParts(
+function createGenAI(
+  GoogleGenAI: Awaited<ReturnType<typeof loadGenAI>>,
+  backend: "google-ai" | "vertex",
+) {
+  if (backend === "vertex") {
+    return new GoogleGenAI({
+      vertexai: true,
+      project: process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT,
+      location: "us-central1",
+    });
+  }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
+  return new GoogleGenAI({ apiKey });
+}
+
+async function geminiProcess(
+  backend: "google-ai" | "vertex",
   imageBuffer: Buffer,
-  maskBuffer: Buffer | null,
   prompt: string,
-): { text: string; imagePart: GeminiPart; maskPart: GeminiPart | null } {
-  const text = maskBuffer
-    ? `Edit this image. Use the provided mask image as a guide: the white areas in the mask indicate the regions to modify. Task: ${prompt}. Return ONLY the full modified image, nothing else.`
-    : `Edit this image. Task: ${prompt}. Return ONLY the full modified image, nothing else.`;
+): Promise<Buffer> {
+  const GoogleGenAI = await loadGenAI();
+  const ai = createGenAI(GoogleGenAI, backend);
 
-  const imagePart: GeminiPart = {
-    inlineData: {
-      mimeType: "image/png",
-      data: imageBuffer.toString("base64"),
+  const editPrompt =
+    `Edit the area highlighted in red: ${prompt}. ` +
+    `Keep everything else unchanged. Remove the red overlay in the output.`;
+
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: editPrompt },
+          {
+            inlineData: {
+              mimeType: "image/png",
+              data: imageBuffer.toString("base64"),
+            },
+          },
+        ],
+      },
+    ],
+    config: {
+      responseModalities: ["TEXT", "IMAGE"],
     },
-  };
+  });
 
-  const maskPart: GeminiPart | null = maskBuffer
-    ? {
-        inlineData: {
-          mimeType: "image/png",
-          data: maskBuffer.toString("base64"),
-        },
-      }
-    : null;
-
-  return { text, imagePart, maskPart };
-}
-
-function extractImageFromResponse(responseParts: GeminiPart[]): Buffer {
-  for (const part of responseParts) {
+  const parts = response.candidates?.[0]?.content?.parts ?? [];
+  for (const part of parts) {
     if (part.inlineData?.data) {
       return Buffer.from(part.inlineData.data, "base64");
     }
   }
+
+  const textParts = parts
+    .map((p) => p.text)
+    .filter(Boolean)
+    .join(" ");
   throw new Error(
     "Gemini response did not contain an image. Response: " +
-      JSON.stringify(responseParts).substring(0, 500),
+      (textParts || JSON.stringify(response).substring(0, 500)),
   );
-}
-
-// ---------------------------------------------------------------------------
-// Google AI Studio backend (uses API key)
-// ---------------------------------------------------------------------------
-async function googleAiProcess(
-  apiKey: string,
-  imageBuffer: Buffer,
-  maskBuffer: Buffer | null,
-  prompt: string,
-): Promise<Buffer> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    generationConfig: {
-      responseModalities: ["TEXT", "IMAGE"],
-    } as Record<string, unknown>,
-  });
-
-  const { text, imagePart, maskPart } = buildPromptParts(
-    imageBuffer,
-    maskBuffer,
-    prompt,
-  );
-  const parts = maskPart
-    ? [text, imagePart, maskPart]
-    : [text, imagePart];
-
-  const result = await model.generateContent(parts as Parameters<typeof model.generateContent>[0]);
-  const response = result.response;
-  const candidates = response.candidates;
-
-  if (!candidates || candidates.length === 0) {
-    throw new Error(
-      "Gemini returned no candidates. Response: " +
-        JSON.stringify(response).substring(0, 500),
-    );
-  }
-
-  const responseParts = (candidates[0].content?.parts ?? []) as GeminiPart[];
-  return extractImageFromResponse(responseParts);
-}
-
-// ---------------------------------------------------------------------------
-// Vertex AI backend (uses service account auth, global region)
-// ---------------------------------------------------------------------------
-async function vertexAiProcess(
-  projectId: string,
-  imageBuffer: Buffer,
-  maskBuffer: Buffer | null,
-  prompt: string,
-): Promise<Buffer> {
-  const vertexAI = new VertexAI({ project: projectId, location: "global" });
-  const model = vertexAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    generationConfig: {
-      responseModalities: ["TEXT", "IMAGE"],
-    } as Record<string, unknown>,
-  });
-
-  const { text, imagePart, maskPart } = buildPromptParts(
-    imageBuffer,
-    maskBuffer,
-    prompt,
-  );
-
-  const contentParts = maskPart
-    ? [{ text }, imagePart, maskPart]
-    : [{ text }, imagePart];
-
-  const result = await model.generateContent({
-    contents: [{ role: "user" as const, parts: contentParts }],
-  } as Parameters<typeof model.generateContent>[0]);
-  const candidates = result.response.candidates;
-
-  if (!candidates || candidates.length === 0) {
-    throw new Error(
-      "Vertex AI returned no candidates. Response: " +
-        JSON.stringify(result.response).substring(0, 500),
-    );
-  }
-
-  const responseParts = (candidates[0].content?.parts ?? []) as GeminiPart[];
-  return extractImageFromResponse(responseParts);
 }
 
 // ---------------------------------------------------------------------------
@@ -289,7 +240,9 @@ export const processImpression = onDocumentCreated(
       | string
       | undefined;
     const sourceImageUrl = impressionData.sourceImageUrl as string | undefined;
-    const maskImagePath = impressionData.maskImagePath as string | undefined;
+    const compositeImagePath = impressionData.compositeImagePath as
+      | string
+      | undefined;
 
     const impressionRef = db.doc(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
@@ -298,50 +251,21 @@ export const processImpression = onDocumentCreated(
     try {
       await impressionRef.update({ status: "processing" });
 
-      // Download source image from Storage
-      const storagePath =
-        sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
-      const [fileBuffer] = await bucket.file(storagePath).download();
-
-      // Download mask image if present
-      let maskBuffer: Buffer | null = null;
-      if (maskImagePath) {
-        const [downloaded] = await bucket.file(maskImagePath).download();
-        maskBuffer = downloaded;
-      }
+      // Prefer the pre-composited image (with red overlay baked in)
+      const imagePath =
+        compositeImagePath ??
+        sourceImagePath ??
+        storagePathFromUrl(sourceImageUrl ?? "");
+      const [fileBuffer] = await bucket.file(imagePath).download();
 
       let resultBuffer: Buffer;
       const backend = getAiBackend();
       console.log(`Processing with backend: ${backend}`);
 
-      switch (backend) {
-        case "vertex": {
-          const projectId =
-            process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
-          if (!projectId) throw new Error("GCP project ID not available");
-          resultBuffer = await vertexAiProcess(
-            projectId,
-            fileBuffer,
-            maskBuffer,
-            prompt,
-          );
-          break;
-        }
-        case "google-ai": {
-          const apiKey = process.env.GEMINI_API_KEY;
-          if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
-          resultBuffer = await googleAiProcess(
-            apiKey,
-            fileBuffer,
-            maskBuffer,
-            prompt,
-          );
-          break;
-        }
-        case "dummy":
-        default:
-          resultBuffer = await dummyProcess(fileBuffer, prompt);
-          break;
+      if (backend === "dummy") {
+        resultBuffer = await dummyProcess(fileBuffer, prompt);
+      } else {
+        resultBuffer = await geminiProcess(backend, fileBuffer, prompt);
       }
 
       // Upload result to Storage
