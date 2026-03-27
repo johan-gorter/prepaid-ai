@@ -44,15 +44,15 @@ How it works:
 - `npm -s run services:start dev` runs the tracked Vite dev service in its default mode
 - By default the real-Firebase dev server runs on `http://localhost:5173`
 - Vite loads `.env`
-- `.env` should contain real Firebase web app configuration. This can be the prepaid-ai-experimental firebase project or a special one.
+- `.env` should contain real Firebase web app configuration. This can be the prepaid-ai-sandbox firebase project or a special one.
 - `VITE_USE_EMULATORS` should be unset
 - Normal hosted builds written with `vite build` or `npm -s run build` go to `dist/`
 
 In this mode the app uses real Firebase services and the emulator-only dev login stays hidden.
 
-## 3. Experimental Deploy
+## 3. Sandbox Deploy
 
-This is the hosted preview environment deployed by CI to the `prepaid-ai-experimental` Firebase project.
+This is the hosted preview environment deployed by CI to the `prepaid-ai-sandbox` Firebase project.
 
 Source of truth:
 
@@ -62,21 +62,21 @@ Source of truth:
 How it works today:
 
 - CI runs `npx vite build`
-- The workflow injects the `*_EXPERIMENTAL` Firebase variables directly into the build step
+- The workflow injects the `*_SANDBOX` Firebase variables directly into the build step
 - The workflow does not set `VITE_USE_EMULATORS`
 - The resulting frontend bundle is emitted to `dist/`
-- CI deploys with `firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-experimental`
+- CI deploys with `firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-sandbox`
 
 Result:
 
-- The experimental deploy should behave like a real hosted environment
+- The sandbox deploy should behave like a real hosted environment
 - The emulator-only dev login should not be visible there
 
-If the emulator login appears on an experimental deploy, that build was produced with emulator settings, typically by using the emulator Vite mode or by setting `VITE_USE_EMULATORS=true` during the build.
+If the emulator login appears on a sandbox deploy, that build was produced with emulator settings, typically by using the emulator Vite mode or by setting `VITE_USE_EMULATORS=true` during the build.
 
 ## 4. Production Deploy
 
-The production deploy job is currently commented out in `.github/workflows/ci.yml`, but its intended shape is the same as the experimental deploy:
+The production deploy job is currently commented out in `.github/workflows/ci.yml`, but its intended shape is the same as the sandbox deploy:
 
 - build a normal production bundle into `dist/`
 - deploy Hosting, Functions, Firestore rules, and Storage rules
@@ -84,7 +84,7 @@ The production deploy job is currently commented out in `.github/workflows/ci.ym
 
 The configured Firebase project aliases are:
 
-- `default` -> `prepaid-ai-experimental`
+- `default` -> `prepaid-ai-sandbox`
 - `production` -> `prepaid-ai-production`
 
 ## Automated Tests

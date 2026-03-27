@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "prepaid-ai-experimental",
+    "default": "prepaid-ai-sandbox",
     "dev": "prepaid-ai-dev",
     "production": "prepaid-ai-production"
   }

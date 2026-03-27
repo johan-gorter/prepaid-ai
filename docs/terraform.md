@@ -11,7 +11,7 @@ terraform/
   variables.tf         # Root input variables
   outputs.tf           # Exported values (web app config, service account, etc.)
   environments/        # One .tfvars file per environment
-    experimental.tfvars
+    sandbox.tfvars
     dev.tfvars
     production.tfvars
   modules/
@@ -25,7 +25,7 @@ terraform/
 
 | Environment | Project ID | Deployed by | Branch |
 |---|---|---|---|
-| experimental | `prepaid-ai-experimental` | Manual / local dev | — |
+| sandbox | `prepaid-ai-sandbox` | Manual / local dev | — |
 | dev | `prepaid-ai-dev` | CI on merge to `main` | `main` |
 | production | `prepaid-ai-production` | CI on merge to `release/production` | `release/production` |
 
@@ -102,13 +102,13 @@ terraform apply -var-file=environments/production.tfvars
 ```
 
 ```bash
-# Experimental
+# Sandbox
 terraform init -reconfigure \
   -backend-config="bucket=prepaid-ai-terraform-state" \
-  -backend-config="prefix=env/experimental"
+  -backend-config="prefix=env/sandbox"
 
-terraform plan  -var-file=environments/experimental.tfvars
-terraform apply -var-file=environments/experimental.tfvars
+terraform plan  -var-file=environments/sandbox.tfvars
+terraform apply -var-file=environments/sandbox.tfvars
 ```
 
 ### 5. Set the GEMINI_API_KEY secret value
