@@ -13,7 +13,6 @@ import { test as base, type Page } from "@playwright/test";
 import {
   createRandomTestUser,
   createTestUser,
-  deleteTestUser,
   signInTestUser,
   type TestUser,
 } from "./helpers/auth";
@@ -41,6 +40,14 @@ export const test = base.extend<TestFixtures>({
       // Sign in the pre-created user in the browser
       await signInTestUser(page, user);
 
+      // Wait for onAuthStateChanged to propagate the sign-in before navigating.
+      // signInWithEmailAndPassword resolves before onAuthStateChanged fires,
+      // so the router guard can see currentUser === null and redirect to /login.
+      await page.waitForFunction(
+        () => (window as any).__testGetUid?.() != null,
+        { timeout: 5000 },
+      );
+
       // Use SPA navigation instead of page.goto("/") to avoid a full
       // page reload that races with IndexedDB auth persistence.
       await page.evaluate(() => {
@@ -52,7 +59,10 @@ export const test = base.extend<TestFixtures>({
       try {
         await use(page);
       } finally {
-        await deleteTestUser(user);
+        // Per-test user deletion is intentionally skipped.
+        // The Auth Emulator's bulk DELETE endpoint ignores the localIds body
+        // and wipes ALL users, breaking parallel tests. Global teardown
+        // handles cleanup after the full suite finishes.
         await context.close();
       }
     },
