@@ -1,6 +1,6 @@
-import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import { expect, test } from "../fixtures";
 
 /**
@@ -44,7 +44,9 @@ test.describe("Impression processing", () => {
 
       // Advance to Step 2: Mask
       await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible();
 
       // Draw a small mask stroke on the canvas
       const canvas = page.locator("canvas");
@@ -53,7 +55,10 @@ test.describe("Impression processing", () => {
       if (box) {
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
         await page.mouse.down();
-        await page.mouse.move(box.x + box.width / 2 + 50, box.y + box.height / 2 + 50);
+        await page.mouse.move(
+          box.x + box.width / 2 + 50,
+          box.y + box.height / 2 + 50,
+        );
         await page.mouse.up();
       }
 
@@ -68,9 +73,9 @@ test.describe("Impression processing", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       // 5. Should show the three-button bar (Timeline, Trash, Next Change)
-      await expect(
-        page.getByRole("button", { name: "Timeline" }),
-      ).toBeVisible({ timeout: 15000 });
+      await expect(page.getByRole("button", { name: "Timeline" })).toBeVisible({
+        timeout: 15000,
+      });
 
       // 6. Wait for the result image to appear (Cloud Function processing)
       const resultImage = page.getByAltText("Result");
@@ -81,7 +86,7 @@ test.describe("Impression processing", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, { timeout: 5000 });
 
       // 8. Verify the timeline page shows the result
-      await expect(page.getByText("Timeline")).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
       const timelineResultImage = page.getByAltText("Result");
       await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
 
@@ -105,11 +110,11 @@ test.describe("Impression processing", () => {
       }>;
       const textChunks = chunks
         .filter((c) => c.name === "tEXt")
-        .map((c) => textChunk.decode(c.data) as { keyword: string; text: string });
+        .map(
+          (c) => textChunk.decode(c.data) as { keyword: string; text: string },
+        );
 
-      const promptLogChunk = textChunks.find(
-        (c) => c.keyword === "PromptLog",
-      );
+      const promptLogChunk = textChunks.find((c) => c.keyword === "PromptLog");
       expect(promptLogChunk).toBeTruthy();
 
       // 11. Verify the prompt log contains our prompt

@@ -147,8 +147,6 @@ export async function signInTestUser(
     },
     { email: user.email, password: user.password },
   );
-
-  await page.waitForTimeout(500);
 }
 
 /**
