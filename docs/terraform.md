@@ -23,11 +23,11 @@ terraform/
 
 ## Environments
 
-| Environment | Project ID | Deployed by | Branch |
-|---|---|---|---|
-| sandbox | `prepaid-ai-sandbox` | Manual / local dev | — |
-| dev | `prepaid-ai-dev` | CI on merge to `main` | `main` |
-| production | `prepaid-ai-production` | CI on merge to `release/production` | `release/production` |
+| Environment | Project ID              | Deployed by                         | Branch               |
+| ----------- | ----------------------- | ----------------------------------- | -------------------- |
+| sandbox     | `prepaid-ai-sandbox`    | Manual / local dev                  | —                    |
+| dev         | `prepaid-ai-dev`        | CI on merge to `main`               | `main`               |
+| production  | `prepaid-ai-production` | CI on merge to `release/production` | `release/production` |
 
 ## Prerequisites
 
@@ -113,7 +113,7 @@ terraform apply -var-file=environments/sandbox.tfvars
 
 ### 5. Set the GEMINI_API_KEY secret value
 
-Terraform creates the secret *container*. You set the actual value once per environment.
+Terraform creates the secret _container_. You set the actual value once per environment.
 
 Get a key from https://aistudio.google.com/apikey — select the target project when creating it.
 
@@ -169,14 +169,14 @@ terraform output ci_service_account_email
 
 ## What Terraform Manages vs. Firebase CLI
 
-| Managed by Terraform | Managed by Firebase CLI |
-|---|---|
-| GCP API enablement | Hosting deployment (`dist/`) |
-| Firebase project + web app | Cloud Functions code |
-| Firestore database instance | Firestore security rules |
-| Firebase Storage bucket | Storage security rules |
-| Secret Manager secrets | |
-| CI service account + IAM | |
+| Managed by Terraform        | Managed by Firebase CLI      |
+| --------------------------- | ---------------------------- |
+| GCP API enablement          | Hosting deployment (`dist/`) |
+| Firebase project + web app  | Cloud Functions code         |
+| Firestore database instance | Firestore security rules     |
+| Firebase Storage bucket     | Storage security rules       |
+| Secret Manager secrets      |                              |
+| CI service account + IAM    |                              |
 
 ## Cloud Functions + Secret Manager
 
@@ -191,11 +191,11 @@ In your function code, read the secret at runtime using the Secret Manager clien
 
 ## Source Control
 
-| File | In git? | Notes |
-|---|---|---|
-| `terraform/*.tf` | Yes | Infrastructure as code |
-| `terraform/environments/*.tfvars` | Yes | No secrets — just project IDs and regions |
-| `terraform/.terraform/` | No | Local provider cache (like `node_modules/`) |
-| `terraform/.terraform.lock.hcl` | Yes | Provider version lock (like `package-lock.json`) |
-| `terraform.tfstate` | No | Stored in GCS backend, never local |
-| `*.auto.tfvars` | No | Gitignored, for local secret overrides |
+| File                              | In git? | Notes                                            |
+| --------------------------------- | ------- | ------------------------------------------------ |
+| `terraform/*.tf`                  | Yes     | Infrastructure as code                           |
+| `terraform/environments/*.tfvars` | Yes     | No secrets — just project IDs and regions        |
+| `terraform/.terraform/`           | No      | Local provider cache (like `node_modules/`)      |
+| `terraform/.terraform.lock.hcl`   | Yes     | Provider version lock (like `package-lock.json`) |
+| `terraform.tfstate`               | No      | Stored in GCS backend, never local               |
+| `*.auto.tfvars`                   | No      | Gitignored, for local secret overrides           |

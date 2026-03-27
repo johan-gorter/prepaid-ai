@@ -13,9 +13,8 @@ async function loadDummyDeps() {
   const { SANS_32_WHITE } = await import("jimp/fonts");
   const extractChunks = (await import("png-chunks-extract")).default;
   const encodeChunks = (await import("png-chunks-encode")).default;
-  const textChunk = (await import(
-    "png-chunk-text"
-  )) as unknown as TextChunkModule;
+  const textChunk =
+    (await import("png-chunk-text")) as unknown as TextChunkModule;
   return {
     Jimp,
     loadFont,
@@ -225,6 +224,7 @@ export const processImpression = onDocumentCreated(
   {
     document:
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
+    region: "europe-west1",
     secrets: ["GEMINI_API_KEY"],
     timeoutSeconds: 120,
     memory: "512MiB",
