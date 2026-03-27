@@ -29,7 +29,7 @@ export function useImpressions(renovationId: Ref<string>) {
         renoId,
         "impressions",
       );
-      const q = query(impressionsRef, orderBy("createdAt", "desc"));
+      const q = query(impressionsRef, orderBy("createdAt", "asc"));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         impressions.value = snapshot.docs.map((doc) => ({

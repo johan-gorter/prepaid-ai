@@ -1,14 +1,20 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
+import { deleteObject, ref as storageRef } from "firebase/storage";
 import { ref, watchEffect } from "vue";
-import { db } from "../firebase";
-import type { Renovation } from "../types";
+import { db, storage } from "../firebase";
+import type { Impression, Renovation } from "../types";
 import { useAuth } from "./useAuth";
 
 export function useRenovations() {
@@ -56,7 +62,6 @@ export function useRenovations() {
   });
 
   async function createRenovation(data: {
-    title: string;
     originalImagePath: string;
   }): Promise<string> {
     if (!currentUser.value) throw new Error("Not authenticated");
@@ -67,7 +72,6 @@ export function useRenovations() {
       "renovations",
     );
     const docRef = await addDoc(renovationsRef, {
-      title: data.title,
       originalImagePath: data.originalImagePath,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -85,10 +89,11 @@ export function useRenovations() {
     },
   ): Promise<string> {
     if (!currentUser.value) throw new Error("Not authenticated");
+    const uid = currentUser.value.uid;
     const impressionsRef = collection(
       db,
       "users",
-      currentUser.value.uid,
+      uid,
       "renovations",
       renovationId,
       "impressions",
@@ -106,8 +111,149 @@ export function useRenovations() {
       docData.compositeImagePath = data.compositeImagePath;
     }
     const docRef = await addDoc(impressionsRef, docData);
+
+    // Auto-star: if renovation has no afterImpressionId, set it
+    const renovationDoc = await getDoc(
+      doc(db, "users", uid, "renovations", renovationId),
+    );
+    if (renovationDoc.exists()) {
+      const renoData = renovationDoc.data();
+      if (!renoData.afterImpressionId) {
+        await updateDoc(
+          doc(db, "users", uid, "renovations", renovationId),
+          { afterImpressionId: docRef.id, updatedAt: serverTimestamp() },
+        );
+      }
+    }
+
     return docRef.id;
   }
 
-  return { renovations, loading, error, createRenovation, createImpression };
+  async function setAfterImpression(
+    renovationId: string,
+    impressionId: string,
+  ): Promise<void> {
+    if (!currentUser.value) throw new Error("Not authenticated");
+    const uid = currentUser.value.uid;
+    await updateDoc(
+      doc(db, "users", uid, "renovations", renovationId),
+      { afterImpressionId: impressionId, updatedAt: serverTimestamp() },
+    );
+  }
+
+  async function deleteImpression(
+    renovationId: string,
+    impressionId: string,
+  ): Promise<void> {
+    if (!currentUser.value) throw new Error("Not authenticated");
+    const uid = currentUser.value.uid;
+
+    // Read impression doc to get storage paths
+    const impressionDocRef = doc(
+      db,
+      "users",
+      uid,
+      "renovations",
+      renovationId,
+      "impressions",
+      impressionId,
+    );
+    const impressionSnap = await getDoc(impressionDocRef);
+    if (impressionSnap.exists()) {
+      const data = impressionSnap.data() as Impression;
+      // Delete storage files (ignore errors for missing files)
+      const pathsToDelete = [
+        data.sourceImagePath,
+        data.resultImagePath,
+        (data as unknown as Record<string, unknown>).compositeImagePath as string | undefined,
+      ].filter(Boolean) as string[];
+      await Promise.allSettled(
+        pathsToDelete.map((p) => deleteObject(storageRef(storage, p))),
+      );
+    }
+
+    // Delete impression doc
+    await deleteDoc(impressionDocRef);
+
+    // If this was the starred impression, auto-star the most recent completed one
+    const renovationDocRef = doc(db, "users", uid, "renovations", renovationId);
+    const renovationSnap = await getDoc(renovationDocRef);
+    if (renovationSnap.exists()) {
+      const renoData = renovationSnap.data();
+      if (renoData.afterImpressionId === impressionId) {
+        // Find most recent completed impression
+        const impressionsRef = collection(
+          db,
+          "users",
+          uid,
+          "renovations",
+          renovationId,
+          "impressions",
+        );
+        const q = query(impressionsRef, orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        const mostRecent = snap.docs.find(
+          (d) => d.data().status === "completed" && d.id !== impressionId,
+        );
+        await updateDoc(renovationDocRef, {
+          afterImpressionId: mostRecent?.id ?? null,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+  }
+
+  async function deleteRenovation(renovationId: string): Promise<void> {
+    if (!currentUser.value) throw new Error("Not authenticated");
+    const uid = currentUser.value.uid;
+
+    // Delete all impressions and their storage files
+    const impressionsRef = collection(
+      db,
+      "users",
+      uid,
+      "renovations",
+      renovationId,
+      "impressions",
+    );
+    const impressionsSnap = await getDocs(impressionsRef);
+    for (const impressionDoc of impressionsSnap.docs) {
+      const data = impressionDoc.data() as Impression;
+      const pathsToDelete = [
+        data.sourceImagePath,
+        data.resultImagePath,
+        (data as unknown as Record<string, unknown>).compositeImagePath as string | undefined,
+      ].filter(Boolean) as string[];
+      await Promise.allSettled(
+        pathsToDelete.map((p) => deleteObject(storageRef(storage, p))),
+      );
+      await deleteDoc(impressionDoc.ref);
+    }
+
+    // Delete original image
+    const renovationDocRef = doc(db, "users", uid, "renovations", renovationId);
+    const renovationSnap = await getDoc(renovationDocRef);
+    if (renovationSnap.exists()) {
+      const renoData = renovationSnap.data();
+      if (renoData.originalImagePath) {
+        await deleteObject(
+          storageRef(storage, renoData.originalImagePath),
+        ).catch(() => {});
+      }
+    }
+
+    // Delete renovation document
+    await deleteDoc(renovationDocRef);
+  }
+
+  return {
+    renovations,
+    loading,
+    error,
+    createRenovation,
+    createImpression,
+    setAfterImpression,
+    deleteImpression,
+    deleteRenovation,
+  };
 }

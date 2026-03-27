@@ -16,7 +16,10 @@
       "Bash(npm run typecheck:tests:*)",
       "Bash(npm run:*)",
       "Bash(curl:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npm -s run typecheck:all)",
+      "Bash(npm -s run build)",
+      "Bash(npm -s run services:restart emulators)"
     ]
   }
 }

@@ -2,9 +2,9 @@ import type { Timestamp } from "firebase/firestore";
 
 export interface Renovation {
   id: string;
-  title: string;
   originalImagePath: string;
   originalImageUrl?: string;
+  afterImpressionId?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
