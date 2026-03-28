@@ -56,6 +56,11 @@ export const test = base.extend<TestFixtures>({
       });
       await page.waitForURL("/", { timeout: 10000 });
 
+      // Wait for the home page to finish rendering. waitForURL resolves
+      // as soon as the URL matches, but Vue Router still needs to
+      // process the route change and mount the HomePage component.
+      await page.getByText("My Renovations").waitFor({ timeout: 10000 });
+
       try {
         await use(page);
       } finally {
