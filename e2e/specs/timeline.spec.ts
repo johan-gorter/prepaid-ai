@@ -66,41 +66,6 @@ test.describe("Timeline Page", () => {
     }
   });
 
-  test("three-button bar shows Timeline active, Trash, Next Change", async ({
-    authenticatedPage: page,
-  }) => {
-    test.setTimeout(60000);
-    const { grayPngPath } = await createRenovationAndWaitForResult(
-      page,
-      "widen the hallway",
-    );
-
-    try {
-      await page.getByRole("button", { name: "Timeline" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-
-      // Verify all three buttons in the bar
-      const timelineBtn = page.locator(".three-button-bar .bar-btn", {
-        hasText: "Timeline",
-      });
-      const trashBtn = page.locator(".three-button-bar .bar-btn", {
-        hasText: "Trash",
-      });
-      const nextChangeBtn = page.locator(".three-button-bar .bar-btn", {
-        hasText: "Next Change",
-      });
-
-      await expect(timelineBtn).toBeVisible();
-      await expect(trashBtn).toBeVisible();
-      await expect(nextChangeBtn).toBeVisible();
-
-      // Timeline should be highlighted (active)
-      await expect(timelineBtn).toHaveClass(/bar-btn-active/);
-    } finally {
-      fs.unlinkSync(grayPngPath);
-    }
-  });
-
   test("back button navigates to home", async ({
     authenticatedPage: page,
   }) => {
@@ -178,31 +143,6 @@ test.describe("Timeline Page", () => {
     }
   });
 
-  test("Next Change button navigates to new impression page", async ({
-    authenticatedPage: page,
-  }) => {
-    test.setTimeout(60000);
-    const { grayPngPath } = await createRenovationAndWaitForResult(
-      page,
-      "install new windows",
-    );
-
-    try {
-      await page.getByRole("button", { name: "Timeline" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-
-      await page.locator(".three-button-bar .bar-btn", { hasText: "Next Change" }).click();
-
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=/);
-
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
-    } finally {
-      fs.unlinkSync(grayPngPath);
-    }
-  });
-
   test("trash button on impression deletes it from timeline", async ({
     authenticatedPage: page,
   }) => {
@@ -232,33 +172,6 @@ test.describe("Timeline Page", () => {
     }
   });
 
-  test("delete renovation navigates back to home", async ({
-    authenticatedPage: page,
-  }) => {
-    test.setTimeout(60000);
-    const { grayPngPath } = await createRenovationAndWaitForResult(
-      page,
-      "demolish wall",
-    );
-
-    try {
-      await page.getByRole("button", { name: "Timeline" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-
-      // Accept the confirmation dialog
-      page.on("dialog", (dialog) => dialog.accept());
-
-      // Click Trash in the bottom bar (delete renovation)
-      await page.locator(".three-button-bar .bar-btn-danger").click();
-
-      // Should navigate back to home
-      await page.waitForURL("/", { timeout: 10000 });
-      await expect(page.getByText("My Renovations")).toBeVisible();
-    } finally {
-      fs.unlinkSync(grayPngPath);
-    }
-  });
-
   test("star toggle switches between impressions", async ({
     authenticatedPage: page,
   }) => {
@@ -274,14 +187,14 @@ test.describe("Timeline Page", () => {
       // Go to timeline
       await page.getByRole("button", { name: "Timeline" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      const timelineUrl = page.url();
 
       // First impression should be starred
       await expect(page.getByTitle("Set as after image")).toHaveClass(/starred/, { timeout: 5000 });
 
-      // Create a second impression via Next Change
-      await page.locator(".three-button-bar .bar-btn", { hasText: "Next Change" }).click();
-      await page.waitForURL(/\/new\?source=/);
+      // Create a second impression by clicking the result image from the timeline
+      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
+      await page.getByAltText("Result").click();
+      await page.waitForURL(/\/new\?source=(?!before)[a-zA-Z0-9]+/);
 
       // Wait for source image to load
       await expect(
@@ -329,6 +242,68 @@ test.describe("Timeline Page", () => {
       // First star should be unstarred
       const firstStar = starButtons.nth(0);
       await expect(firstStar).not.toHaveClass(/starred/);
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
+  });
+
+  test("chaining: click result image, complete full impression flow, verify both on timeline", async ({
+    authenticatedPage: page,
+  }) => {
+    test.setTimeout(120000);
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "base impression",
+    );
+
+    try {
+      // Navigate to timeline
+      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+
+      // Wait for result image to appear
+      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
+
+      // Click result image — should navigate to new impression with source=impressionId
+      await page.getByAltText("Result").click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=(?!before)[a-zA-Z0-9]+/);
+
+      // Source image must load — mask step visible with canvas ready
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(page.locator("canvas")).toBeVisible();
+
+      // Draw mask stroke
+      await drawMaskStroke(page);
+
+      // Advance to prompt step
+      await page.getByRole("button", { name: "Next" }).click();
+      const promptInput = page.getByTestId("prompt");
+      await expect(promptInput).toBeVisible();
+      await promptInput.fill("chained from result");
+
+      // Generate
+      await page.getByRole("button", { name: "Generate" }).click();
+
+      // Processing starts — three-button bar appears
+      await expect(
+        page.getByRole("button", { name: "Timeline" }),
+      ).toBeVisible({ timeout: 15000 });
+
+      // Wait for the chained result image
+      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
+
+      // Navigate back to timeline
+      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+
+      // Both impression prompts visible on timeline
+      await expect(page.getByText("base impression")).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText("chained from result")).toBeVisible();
+
+      // Two result images present
+      await expect(page.getByAltText("Result")).toHaveCount(2, { timeout: 5000 });
     } finally {
       fs.unlinkSync(grayPngPath);
     }

@@ -12,7 +12,7 @@ import type { Renovation } from "../types";
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
-const { setAfterImpression, deleteImpression, deleteRenovation } = useRenovations();
+const { setAfterImpression, deleteImpression } = useRenovations();
 
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
@@ -104,23 +104,8 @@ async function handleDeleteImpression(impressionId: string) {
   await deleteImpression(renovationId.value, impressionId);
 }
 
-async function handleDeleteRenovation() {
-  if (!confirm("Delete this renovation and all its impressions?")) return;
-  await deleteRenovation(renovationId.value);
-  router.push("/");
-}
-
 function navigateToNewImpression(source: string) {
   router.push(`/renovation/${renovationId.value}/new?source=${source}`);
-}
-
-function handleNextChange() {
-  const afterId = renovation.value?.afterImpressionId;
-  if (afterId) {
-    navigateToNewImpression(afterId);
-  } else {
-    navigateToNewImpression("before");
-  }
 }
 
 onMounted(() => {
@@ -148,7 +133,7 @@ onMounted(() => {
           @click="navigateToNewImpression('before')"
         >
           <div class="image-container">
-            <img :src="originalImageUrl" alt="Original" class="timeline-image" />
+            <img :src="originalImageUrl" alt="Original" class="timeline-image" crossorigin="anonymous" />
             <span class="image-label">Original</span>
           </div>
         </div>
@@ -166,6 +151,7 @@ onMounted(() => {
                 :src="resultImageUrls[impression.id] ?? impression.resultImageUrl ?? ''"
                 alt="Result"
                 class="timeline-image clickable"
+                crossorigin="anonymous"
                 @click="navigateToNewImpression(impression.id)"
               />
             </template>
@@ -215,12 +201,6 @@ onMounted(() => {
       </div>
     </main>
 
-    <!-- Three-button bar -->
-    <footer class="three-button-bar">
-      <button class="bar-btn bar-btn-active">Timeline</button>
-      <button class="bar-btn bar-btn-danger" @click="handleDeleteRenovation">Trash</button>
-      <button class="bar-btn" @click="handleNextChange">Next Change</button>
-    </footer>
   </div>
 </template>
 
@@ -392,42 +372,4 @@ onMounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-.three-button-bar {
-  display: flex;
-  gap: 0;
-  flex-shrink: 0;
-  border-top: 1px solid #eee;
-}
-
-.bar-btn {
-  flex: 1;
-  padding: 0.9rem 0.5rem;
-  border: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  background: #0f3460;
-  color: #fff;
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.bar-btn:last-child {
-  border-right: none;
-}
-
-.bar-btn:hover:not(:disabled) {
-  background: #1a1a2e;
-}
-
-.bar-btn-active {
-  background: #1a1a2e;
-}
-
-.bar-btn-danger {
-  background: #c0392b;
-}
-
-.bar-btn-danger:hover {
-  background: #962d22;
-}
 </style>
