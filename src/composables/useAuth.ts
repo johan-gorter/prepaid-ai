@@ -46,6 +46,13 @@ export function getCurrentUser(): Promise<User | null> {
   });
 }
 
+// Expose test helper so Playwright can wait for Vue-side auth state
+if (import.meta.env.VITE_USE_EMULATORS === "true") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__testAuthReady = () =>
+    getCurrentUser().then((u) => u?.uid ?? null);
+}
+
 export function useAuth() {
   const isAuthenticated = computed(() => !!currentUser.value);
 
