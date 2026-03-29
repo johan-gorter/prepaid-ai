@@ -5,7 +5,7 @@ import {
   drawMaskStroke,
 } from "../helpers/renovation";
 
-test.describe("Timeline Page", () => {
+test.describe("Renovation Details Page", () => {
   test.beforeEach(async ({}, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "chromium only");
   });
@@ -22,11 +22,11 @@ test.describe("Timeline Page", () => {
 
     try {
       // Navigate to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Header
-      await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
 
       // Original image pinned at top
       await expect(page.getByAltText("Original")).toBeVisible();
@@ -52,7 +52,7 @@ test.describe("Timeline Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Wait for star to appear on the completed impression
@@ -76,7 +76,7 @@ test.describe("Timeline Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       await page.getByRole("button", { name: "← Back" }).click();
@@ -97,7 +97,7 @@ test.describe("Timeline Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       await expect(page.getByAltText("Original")).toBeVisible();
@@ -124,7 +124,7 @@ test.describe("Timeline Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
@@ -153,7 +153,7 @@ test.describe("Timeline Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Verify impression is visible
@@ -185,7 +185,7 @@ test.describe("Timeline Page", () => {
 
     try {
       // Go to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // First impression should be starred
@@ -213,14 +213,14 @@ test.describe("Timeline Page", () => {
       // Generate
       await page.getByRole("button", { name: "Generate" }).click();
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible({ timeout: 15000 });
       await expect(page.getByAltText("Result")).toBeVisible({
         timeout: 30000,
       });
 
       // Go back to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Should see two Result images + prompts
@@ -258,7 +258,7 @@ test.describe("Timeline Page", () => {
 
     try {
       // Navigate to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Wait for result image to appear
@@ -288,14 +288,14 @@ test.describe("Timeline Page", () => {
 
       // Processing starts — three-button bar appears
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible({ timeout: 15000 });
 
       // Wait for the chained result image
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
 
       // Navigate back to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Both impression prompts visible on timeline

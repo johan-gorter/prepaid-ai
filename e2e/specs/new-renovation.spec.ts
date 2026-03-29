@@ -169,7 +169,7 @@ test.describe("New Renovation Page", () => {
       try {
         // Three-button bar is visible
         await expect(
-          page.getByRole("button", { name: "Timeline" }),
+          page.getByRole("button", { name: "Renovation Details" }),
         ).toBeVisible();
         await expect(
           page.getByRole("button", { name: "Trash" }),
@@ -185,7 +185,7 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("Timeline button navigates to timeline page", async ({
+    test("Renovation Details button navigates to timeline page", async ({
       authenticatedPage: page,
     }) => {
       test.setTimeout(60000);
@@ -195,11 +195,11 @@ test.describe("New Renovation Page", () => {
       );
 
       try {
-        await page.getByRole("button", { name: "Timeline" }).click();
+        await page.getByRole("button", { name: "Renovation Details" }).click();
         await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, {
           timeout: 5000,
         });
-        await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
+        await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
       }
@@ -225,7 +225,7 @@ test.describe("New Renovation Page", () => {
 
         // Three-button bar should be gone
         await expect(
-          page.getByRole("button", { name: "Timeline" }),
+          page.getByRole("button", { name: "Renovation Details" }),
         ).not.toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
@@ -266,7 +266,7 @@ test.describe("New Renovation Page", () => {
         // Generate
         await page.getByRole("button", { name: "Generate" }).click();
         await expect(
-          page.getByRole("button", { name: "Timeline" }),
+          page.getByRole("button", { name: "Renovation Details" }),
         ).toBeVisible({ timeout: 15000 });
         await expect(page.getByAltText("Result")).toBeVisible({
           timeout: 30000,
@@ -286,7 +286,7 @@ test.describe("New Renovation Page", () => {
 
         await page.getByRole("button", { name: "Generate" }).click();
         await expect(
-          page.getByRole("button", { name: "Timeline" }),
+          page.getByRole("button", { name: "Renovation Details" }),
         ).toBeVisible({ timeout: 15000 });
         await expect(page.getByAltText("Result")).toBeVisible({
           timeout: 30000,

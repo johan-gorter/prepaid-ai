@@ -72,8 +72,8 @@ test.describe("Impression processing", () => {
       // Click Generate — triggers submit, stays on page at step 4 (Result)
       await page.getByRole("button", { name: "Generate" }).click();
 
-      // 5. Should show the three-button bar (Timeline, Trash, Next Change)
-      await expect(page.getByRole("button", { name: "Timeline" })).toBeVisible({
+      // 5. Should show the three-button bar (Renovation Details, Trash, Next Change)
+      await expect(page.getByRole("button", { name: "Renovation Details" })).toBeVisible({
         timeout: 15000,
       });
 
@@ -81,12 +81,12 @@ test.describe("Impression processing", () => {
       const resultImage = page.getByAltText("Result");
       await expect(resultImage).toBeVisible({ timeout: 30000 });
 
-      // 7. Click Timeline to navigate to the renovation detail page
-      await page.getByRole("button", { name: "Timeline" }).click();
+      // 7. Click Renovation Details to navigate to the renovation detail page
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, { timeout: 5000 });
 
       // 8. Verify the timeline page shows the result
-      await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
       const timelineResultImage = page.getByAltText("Result");
       await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
 

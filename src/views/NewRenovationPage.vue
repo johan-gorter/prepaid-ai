@@ -466,7 +466,7 @@ onUnmounted(() => {
 
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="three-button-bar">
-      <button class="bar-btn" @click="handleTimeline">Timeline</button>
+      <button class="bar-btn" @click="handleTimeline">Renovation Details</button>
       <button class="bar-btn bar-btn-danger" @click="handleTrash">Trash</button>
       <button class="bar-btn" :disabled="!impressionCompleted" @click="handleNextChange">Next Change</button>
     </footer>

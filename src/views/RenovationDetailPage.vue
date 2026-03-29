@@ -12,7 +12,7 @@ import type { Renovation } from "../types";
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
-const { setAfterImpression, deleteImpression } = useRenovations();
+const { setAfterImpression, deleteImpression, deleteRenovation } = useRenovations();
 
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
@@ -82,10 +82,18 @@ watch(
         urlEntries.filter(([, url]) => Boolean(url)),
       );
 
-      // Auto-scroll to bottom after loading
+      // Scroll to starred impression, or bottom if none starred
       await nextTick();
       if (scrollContainer.value) {
-        scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+        const starred = scrollContainer.value.querySelector('.btn-star.starred');
+        if (starred) {
+          const item = starred.closest('.timeline-item');
+          if (item) {
+            (item as HTMLElement).scrollIntoView({ block: 'center' });
+          }
+        } else {
+          scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+        }
       }
     }
   },
@@ -104,6 +112,12 @@ async function handleDeleteImpression(impressionId: string) {
   await deleteImpression(renovationId.value, impressionId);
 }
 
+async function handleDeleteRenovation() {
+  if (!confirm("Delete this renovation and all its impressions?")) return;
+  await deleteRenovation(renovationId.value);
+  router.push("/");
+}
+
 function navigateToNewImpression(source: string) {
   router.push(`/renovation/${renovationId.value}/new?source=${source}`);
 }
@@ -117,7 +131,8 @@ onMounted(() => {
   <div class="timeline-page">
     <header class="page-header">
       <button class="btn-back" @click="router.push('/')">← Back</button>
-      <h1>Timeline</h1>
+      <h1>Renovation Details</h1>
+      <button class="btn-delete-renovation" @click="handleDeleteRenovation" title="Delete renovation">🗑</button>
     </header>
 
     <main ref="scrollContainer" class="content">
@@ -226,6 +241,20 @@ onMounted(() => {
 .page-header h1 {
   margin: 0;
   font-size: 1.25rem;
+  flex: 1;
+}
+
+.btn-delete-renovation {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.btn-delete-renovation:hover {
+  color: #e74c3c;
 }
 
 .btn-back {

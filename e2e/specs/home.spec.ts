@@ -71,8 +71,8 @@ test.describe("Home Page with renovations", () => {
     );
 
     try {
-      // Navigate back to home via Timeline → Back
-      await page.getByRole("button", { name: "Timeline" }).click();
+      // Navigate back to home via Renovation Details → Back
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await page.getByRole("button", { name: "← Back" }).click();
       await page.waitForURL("/");
@@ -100,7 +100,7 @@ test.describe("Home Page with renovations", () => {
 
     try {
       // Go home
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await page.getByRole("button", { name: "← Back" }).click();
       await page.waitForURL("/");
@@ -112,7 +112,7 @@ test.describe("Home Page with renovations", () => {
 
       // Should navigate to timeline
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }
