@@ -221,28 +221,50 @@ test.describe("PWA Requirements", () => {
       await page.getByRole("link", { name: "+ New Renovation" }).click();
       await page.waitForURL("/renovation/new");
 
-      await page.getByLabel("Title").fill("Offline cached thumbnail");
-      await page.getByLabel("Photo (PNG)").setInputFiles(uploadPath);
+      // Step 1: Capture — upload image via file input
+      const fileInput = page.locator('input[type="file"]');
+      await fileInput.setInputFiles(uploadPath);
       await expect(page.getByAltText("Preview")).toBeVisible();
-      await page
-        .getByLabel("Describe your renovation")
-        .fill("verify cached image survives refresh");
 
-      await page.getByRole("button", { name: "Create Renovation" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/, { timeout: 15000 });
+      // Advance to Step 2: Mask
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.locator("canvas")).toBeVisible();
 
-      await expect(page.locator(".status-completed")).toBeVisible({
-        timeout: 30000,
-      });
-      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
+      // Draw a small mask stroke
+      const canvas = page.locator("canvas");
+      const box = await canvas.boundingBox();
+      if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(
+          box.x + box.width / 2 + 30,
+          box.y + box.height / 2 + 30,
+        );
+        await page.mouse.up();
+      }
 
+      // Advance to Step 3: Prompt
+      await page.getByRole("button", { name: "Next" }).click();
+      const promptInput = page.getByTestId("prompt");
+      await expect(promptInput).toBeVisible();
+      await promptInput.fill("verify cached image survives refresh");
+
+      // Click Generate
+      await page.getByRole("button", { name: "Generate" }).click();
+
+      // Wait for three-button bar and result image
+      await expect(
+        page.getByRole("button", { name: "Renovation Details" }),
+      ).toBeVisible({ timeout: 15000 });
+      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
+
+      // Navigate to home via Renovation Details → Back
+      await page.getByRole("button", { name: "Renovation Details" }).click();
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/);
       await page.goto("/");
       await page.waitForURL("/");
 
       const thumbnail = page.locator(".renovation-thumbnail").first();
-      await expect(
-        page.getByRole("heading", { name: "Offline cached thumbnail" }),
-      ).toBeVisible({ timeout: 30000 });
       await expect(thumbnail).toBeVisible({ timeout: 30000 });
       await expect
         .poll(async () => {
