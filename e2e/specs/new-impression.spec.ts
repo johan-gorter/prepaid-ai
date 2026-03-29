@@ -21,7 +21,7 @@ test.describe("New Impression Page", () => {
 
     try {
       // Go to timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Click original image → new impression with source=before
@@ -49,7 +49,7 @@ test.describe("New Impression Page", () => {
 
     try {
       // Go to timeline, click result image
-      await page.getByRole("button", { name: "Timeline" }).click();
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
@@ -123,7 +123,7 @@ test.describe("New Impression Page", () => {
 
       // Should show step 4 with three-button bar
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible({ timeout: 15000 });
       await expect(
         page.getByRole("button", { name: "Trash" }),
@@ -161,7 +161,7 @@ test.describe("New Impression Page", () => {
       // Click header back button
       await page.getByRole("button", { name: "← Back" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await expect(page.locator("h1", { hasText: "Timeline" })).toBeVisible();
+      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }
@@ -194,7 +194,7 @@ test.describe("New Impression Page", () => {
 
       // Wait for result
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible({ timeout: 15000 });
       await expect(page.getByAltText("Result")).toBeVisible({
         timeout: 30000,
@@ -211,14 +211,14 @@ test.describe("New Impression Page", () => {
 
       // Three-button bar gone
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).not.toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }
   });
 
-  test("Timeline button on result navigates to timeline", async ({
+  test("Renovation Details button on result navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
     test.setTimeout(90000);
@@ -242,11 +242,11 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       await expect(
-        page.getByRole("button", { name: "Timeline" }),
+        page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible({ timeout: 15000 });
 
-      // Click Timeline
-      await page.getByRole("button", { name: "Timeline" }).click();
+      // Click Renovation Details
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Should show both impressions on the timeline
