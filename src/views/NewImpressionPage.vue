@@ -57,7 +57,7 @@ let maskCtx: CanvasRenderingContext2D | null = null;
 let sourceCanvas: HTMLCanvasElement | null = null;
 let isDrawing = false;
 const brushSize = 30;
-const CANVAS_SIZE = 1000;
+const CANVAS_SIZE = 1024;
 
 let resizeObserver: ResizeObserver | null = null;
 
@@ -144,7 +144,7 @@ function initCanvases() {
   const img = loadedImage.value;
   if (!img) return;
 
-  // Source is already 1000x1000, draw directly
+  // Source is already 1024x1024, draw directly
   sourceCanvas = document.createElement("canvas");
   sourceCanvas.width = CANVAS_SIZE;
   sourceCanvas.height = CANVAS_SIZE;

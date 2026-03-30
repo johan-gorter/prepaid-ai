@@ -4,11 +4,11 @@ import path from "node:path";
 import { expect, test } from "../fixtures";
 
 /**
- * Create a 1000x1000 gray PNG using jimp and save it to a temp file.
+ * Create a 1024x1024 gray PNG using jimp and save it to a temp file.
  */
 async function createGrayPng(): Promise<string> {
   const { Jimp } = await import("jimp");
-  const image = new Jimp({ width: 1000, height: 1000, color: 0x808080ff });
+  const image = new Jimp({ width: 1024, height: 1024, color: 0x808080ff });
   const buffer = await image.getBuffer("image/png");
   const tmpPath = path.join(os.tmpdir(), `test-gray-${Date.now()}.png`);
   fs.writeFileSync(tmpPath, buffer);
@@ -28,7 +28,7 @@ test.describe("Impression processing", () => {
     test.setTimeout(60000);
     const promptText = "remove the furniture";
 
-    // 1. Create a dummy 1000x1000 gray PNG
+    // 1. Create a dummy 1024x1024 gray PNG
     const grayPngPath = await createGrayPng();
 
     try {
