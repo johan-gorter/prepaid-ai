@@ -33,38 +33,37 @@ function drawBeforeAfterComposite(
   }
 
   const theta = (15 * Math.PI) / 180;
-  // Compute y-intercept so upper-left polygon is ~30% of area
-  // For a line y = tan(theta)*x + b intersecting the square,
-  // we need the area above-left to be 0.3 * S^2
-  // Using trial: offset the line from the center
+  // Compute x-intercept so left polygon is ~30% of area
+  // Line goes vertically: x = tanTheta*(size-y) + b
+  // At y=0 (top): x = tanTheta*size + b
+  // At y=size (bottom): x = b
+  // Area of left trapezoid = size * (top_width + bottom_width) / 2
+  //   = size * (tanTheta*size + b + b) / 2 = size*b + 0.5*tanTheta*size^2
+  // Set = 0.3*size^2: b = size*(0.3 - 0.5*tanTheta)
   const tanTheta = Math.tan(theta);
-  // The diagonal line: y = tanTheta * x + b
-  // We shift b so that the area of the polygon above the line is 30% of S*S
-  // For a line crossing the square from left to right:
-  // At x=0, y=b; at x=S, y=tanTheta*S + b
-  // Area above = S*b + 0.5*S*(tanTheta*S) = S*b + 0.5*tanTheta*S^2
-  // Set = 0.3*S^2: b = (0.3*S - 0.5*tanTheta*S)
   const b = size * (0.3 - 0.5 * tanTheta);
+  const xTop = tanTheta * size + b; // where line meets top edge
+  const xBot = b;                    // where line meets bottom edge
 
-  // Clip region for "before" (upper-left polygon — above the line)
+  // Clip region for "before" (left polygon)
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(size, 0);
-  ctx.lineTo(size, tanTheta * size + b);
-  ctx.lineTo(0, b);
+  ctx.lineTo(xTop, 0);
+  ctx.lineTo(xBot, size);
+  ctx.lineTo(0, size);
   ctx.closePath();
   ctx.clip();
   ctx.drawImage(beforeImg, 0, 0, size, size);
   ctx.restore();
 
-  // Clip region for "after" (lower-right — below the line)
+  // Clip region for "after" (right polygon)
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(0, b);
-  ctx.lineTo(size, tanTheta * size + b);
+  ctx.moveTo(xTop, 0);
+  ctx.lineTo(size, 0);
   ctx.lineTo(size, size);
-  ctx.lineTo(0, size);
+  ctx.lineTo(xBot, size);
   ctx.closePath();
   ctx.clip();
   ctx.drawImage(afterImg, 0, 0, size, size);
@@ -72,10 +71,10 @@ function drawBeforeAfterComposite(
 
   // Draw the dividing line
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.moveTo(0, b);
-  ctx.lineTo(size, tanTheta * size + b);
+  ctx.moveTo(xTop, 0);
+  ctx.lineTo(xBot, size);
   ctx.stroke();
 
   return canvas.toDataURL();
