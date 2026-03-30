@@ -51,7 +51,7 @@ let maskCtx: CanvasRenderingContext2D | null = null;
 let sourceCanvas: HTMLCanvasElement | null = null;
 let isDrawing = false;
 const brushSize = 30;
-const CANVAS_SIZE = 1000;
+const CANVAS_SIZE = 1024;
 const SQUARE_CROP_RATIO = 0.5;
 
 let resizeObserver: ResizeObserver | null = null;

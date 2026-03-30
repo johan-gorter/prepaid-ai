@@ -8,11 +8,11 @@ import os from "node:os";
 import { expect, type Page } from "@playwright/test";
 
 /**
- * Create a 1000x1000 gray PNG using jimp and save it to a temp file.
+ * Create a 1024x1024 gray PNG using jimp and save it to a temp file.
  */
 export async function createGrayPng(): Promise<string> {
   const { Jimp } = await import("jimp");
-  const image = new Jimp({ width: 1000, height: 1000, color: 0x808080ff });
+  const image = new Jimp({ width: 1024, height: 1024, color: 0x808080ff });
   const buffer = await image.getBuffer("image/png");
   const tmpPath = path.join(os.tmpdir(), `test-gray-${Date.now()}.png`);
   fs.writeFileSync(tmpPath, buffer);
