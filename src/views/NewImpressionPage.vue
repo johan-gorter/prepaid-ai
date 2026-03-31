@@ -92,7 +92,6 @@ async function loadSourceImage() {
     let imagePath: string;
 
     if (sourceParam.value === "before") {
-      // Load original image from renovation doc
       const renoDoc = await getDoc(
         doc(db, "users", uid, "renovations", renovationId.value),
       );
@@ -102,7 +101,6 @@ async function loadSourceImage() {
       }
       imagePath = renoDoc.data().originalImagePath;
     } else {
-      // Load result image from impression doc
       const impDoc = await getDoc(
         doc(
           db, "users", uid, "renovations", renovationId.value,
@@ -144,7 +142,6 @@ function initCanvases() {
   const img = loadedImage.value;
   if (!img) return;
 
-  // Source is already 1024x1024, draw directly
   sourceCanvas = document.createElement("canvas");
   sourceCanvas.width = CANVAS_SIZE;
   sourceCanvas.height = CANVAS_SIZE;
@@ -349,24 +346,26 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="new-impression-page">
-    <header class="page-header">
-      <button class="btn-back" @click="router.push(`/renovation/${renovationId}`)">← Back</button>
-      <h1>{{ stepTitles[step] }}</h1>
+  <div class="page-layout">
+    <header class="fixed primary">
+      <nav>
+        <button class="transparent circle" @click="router.push(`/renovation/${renovationId}`)">
+          <i>arrow_back</i>
+        </button>
+        <h5 class="max">{{ stepTitles[step] }}</h5>
+      </nav>
     </header>
 
-    <main class="step-content">
+    <main class="responsive" style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem; padding-bottom: 5rem;">
       <!-- Step 0: Loading source image -->
-      <div v-show="step === 0" class="step-panel step-processing">
-        <div class="processing-indicator">
-          <div class="spinner"></div>
-          <p>Loading source image...</p>
-        </div>
+      <div v-show="step === 0" class="center-align large-padding">
+        <progress class="circle"></progress>
+        <p>Loading source image...</p>
       </div>
 
       <!-- Step 1: Mask Drawing -->
-      <div v-show="step === 1" class="step-panel step-mask">
-        <p class="step-hint">Paint the area you want to change (shown in red)</p>
+      <div v-show="step === 1" class="center-align">
+        <p class="small-text">Paint the area you want to change (shown in red)</p>
         <div ref="canvasWrapperRef" class="canvas-wrapper">
           <canvas
             ref="mainCanvasRef"
@@ -377,161 +376,96 @@ onUnmounted(() => {
             @pointerup="onPointerUp"
           ></canvas>
         </div>
-        <button class="btn-clear-mask" @click="clearMask">Clear Mask</button>
+        <button class="transparent small-round" @click="clearMask">
+          <i>delete_sweep</i>
+          <span>Clear Mask</span>
+        </button>
       </div>
 
       <!-- Step 2: Prompt -->
-      <div v-show="step === 2" class="step-panel">
-        <div class="form-group">
-          <label for="prompt-input">What should change in the red area?</label>
+      <div v-show="step === 2">
+        <div class="field textarea label border round">
           <textarea
             id="prompt-input"
             data-testid="prompt"
             v-model="prompt"
             rows="4"
-            placeholder="e.g. Replace with white marble countertops"
+            placeholder=" "
           ></textarea>
+          <label for="prompt-input">What should change in the red area?</label>
         </div>
       </div>
 
       <!-- Step 3: Processing -->
-      <div v-show="step === 3" class="step-panel step-processing">
-        <div class="processing-indicator">
-          <div class="spinner"></div>
-          <p>{{ submitting ? 'Creating impression...' : 'Processing...' }}</p>
-        </div>
+      <div v-show="step === 3" class="center-align large-padding">
+        <progress class="circle"></progress>
+        <p>{{ submitting ? 'Creating impression...' : 'Processing...' }}</p>
       </div>
 
       <!-- Step 4: Result -->
-      <div v-show="step === 4" class="step-panel step-result">
-        <div v-if="impressionCompleted && resultImageUrl" class="result-display">
-          <img :src="resultImageUrl" alt="Result" class="result-image" />
+      <div v-show="step === 4">
+        <div v-if="impressionCompleted && resultImageUrl" class="center-align">
+          <img :src="resultImageUrl" alt="Result" class="responsive round" />
         </div>
-        <div v-else class="processing-indicator">
-          <div class="spinner"></div>
-          <p v-if="impressionStatus === 'failed'">Processing failed.</p>
+        <div v-else class="center-align large-padding">
+          <progress class="circle"></progress>
+          <p v-if="impressionStatus === 'failed'" class="error-text">Processing failed.</p>
           <p v-else>Processing your image...</p>
         </div>
       </div>
 
-      <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="error-text center-align">{{ errorMessage }}</p>
     </main>
 
     <!-- Step 1-2 controls -->
-    <footer v-if="step >= 1 && step <= 2" class="step-controls">
-      <button
-        class="btn-prev"
-        :disabled="step === 1"
-        @click="goPrev"
-      >
-        Back
-      </button>
-      <button
-        class="btn-next"
-        :disabled="!canGoNext"
-        @click="goNext"
-      >
-        {{ nextLabel }}
-      </button>
+    <footer v-if="step >= 1 && step <= 2" class="fixed">
+      <nav>
+        <button
+          class="max border small-round"
+          :disabled="step === 1"
+          @click="goPrev"
+        >
+          <i>arrow_back</i>
+          <span>Back</span>
+        </button>
+        <div class="small-space"></div>
+        <button
+          class="max small-round"
+          :disabled="!canGoNext"
+          @click="goNext"
+        >
+          <i>{{ step === 2 ? 'auto_awesome' : 'arrow_forward' }}</i>
+          <span>{{ nextLabel }}</span>
+        </button>
+      </nav>
     </footer>
 
     <!-- Step 4: Three-button bar -->
-    <footer v-if="step === 4" class="three-button-bar">
-      <button class="bar-btn" @click="handleTimeline">Renovation Details</button>
-      <button class="bar-btn bar-btn-danger" @click="handleTrash">Trash</button>
-      <button class="bar-btn" :disabled="!impressionCompleted" @click="handleNextChange">Next Change</button>
+    <footer v-if="step === 4" class="fixed">
+      <nav>
+        <button class="max small-round" @click="handleTimeline">
+          <i>timeline</i>
+          <span>Details</span>
+        </button>
+        <button class="max small-round error" @click="handleTrash">
+          <i>delete</i>
+          <span>Trash</span>
+        </button>
+        <button class="max small-round" :disabled="!impressionCompleted" @click="handleNextChange">
+          <i>edit</i>
+          <span>Next</span>
+        </button>
+      </nav>
     </footer>
   </div>
 </template>
 
 <style scoped>
-.new-impression-page {
+.page-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  background: #f8f9fa;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: #1a1a2e;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.btn-back {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.btn-back:hover {
-  color: #fff;
-}
-
-.step-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem;
-}
-
-.step-panel {
-  width: 100%;
-  max-width: 600px;
-}
-
-.step-mask {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.step-hint {
-  margin: 0 0 0.75rem;
-  color: #666;
-  font-size: 0.95rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #1a1a2e;
-}
-
-.form-group textarea {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-.form-group textarea:focus {
-  outline: none;
-  border-color: #0f3460;
-  box-shadow: 0 0 0 2px rgba(15, 52, 96, 0.15);
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .canvas-wrapper {
@@ -541,156 +475,14 @@ onUnmounted(() => {
   aspect-ratio: 1 / 1;
   background: #000;
   touch-action: none;
-  border: 1px solid #ccc;
   border-radius: 0.5rem;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .canvas-wrapper canvas {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.btn-clear-mask {
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.btn-clear-mask:hover {
-  color: #333;
-}
-
-.step-processing,
-.step-result {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-}
-
-.processing-indicator {
-  text-align: center;
-  color: #666;
-}
-
-.result-display {
-  width: 100%;
-}
-
-.result-image {
-  width: 100%;
-  border-radius: 0.5rem;
-  display: block;
-}
-
-.spinner {
-  border: 4px solid #eee;
-  border-top: 4px solid #0f3460;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error-text {
-  color: #c0392b;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-}
-
-.step-controls {
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  background: #fff;
-  border-top: 1px solid #eee;
-  flex-shrink: 0;
-}
-
-.btn-prev,
-.btn-next {
-  flex: 1;
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  border: none;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.btn-prev {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.btn-next {
-  background: #0f3460;
-  color: #fff;
-}
-
-.btn-prev:hover:not(:disabled) {
-  background: #cbd5e1;
-}
-
-.btn-next:hover:not(:disabled) {
-  background: #1a1a2e;
-}
-
-.btn-prev:disabled,
-.btn-next:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.three-button-bar {
-  display: flex;
-  gap: 0;
-  flex-shrink: 0;
-  border-top: 1px solid #eee;
-}
-
-.bar-btn {
-  flex: 1;
-  padding: 0.9rem 0.5rem;
-  border: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  background: #0f3460;
-  color: #fff;
-  border-right: 1px solid rgba(255,255,255,0.15);
-}
-
-.bar-btn:last-child {
-  border-right: none;
-}
-
-.bar-btn:hover:not(:disabled) {
-  background: #1a1a2e;
-}
-
-.bar-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.bar-btn-danger {
-  background: #c0392b;
-}
-
-.bar-btn-danger:hover:not(:disabled) {
-  background: #962d22;
 }
 </style>

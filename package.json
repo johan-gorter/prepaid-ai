@@ -36,7 +36,9 @@
     "test:pwa": "playwright test --config=playwright-pwa.config.ts"
   },
   "dependencies": {
+    "beercss": "^4.0.20",
     "firebase": "^12.9.0",
+    "material-dynamic-colors": "^1.1.4",
     "pinia": "^3.0.0",
     "vue": "^3.5.25",
     "vue-router": "^4.5.0"
