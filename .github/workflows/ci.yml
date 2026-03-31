@@ -198,4 +198,4 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
       - name: Deploy to dev project
-        run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-dev
+        run: npx firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-dev --force
