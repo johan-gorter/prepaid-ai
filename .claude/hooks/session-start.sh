@@ -52,6 +52,13 @@ else
   echo "Warning: npm install failed or timed out" >&2
 fi
 
+# Install Cloud Functions dependencies (needed for emulator startup)
+echo "Installing Cloud Functions dependencies..." >&2
+if ! timeout 60 npm --prefix functions install >&2 2>&1; then
+  echo "Warning: functions npm install failed or timed out" >&2
+fi
+
+
 # If npm install failed, skip steps that depend on installed packages
 if [ "$NPM_OK" != true ]; then
   echo "Skipping Playwright, emulator, and devservices setup (npm install failed)" >&2
