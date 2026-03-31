@@ -159,7 +159,7 @@ function createGenAI(
     return new GoogleGenAI({
       vertexai: true,
       project: process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT,
-      location: "us-central1",
+      location: "europe-west1",
     });
   }
   const apiKey = process.env.GEMINI_API_KEY;
