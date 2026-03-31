@@ -313,6 +313,27 @@ function handleNextChange() {
   router.push(`/renovation/${renovationId.value}/new?source=${createdImpressionId.value}`);
 }
 
+function resetState() {
+  step.value = 0;
+  prompt.value = "";
+  submitting.value = false;
+  errorMessage.value = null;
+  loadedImage.value = null;
+  createdImpressionId.value = null;
+  resultImageUrl.value = null;
+  sourceImagePath = "";
+  maskCanvas = null;
+  maskCtx = null;
+  sourceCanvas = null;
+  isDrawing = false;
+}
+
+// Reload when source query param changes (e.g. "Next Change" button)
+watch(sourceParam, () => {
+  resetState();
+  loadSourceImage();
+});
+
 onMounted(() => {
   loadSourceImage();
   resizeObserver = new ResizeObserver(() => {

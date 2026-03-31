@@ -259,6 +259,57 @@ test.describe("New Impression Page", () => {
     }
   });
 
+  test("consecutive Next Change: second change loads correctly without refresh", async ({
+    authenticatedPage: page,
+  }) => {
+    test.setTimeout(120000);
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "first change",
+    );
+
+    try {
+      // --- First Next Change ---
+      await page.getByRole("button", { name: "Next Change" }).click();
+      await page.waitForURL(/\/new\?source=/);
+
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible({ timeout: 10000 });
+
+      await drawMaskStroke(page);
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.getByTestId("prompt").fill("second change");
+      await page.getByRole("button", { name: "Generate" }).click();
+
+      await expect(page.getByAltText("Result")).toBeVisible({
+        timeout: 30000,
+      });
+
+      // --- Second consecutive Next Change (this was the bug) ---
+      await page.getByRole("button", { name: "Next Change" }).click();
+      await page.waitForURL(/\/new\?source=/);
+
+      // Must reset to mask step with the new source loaded
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(page.locator("canvas")).toBeVisible();
+
+      // Should be able to complete the full flow again
+      await drawMaskStroke(page);
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.getByTestId("prompt").fill("third change");
+      await page.getByRole("button", { name: "Generate" }).click();
+
+      await expect(page.getByAltText("Result")).toBeVisible({
+        timeout: 30000,
+      });
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
+  });
+
   test("step navigation: back from prompt returns to mask", async ({
     authenticatedPage: page,
   }) => {
