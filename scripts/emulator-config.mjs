@@ -11,7 +11,7 @@ export const EMULATOR_HOST = "localhost";
 
 export const EMULATOR_PORTS = {
   auth: 9099,
-  firestore: 8080,
+  firestore: 8081,
   storage: 9199,
   functions: 5001,
   ui: 4000,

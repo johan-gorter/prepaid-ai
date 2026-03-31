@@ -2,6 +2,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import StorageImage from "../components/StorageImage.vue";
 import { useAuth } from "../composables/useAuth";
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
@@ -43,7 +44,7 @@ function drawBeforeAfterComposite(
   const tanTheta = Math.tan(theta);
   const b = size * (0.3 - 0.5 * tanTheta);
   const xTop = tanTheta * size + b; // where line meets top edge
-  const xBot = b;                    // where line meets bottom edge
+  const xBot = b; // where line meets bottom edge
 
   // Clip region for "before" (left polygon)
   ctx.save();
@@ -94,7 +95,9 @@ watch(
   renovations,
   async (items, _oldValue, onCleanup) => {
     let cancelled = false;
-    onCleanup(() => { cancelled = true; });
+    onCleanup(() => {
+      cancelled = true;
+    });
 
     const uid = currentUser.value?.uid;
     if (!uid) return;
@@ -103,7 +106,9 @@ watch(
       items.map(async (renovation) => {
         try {
           // Resolve before image
-          const beforeUrl = await resolveStorageUrl(renovation.originalImagePath);
+          const beforeUrl = await resolveStorageUrl(
+            renovation.originalImagePath,
+          );
           const beforeImg = await loadImage(beforeUrl);
 
           let afterImg: HTMLImageElement | null = null;
@@ -111,12 +116,19 @@ watch(
             // Fetch after impression's resultImagePath
             const impDoc = await getDoc(
               doc(
-                db, "users", uid, "renovations", renovation.id,
-                "impressions", renovation.afterImpressionId,
+                db,
+                "users",
+                uid,
+                "renovations",
+                renovation.id,
+                "impressions",
+                renovation.afterImpressionId,
               ),
             );
             if (impDoc.exists()) {
-              const resultPath = impDoc.data().resultImagePath as string | undefined;
+              const resultPath = impDoc.data().resultImagePath as
+                | string
+                | undefined;
               if (resultPath) {
                 const afterUrl = await resolveStorageUrl(resultPath);
                 afterImg = await loadImage(afterUrl);
@@ -129,7 +141,9 @@ watch(
         } catch {
           // Fallback: try to show just the before image
           try {
-            const beforeUrl = await resolveStorageUrl(renovation.originalImagePath);
+            const beforeUrl = await resolveStorageUrl(
+              renovation.originalImagePath,
+            );
             return [renovation.id, beforeUrl] as const;
           } catch {
             return [renovation.id, renovation.originalImageUrl ?? ""] as const;
@@ -201,11 +215,7 @@ async function handleSignOut() {
           class="renovation-card"
           @click="router.push(`/renovation/${renovation.id}`)"
         >
-          <img
-            :src="cardDataUrls[renovation.id] ?? ''"
-            alt="Renovation"
-            class="renovation-thumbnail"
-          />
+          <StorageImage :src="cardDataUrls[renovation.id]" alt="Renovation" />
         </div>
       </div>
     </main>

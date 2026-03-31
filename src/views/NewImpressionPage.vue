@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { doc, getDoc } from "firebase/firestore";
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref as storageRef, uploadBytes } from "firebase/storage";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import StorageImage from "../components/StorageImage.vue";
 import { useAuth } from "../composables/useAuth";
-import { useRenovations } from "../composables/useRenovations";
 import { useImpressions } from "../composables/useImpressions";
+import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db, storage } from "../firebase";
 
@@ -19,7 +20,13 @@ const sourceParam = computed(() => (route.query.source as string) ?? "before");
 
 // Step state: 0=Loading source, 1=Mask, 2=Prompt, 3=Processing, 4=Result
 const step = ref(0);
-const stepTitles = ["Loading...", "1. Mark Area", "2. Describe Change", "3. Processing", "4. Result"];
+const stepTitles = [
+  "Loading...",
+  "1. Mark Area",
+  "2. Describe Change",
+  "3. Processing",
+  "4. Result",
+];
 
 const prompt = ref("");
 const submitting = ref(false);
@@ -28,14 +35,16 @@ const loadedImage = ref<HTMLImageElement | null>(null);
 
 // Created impression tracking
 const createdImpressionId = ref<string | null>(null);
-const resultImageUrl = ref<string | null>(null);
+const resultImagePath = ref<string | null>(null);
 
 // Source image path for upload
 let sourceImagePath = "";
 
 // Use impressions watcher for result polling
 const renovationIdRef = ref(renovationId.value);
-watch(renovationId, (val) => { renovationIdRef.value = val; });
+watch(renovationId, (val) => {
+  renovationIdRef.value = val;
+});
 const { impressions } = useImpressions(renovationIdRef);
 
 // Watch for impression completion
@@ -43,9 +52,7 @@ watch(impressions, (items) => {
   if (!createdImpressionId.value) return;
   const imp = items.find((i) => i.id === createdImpressionId.value);
   if (imp && imp.status === "completed" && imp.resultImagePath) {
-    resolveStorageUrl(imp.resultImagePath).then((url) => {
-      resultImageUrl.value = url;
-    }).catch(() => {});
+    resultImagePath.value = imp.resultImagePath;
   }
 });
 
@@ -105,8 +112,13 @@ async function loadSourceImage() {
       // Load result image from impression doc
       const impDoc = await getDoc(
         doc(
-          db, "users", uid, "renovations", renovationId.value,
-          "impressions", sourceParam.value,
+          db,
+          "users",
+          uid,
+          "renovations",
+          renovationId.value,
+          "impressions",
+          sourceParam.value,
         ),
       );
       if (!impDoc.exists()) {
@@ -136,7 +148,8 @@ async function loadSourceImage() {
     step.value = 1;
     requestAnimationFrame(renderCanvas);
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error ? err.message : "Failed to load source image.";
+    errorMessage.value =
+      err instanceof Error ? err.message : "Failed to load source image.";
   }
 }
 
@@ -297,7 +310,7 @@ async function handleTrash() {
     // Ignore deletion errors
   }
   createdImpressionId.value = null;
-  resultImageUrl.value = null;
+  resultImagePath.value = null;
   prompt.value = "";
   step.value = 1;
   clearMask();
@@ -310,7 +323,9 @@ function handleTimeline() {
 
 function handleNextChange() {
   if (!createdImpressionId.value) return;
-  router.push(`/renovation/${renovationId.value}/new?source=${createdImpressionId.value}`);
+  router.push(
+    `/renovation/${renovationId.value}/new?source=${createdImpressionId.value}`,
+  );
 }
 
 function resetState() {
@@ -320,7 +335,7 @@ function resetState() {
   errorMessage.value = null;
   loadedImage.value = null;
   createdImpressionId.value = null;
-  resultImageUrl.value = null;
+  resultImagePath.value = null;
   sourceImagePath = "";
   maskCanvas = null;
   maskCtx = null;
@@ -351,7 +366,12 @@ onUnmounted(() => {
 <template>
   <div class="new-impression-page">
     <header class="page-header">
-      <button class="btn-back" @click="router.push(`/renovation/${renovationId}`)">← Back</button>
+      <button
+        class="btn-back"
+        @click="router.push(`/renovation/${renovationId}`)"
+      >
+        ← Back
+      </button>
       <h1>{{ stepTitles[step] }}</h1>
     </header>
 
@@ -366,7 +386,9 @@ onUnmounted(() => {
 
       <!-- Step 1: Mask Drawing -->
       <div v-show="step === 1" class="step-panel step-mask">
-        <p class="step-hint">Paint the area you want to change (shown in red)</p>
+        <p class="step-hint">
+          Paint the area you want to change (shown in red)
+        </p>
         <div ref="canvasWrapperRef" class="canvas-wrapper">
           <canvas
             ref="mainCanvasRef"
@@ -398,14 +420,21 @@ onUnmounted(() => {
       <div v-show="step === 3" class="step-panel step-processing">
         <div class="processing-indicator">
           <div class="spinner"></div>
-          <p>{{ submitting ? 'Creating impression...' : 'Processing...' }}</p>
+          <p>{{ submitting ? "Creating impression..." : "Processing..." }}</p>
         </div>
       </div>
 
       <!-- Step 4: Result -->
       <div v-show="step === 4" class="step-panel step-result">
-        <div v-if="impressionCompleted && resultImageUrl" class="result-display">
-          <img :src="resultImageUrl" alt="Result" class="result-image" />
+        <div
+          v-if="impressionCompleted && resultImagePath"
+          class="result-display"
+        >
+          <StorageImage
+            :path="resultImagePath"
+            alt="Result"
+            class="result-image"
+          />
         </div>
         <div v-else class="processing-indicator">
           <div class="spinner"></div>
@@ -419,27 +448,27 @@ onUnmounted(() => {
 
     <!-- Step 1-2 controls -->
     <footer v-if="step >= 1 && step <= 2" class="step-controls">
-      <button
-        class="btn-prev"
-        :disabled="step === 1"
-        @click="goPrev"
-      >
+      <button class="btn-prev" :disabled="step === 1" @click="goPrev">
         Back
       </button>
-      <button
-        class="btn-next"
-        :disabled="!canGoNext"
-        @click="goNext"
-      >
+      <button class="btn-next" :disabled="!canGoNext" @click="goNext">
         {{ nextLabel }}
       </button>
     </footer>
 
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="three-button-bar">
-      <button class="bar-btn" @click="handleTimeline">Renovation Details</button>
+      <button class="bar-btn" @click="handleTimeline">
+        Renovation Details
+      </button>
       <button class="bar-btn bar-btn-danger" @click="handleTrash">Trash</button>
-      <button class="bar-btn" :disabled="!impressionCompleted" @click="handleNextChange">Next Change</button>
+      <button
+        class="bar-btn"
+        :disabled="!impressionCompleted"
+        @click="handleNextChange"
+      >
+        Next Change
+      </button>
     </footer>
   </div>
 </template>
@@ -600,8 +629,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-text {
@@ -670,7 +703,7 @@ onUnmounted(() => {
   cursor: pointer;
   background: #0f3460;
   color: #fff;
-  border-right: 1px solid rgba(255,255,255,0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .bar-btn:last-child {

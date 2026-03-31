@@ -1,28 +1,29 @@
 <script setup lang="ts">
+import { doc, getDoc } from "firebase/firestore";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { doc, getDoc } from "firebase/firestore";
+import StorageImage from "../components/StorageImage.vue";
 import { useAuth } from "../composables/useAuth";
 import { useImpressions } from "../composables/useImpressions";
 import { useRenovations } from "../composables/useRenovations";
-import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db } from "../firebase";
 import type { Renovation } from "../types";
 
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
-const { setAfterImpression, deleteImpression, deleteRenovation } = useRenovations();
+const { setAfterImpression, deleteImpression, deleteRenovation } =
+  useRenovations();
 
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
-watch(renovationId, (val) => { renovationIdRef.value = val; });
+watch(renovationId, (val) => {
+  renovationIdRef.value = val;
+});
 
 const { impressions, loading } = useImpressions(renovationIdRef);
 
 const renovation = ref<Renovation | null>(null);
-const originalImageUrl = ref<string | null>(null);
-const resultImageUrls = ref<Record<string, string>>({});
 const scrollContainer = ref<HTMLElement | null>(null);
 
 // Load renovation document
@@ -34,62 +35,44 @@ async function loadRenovation() {
   );
   if (renoDoc.exists()) {
     renovation.value = { id: renoDoc.id, ...renoDoc.data() } as Renovation;
-    if (renovation.value.originalImagePath) {
-      try {
-        originalImageUrl.value = await resolveStorageUrl(renovation.value.originalImagePath);
-      } catch {
-        originalImageUrl.value = renovation.value.originalImageUrl ?? null;
-      }
-    }
   }
 }
 
-// Resolve result image URLs
+// Re-read renovation on impression changes + scroll
 watch(
   impressions,
-  async (items, _oldValue, onCleanup) => {
+  async (_items, _oldValue, onCleanup) => {
     let cancelled = false;
-    onCleanup(() => { cancelled = true; });
+    onCleanup(() => {
+      cancelled = true;
+    });
 
-    // Also re-read renovation to keep afterImpressionId in sync
+    // Re-read renovation to keep afterImpressionId in sync
     if (currentUser.value) {
       const renoDoc = await getDoc(
-        doc(db, "users", currentUser.value.uid, "renovations", renovationId.value),
+        doc(
+          db,
+          "users",
+          currentUser.value.uid,
+          "renovations",
+          renovationId.value,
+        ),
       );
       if (renoDoc.exists() && !cancelled) {
         renovation.value = { id: renoDoc.id, ...renoDoc.data() } as Renovation;
       }
     }
 
-    const urlEntries = await Promise.all(
-      items.map(async (impression) => {
-        if (impression.resultImagePath) {
-          try {
-            return [
-              impression.id,
-              await resolveStorageUrl(impression.resultImagePath),
-            ] as const;
-          } catch {
-            return [impression.id, impression.resultImageUrl ?? ""] as const;
-          }
-        }
-        return [impression.id, impression.resultImageUrl ?? ""] as const;
-      }),
-    );
-
     if (!cancelled) {
-      resultImageUrls.value = Object.fromEntries(
-        urlEntries.filter(([, url]) => Boolean(url)),
-      );
-
       // Scroll to starred impression, or bottom if none starred
       await nextTick();
       if (scrollContainer.value) {
-        const starred = scrollContainer.value.querySelector('.btn-star.starred');
+        const starred =
+          scrollContainer.value.querySelector(".btn-star.starred");
         if (starred) {
-          const item = starred.closest('.timeline-item');
+          const item = starred.closest(".timeline-item");
           if (item) {
-            (item as HTMLElement).scrollIntoView({ block: 'center' });
+            (item as HTMLElement).scrollIntoView({ block: "center" });
           }
         } else {
           scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
@@ -132,7 +115,13 @@ onMounted(() => {
     <header class="page-header">
       <button class="btn-back" @click="router.push('/')">← Back</button>
       <h1>Renovation Details</h1>
-      <button class="btn-delete-renovation" @click="handleDeleteRenovation" title="Delete renovation">🗑</button>
+      <button
+        class="btn-delete-renovation"
+        @click="handleDeleteRenovation"
+        title="Delete renovation"
+      >
+        🗑
+      </button>
     </header>
 
     <main ref="scrollContainer" class="content">
@@ -143,12 +132,17 @@ onMounted(() => {
       <div v-else class="timeline-list">
         <!-- Original "before" image (pinned first) -->
         <div
-          v-if="originalImageUrl"
+          v-if="renovation?.originalImagePath"
           class="timeline-item timeline-original"
           @click="navigateToNewImpression('before')"
         >
           <div class="image-container">
-            <img :src="originalImageUrl" alt="Original" class="timeline-image" crossorigin="anonymous" />
+            <StorageImage
+              :path="renovation.originalImagePath"
+              :fallback-url="renovation.originalImageUrl"
+              alt="Original"
+              class="timeline-image"
+            />
             <span class="image-label">Original</span>
           </div>
         </div>
@@ -161,12 +155,17 @@ onMounted(() => {
         >
           <div class="image-container">
             <!-- Completed: show result image -->
-            <template v-if="impression.status === 'completed' && (resultImageUrls[impression.id] || impression.resultImageUrl)">
-              <img
-                :src="resultImageUrls[impression.id] ?? impression.resultImageUrl ?? ''"
+            <template
+              v-if="
+                impression.status === 'completed' &&
+                (impression.resultImagePath || impression.resultImageUrl)
+              "
+            >
+              <StorageImage
+                :path="impression.resultImagePath"
+                :fallback-url="impression.resultImageUrl"
                 alt="Result"
                 class="timeline-image clickable"
-                crossorigin="anonymous"
                 @click="navigateToNewImpression(impression.id)"
               />
             </template>
@@ -194,11 +193,13 @@ onMounted(() => {
             <button
               v-if="impression.status === 'completed'"
               class="btn-star"
-              :class="{ starred: renovation?.afterImpressionId === impression.id }"
+              :class="{
+                starred: renovation?.afterImpressionId === impression.id,
+              }"
               @click.stop="handleStar(impression.id)"
               title="Set as after image"
             >
-              {{ renovation?.afterImpressionId === impression.id ? '★' : '☆' }}
+              {{ renovation?.afterImpressionId === impression.id ? "★" : "☆" }}
             </button>
 
             <!-- Trash button (top-left) -->
@@ -215,7 +216,6 @@ onMounted(() => {
         </div>
       </div>
     </main>
-
   </div>
 </template>
 
@@ -397,8 +397,11 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
 </style>

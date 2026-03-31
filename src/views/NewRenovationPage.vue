@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import { ref as storageRef, uploadBytes } from "firebase/storage";
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import StorageImage from "../components/StorageImage.vue";
 import { useAuth } from "../composables/useAuth";
-import { useRenovations } from "../composables/useRenovations";
 import { useImpressions } from "../composables/useImpressions";
-import { resolveStorageUrl } from "../composables/useStorageUrl";
+import { useRenovations } from "../composables/useRenovations";
 import { storage } from "../firebase";
 
 const router = useRouter();
-const { createRenovation, createImpression, deleteImpression } = useRenovations();
+const { createRenovation, createImpression, deleteImpression } =
+  useRenovations();
 const { currentUser } = useAuth();
 
 // Step state: 0=Image, 1=Mask, 2=Prompt, 3=Processing, 4=Result
 const step = ref(0);
-const stepTitles = ["1. Capture Image", "2. Mark Area", "3. Describe Change", "4. Processing", "5. Result"];
+const stepTitles = [
+  "1. Capture Image",
+  "2. Mark Area",
+  "3. Describe Change",
+  "4. Processing",
+  "5. Result",
+];
 
 const prompt = ref("");
 const selectedFile = ref<File | null>(null);
@@ -26,7 +33,7 @@ const loadedImage = ref<HTMLImageElement | null>(null);
 // Created renovation/impression tracking
 const createdRenovationId = ref<string | null>(null);
 const createdImpressionId = ref<string | null>(null);
-const resultImageUrl = ref<string | null>(null);
+const resultImagePath = ref<string | null>(null);
 
 // Use impressions watcher for result polling
 const renovationIdRef = ref("");
@@ -37,9 +44,7 @@ watch(impressions, (items) => {
   if (!createdImpressionId.value) return;
   const imp = items.find((i) => i.id === createdImpressionId.value);
   if (imp && imp.status === "completed" && imp.resultImagePath) {
-    resolveStorageUrl(imp.resultImagePath).then((url) => {
-      resultImageUrl.value = url;
-    }).catch(() => {});
+    resultImagePath.value = imp.resultImagePath;
   }
 });
 
@@ -109,7 +114,16 @@ function computeSquareFit(imgW: number, imgH: number, size: number) {
   const r = SQUARE_CROP_RATIO;
 
   if (Math.abs(aspect - 1) < 0.01) {
-    return { sx: 0, sy: 0, sw: imgW, sh: imgH, dx: 0, dy: 0, dw: size, dh: size };
+    return {
+      sx: 0,
+      sy: 0,
+      sw: imgW,
+      sh: imgH,
+      dx: 0,
+      dy: 0,
+      dw: size,
+      dh: size,
+    };
   }
 
   if (aspect > 1) {
@@ -118,8 +132,8 @@ function computeSquareFit(imgW: number, imgH: number, size: number) {
     const scale = letterboxScale + r * (cropScale - letterboxScale);
     const drawW = imgW * scale;
     const drawH = imgH * scale;
-    const sx = drawW > size ? ((drawW - size) / 2) / scale : 0;
-    const sy = drawH > size ? ((drawH - size) / 2) / scale : 0;
+    const sx = drawW > size ? (drawW - size) / 2 / scale : 0;
+    const sy = drawH > size ? (drawH - size) / 2 / scale : 0;
     const sw = Math.min(imgW, size / scale);
     const sh = Math.min(imgH, size / scale);
     const dw = Math.min(drawW, size);
@@ -133,8 +147,8 @@ function computeSquareFit(imgW: number, imgH: number, size: number) {
     const scale = letterboxScale + r * (cropScale - letterboxScale);
     const drawW = imgW * scale;
     const drawH = imgH * scale;
-    const sx = drawW > size ? ((drawW - size) / 2) / scale : 0;
-    const sy = drawH > size ? ((drawH - size) / 2) / scale : 0;
+    const sx = drawW > size ? (drawW - size) / 2 / scale : 0;
+    const sy = drawH > size ? (drawH - size) / 2 / scale : 0;
     const sw = Math.min(imgW, size / scale);
     const sh = Math.min(imgH, size / scale);
     const dw = Math.min(drawW, size);
@@ -155,8 +169,22 @@ function initCanvases() {
   const srcCtx = sourceCanvas.getContext("2d")!;
   srcCtx.fillStyle = "black";
   srcCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  const fit = computeSquareFit(img.naturalWidth, img.naturalHeight, CANVAS_SIZE);
-  srcCtx.drawImage(img, fit.sx, fit.sy, fit.sw, fit.sh, fit.dx, fit.dy, fit.dw, fit.dh);
+  const fit = computeSquareFit(
+    img.naturalWidth,
+    img.naturalHeight,
+    CANVAS_SIZE,
+  );
+  srcCtx.drawImage(
+    img,
+    fit.sx,
+    fit.sy,
+    fit.sw,
+    fit.sh,
+    fit.dx,
+    fit.dy,
+    fit.dw,
+    fit.dh,
+  );
 
   maskCanvas = document.createElement("canvas");
   maskCanvas.width = CANVAS_SIZE;
@@ -325,13 +353,16 @@ async function handleSubmit() {
 async function handleTrash() {
   if (!createdRenovationId.value || !createdImpressionId.value) return;
   try {
-    await deleteImpression(createdRenovationId.value, createdImpressionId.value);
+    await deleteImpression(
+      createdRenovationId.value,
+      createdImpressionId.value,
+    );
   } catch {
     // Ignore deletion errors
   }
   // Reset to step 1 with same source image
   createdImpressionId.value = null;
-  resultImageUrl.value = null;
+  resultImagePath.value = null;
   prompt.value = "";
   step.value = 1;
   clearMask();
@@ -345,7 +376,9 @@ function handleTimeline() {
 
 function handleNextChange() {
   if (!createdRenovationId.value || !createdImpressionId.value) return;
-  router.push(`/renovation/${createdRenovationId.value}/new?source=${createdImpressionId.value}`);
+  router.push(
+    `/renovation/${createdRenovationId.value}/new?source=${createdImpressionId.value}`,
+  );
 }
 
 onMounted(() => {
@@ -373,7 +406,10 @@ onUnmounted(() => {
       <div v-show="step === 0" class="step-panel">
         <div class="form-group">
           <label>Photo</label>
-          <button class="btn-capture" @click="($refs.fileInput as HTMLInputElement)?.click()">
+          <button
+            class="btn-capture"
+            @click="($refs.fileInput as HTMLInputElement)?.click()"
+          >
             Select or Capture Photo
           </button>
           <input
@@ -395,7 +431,9 @@ onUnmounted(() => {
 
       <!-- Step 1: Mask Drawing -->
       <div v-show="step === 1" class="step-panel step-mask">
-        <p class="step-hint">Paint the area you want to change (shown in red)</p>
+        <p class="step-hint">
+          Paint the area you want to change (shown in red)
+        </p>
         <div ref="canvasWrapperRef" class="canvas-wrapper">
           <canvas
             ref="mainCanvasRef"
@@ -427,14 +465,23 @@ onUnmounted(() => {
       <div v-show="step === 3" class="step-panel step-processing">
         <div class="processing-indicator">
           <div class="spinner"></div>
-          <p>{{ submitting ? 'Creating your renovation...' : 'Redirecting...' }}</p>
+          <p>
+            {{ submitting ? "Creating your renovation..." : "Redirecting..." }}
+          </p>
         </div>
       </div>
 
       <!-- Step 4: Result -->
       <div v-show="step === 4" class="step-panel step-result">
-        <div v-if="impressionCompleted && resultImageUrl" class="result-display">
-          <img :src="resultImageUrl" alt="Result" class="result-image" />
+        <div
+          v-if="impressionCompleted && resultImagePath"
+          class="result-display"
+        >
+          <StorageImage
+            :path="resultImagePath"
+            alt="Result"
+            class="result-image"
+          />
         </div>
         <div v-else class="processing-indicator">
           <div class="spinner"></div>
@@ -448,27 +495,27 @@ onUnmounted(() => {
 
     <!-- Step 0-2 controls -->
     <footer v-if="step < 3" class="step-controls">
-      <button
-        class="btn-prev"
-        :disabled="step === 0"
-        @click="goPrev"
-      >
+      <button class="btn-prev" :disabled="step === 0" @click="goPrev">
         Back
       </button>
-      <button
-        class="btn-next"
-        :disabled="!canGoNext"
-        @click="goNext"
-      >
+      <button class="btn-next" :disabled="!canGoNext" @click="goNext">
         {{ nextLabel }}
       </button>
     </footer>
 
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="three-button-bar">
-      <button class="bar-btn" @click="handleTimeline">Renovation Details</button>
+      <button class="bar-btn" @click="handleTimeline">
+        Renovation Details
+      </button>
       <button class="bar-btn bar-btn-danger" @click="handleTrash">Trash</button>
-      <button class="bar-btn" :disabled="!impressionCompleted" @click="handleNextChange">Next Change</button>
+      <button
+        class="bar-btn"
+        :disabled="!impressionCompleted"
+        @click="handleNextChange"
+      >
+        Next Change
+      </button>
     </footer>
   </div>
 </template>
@@ -655,8 +702,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-text {
@@ -725,7 +776,7 @@ onUnmounted(() => {
   cursor: pointer;
   background: #0f3460;
   color: #fff;
-  border-right: 1px solid rgba(255,255,255,0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .bar-btn:last-child {
