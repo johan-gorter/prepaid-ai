@@ -40,7 +40,7 @@ export function useRenovations() {
       currentUser.value.uid,
       "renovations",
     );
-    const q = query(renovationsRef, orderBy("createdAt", "desc"));
+    const q = query(renovationsRef, orderBy("updatedAt", "desc"));
 
     const unsubscribe = onSnapshot(
       q,
@@ -113,16 +113,19 @@ export function useRenovations() {
     const docRef = await addDoc(impressionsRef, docData);
 
     // Auto-star: if renovation has no afterImpressionId, set it
-    const renovationDoc = await getDoc(
-      doc(db, "users", uid, "renovations", renovationId),
-    );
+    const renovationDocRef = doc(db, "users", uid, "renovations", renovationId);
+    const renovationDoc = await getDoc(renovationDocRef);
     if (renovationDoc.exists()) {
       const renoData = renovationDoc.data();
       if (!renoData.afterImpressionId) {
-        await updateDoc(
-          doc(db, "users", uid, "renovations", renovationId),
-          { afterImpressionId: docRef.id, updatedAt: serverTimestamp() },
-        );
+        await updateDoc(renovationDocRef, {
+          afterImpressionId: docRef.id,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await updateDoc(renovationDocRef, {
+          updatedAt: serverTimestamp(),
+        });
       }
     }
 
