@@ -167,6 +167,16 @@ terraform output web_app_config
 terraform output ci_service_account_email
 ```
 
+## Storage CORS
+
+`terraform apply` automatically sets a CORS policy on the Firebase Storage bucket so the web app (and its service worker) can fetch images cross-origin. The policy lives in `modules/firebase-env/cors.json` and allows `GET`/`HEAD` from any origin — actual access control is enforced by Firebase Security Rules and the token in each download URL.
+
+To apply CORS manually without a full `terraform apply`:
+
+```bash
+gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app --cors-file=modules/firebase-env/cors.json
+```
+
 ## What Terraform Manages vs. Firebase CLI
 
 | Managed by Terraform        | Managed by Firebase CLI      |
@@ -175,6 +185,7 @@ terraform output ci_service_account_email
 | Firebase project + web app  | Cloud Functions code         |
 | Firestore database instance | Firestore security rules     |
 | Firebase Storage bucket     | Storage security rules       |
+| Storage bucket CORS policy  |                              |
 | Secret Manager secrets      |                              |
 | CI service account + IAM    |                              |
 

@@ -72,6 +72,19 @@ resource "google_firestore_database" "default" {
 # (the .firebasestorage.app domain is Firebase-managed and cannot be created via GCS API)
 # ---------------------------------------------------------------------------
 
+# Set CORS on the Storage bucket so the web app can fetch images cross-origin.
+# Uses gsutil because the Firebase-managed bucket cannot be imported into a
+# google_storage_bucket resource without risking conflicts.
+resource "null_resource" "storage_cors" {
+  triggers = {
+    cors_hash = filemd5("${path.module}/cors.json")
+  }
+
+  provisioner "local-exec" {
+    command = "gcloud storage buckets update gs://${var.project_id}.firebasestorage.app --cors-file=${path.module}/cors.json"
+  }
+}
+
 # ---------------------------------------------------------------------------
 # Secret Manager — GEMINI_API_KEY
 # ---------------------------------------------------------------------------

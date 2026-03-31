@@ -50,7 +50,7 @@ Environment and deployment details live in [docs/environments.md](docs/environme
 
 ## Development Modes
 
-See [docs/environments.md](docs/environments.md) for the canonical breakdown of local emulator mode, local real Firebase mode, CI experimental deploys, and production deploys.
+See [docs/environments.md](docs/environments.md) for the canonical breakdown of local emulator mode, local real Firebase mode, sandbox deploys, and production deploys.
 
 ---
 
@@ -242,14 +242,14 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## Service-Manager Reference
 
-| Command                                          | Description                                                                  |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Command                                       | Description                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
 | `npm -s run services:start dev`               | Start the tracked dev server against real Firebase on `localhost:5173`       |
 | `npm -s run services:start emulators`         | Start the tracked Firebase Emulator Suite                                    |
 | `npm -s run services:start dev:emulators`     | Start the tracked dev server against local emulators on `localhost:5174`     |
 | `npm -s run services:wait <name>`             | Wait up to 45 seconds until one tracked service port is open                 |
 | `npm -s run services:start preview:emulators` | Build and start the tracked emulator-mode preview server on `localhost:4175` |
-| `npm -s run services:status`                     | Show tracked service status, ports, error counts, and recent log output      |
+| `npm -s run services:status`                  | Show tracked service status, ports, error counts, and recent log output      |
 | `npm -s run services:restart <name>`          | Restart one tracked service                                                  |
 | `npm -s run services:stop [name]`             | Stop one tracked service, or all tracked services if omitted                 |
 

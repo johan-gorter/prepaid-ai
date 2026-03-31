@@ -62,7 +62,7 @@ users/{uid}
 13. Configure `vite.config.ts` with PWA plugin and env variables
 14. Set up Firebase SDK initialization using env variables
 
-See [docs/environments.md](docs/environments.md) for the current local, experimental, and production environment flows.
+See [docs/environments.md](docs/environments.md) for the current local, sandbox, and production environment flows.
 
 ### Phase 3: Authentication
 
