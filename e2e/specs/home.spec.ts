@@ -67,7 +67,7 @@ test.describe("Home Page with renovations", () => {
   test("shows renovation card after creation", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add a fireplace",
@@ -95,7 +95,7 @@ test.describe("Home Page with renovations", () => {
   test("clicking renovation card navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change the countertops",

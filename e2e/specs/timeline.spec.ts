@@ -13,7 +13,7 @@ test.describe("Renovation Details Page", () => {
   test("shows original image, completed impression, and prompt text", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const promptText = "add a skylight";
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
@@ -45,7 +45,7 @@ test.describe("Renovation Details Page", () => {
   test("first impression is auto-starred", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add plants",
@@ -69,7 +69,7 @@ test.describe("Renovation Details Page", () => {
   test("back button navigates to home", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "paint ceiling",
@@ -90,7 +90,7 @@ test.describe("Renovation Details Page", () => {
   test("clicking original image navigates to new impression with source=before", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "remove wallpaper",
@@ -117,7 +117,7 @@ test.describe("Renovation Details Page", () => {
   test("clicking result image navigates to new impression with source=impressionId", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add lighting",
@@ -146,7 +146,7 @@ test.describe("Renovation Details Page", () => {
   test("trash button on impression deletes it from timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "replace flooring",
@@ -159,8 +159,9 @@ test.describe("Renovation Details Page", () => {
       // Verify impression is visible
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
 
-      // Click the trash button on the impression
-      await page.getByTitle("Delete impression").click();
+      // Open the more menu then click Delete
+      await page.locator(".absolute-btn-more button").click();
+      await page.getByRole("link", { name: "Delete" }).click();
 
       // Impression should be removed — no more Result images
       await expect(page.getByAltText("Result")).not.toBeVisible({ timeout: 5000 });
@@ -175,7 +176,7 @@ test.describe("Renovation Details Page", () => {
   test("star toggle switches between impressions", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(15000);
 
     // Create first renovation and go to result
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -250,7 +251,7 @@ test.describe("Renovation Details Page", () => {
   test("chaining: click result image, complete full impression flow, verify both on timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "base impression",
