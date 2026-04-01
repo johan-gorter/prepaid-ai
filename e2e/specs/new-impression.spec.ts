@@ -13,7 +13,7 @@ test.describe("New Impression Page", () => {
   test("loads source from original image (source=before) via timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change the color",
@@ -41,7 +41,7 @@ test.describe("New Impression Page", () => {
   test("loads source from impression result via timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add recessed lighting",
@@ -69,7 +69,7 @@ test.describe("New Impression Page", () => {
   test("loads source from Next Change button on result step", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "paint the trim",
@@ -144,7 +144,7 @@ test.describe("New Impression Page", () => {
   test("back button navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change for back test",
@@ -262,7 +262,7 @@ test.describe("New Impression Page", () => {
   test("consecutive Next Change: second change loads correctly without refresh", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(120000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "first change",
@@ -313,7 +313,7 @@ test.describe("New Impression Page", () => {
   test("step navigation: back from prompt returns to mask", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "source for nav test",

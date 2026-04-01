@@ -160,7 +160,7 @@ test.describe("New Renovation Page", () => {
     test("Generate shows result step with three-button bar", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(60000);
+      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "paint the walls blue",
@@ -188,7 +188,7 @@ test.describe("New Renovation Page", () => {
     test("Renovation Details button navigates to timeline page", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(60000);
+      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "add wooden floors",
@@ -208,7 +208,7 @@ test.describe("New Renovation Page", () => {
     test("Trash button deletes impression and resets to mask step", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(60000);
+      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "remove the carpet",
@@ -235,7 +235,7 @@ test.describe("New Renovation Page", () => {
     test("Next Change button navigates to new impression page", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(60000);
+      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "add crown molding",

@@ -25,7 +25,7 @@ test.describe("Impression processing", () => {
   test("uploads image, triggers Cloud Function, and produces PNG with PromptLog metadata", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(15000);
     const promptText = "remove the furniture";
 
     // 1. Create a dummy 1024x1024 gray PNG
