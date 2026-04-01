@@ -8,21 +8,21 @@
 
 ## Why your previous attempts failed
 
-| What you tried | Why it failed |
-|---|---|
-| `gemini-2.0-flash-exp` | Retired/removed experimental model |
-| `gemini-2.0-flash` | Text-only model — never had image output |
-| `gemini-2.5-flash` + `responseModalities: ["TEXT", "IMAGE"]` | This is the **text reasoning** model. You need **`gemini-2.5-flash-image`** (note the `-image` suffix) |
-| `@google-cloud/vertexai` SDK — all models 404 | Legacy SDK, no longer receives Gemini 2.0+ features. See [Vertex AI 404 troubleshooting](#vertex-ai-404-troubleshooting) |
-| Google AI Studio free tier exhausted | Resets daily (500 req/day for `gemini-2.5-flash-image`). A paid API key has higher limits |
+| What you tried                                               | Why it failed                                                                                                            |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `gemini-2.0-flash-exp`                                       | Retired/removed experimental model                                                                                       |
+| `gemini-2.0-flash`                                           | Text-only model — never had image output                                                                                 |
+| `gemini-2.5-flash` + `responseModalities: ["TEXT", "IMAGE"]` | This is the **text reasoning** model. You need **`gemini-2.5-flash-image`** (note the `-image` suffix)                   |
+| `@google-cloud/vertexai` SDK — all models 404                | Legacy SDK, no longer receives Gemini 2.0+ features. See [Vertex AI 404 troubleshooting](#vertex-ai-404-troubleshooting) |
+| Google AI Studio free tier exhausted                         | Resets daily (500 req/day for `gemini-2.5-flash-image`). A paid API key has higher limits                                |
 
 ## Current image models (March 2026)
 
-| Marketing name | Model ID | Notes |
-|---|---|---|
-| **Nano Banana** | `gemini-2.5-flash-image` | Stable. Free tier: 500 req/day. Best starting point |
-| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Released Feb 26 2026. Highest quality at Flash speed. Paid key required |
-| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Pro-tier quality, 4K support, "thinking" mode. Paid only |
+| Marketing name      | Model ID                         | Notes                                                                   |
+| ------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| **Nano Banana**     | `gemini-2.5-flash-image`         | Stable. Free tier: 500 req/day. Best starting point                     |
+| **Nano Banana 2**   | `gemini-3.1-flash-image-preview` | Released Feb 26 2026. Highest quality at Flash speed. Paid key required |
+| **Nano Banana Pro** | `gemini-3-pro-image-preview`     | Pro-tier quality, 4K support, "thinking" mode. Paid only                |
 
 All three support image generation and editing via the same `generateContent` API with `responseModalities: ["TEXT", "IMAGE"]`.
 
@@ -46,7 +46,7 @@ To guide the model to a specific region, **composite a semi-transparent red over
 
 - **Single image = zero spatial ambiguity.** Sending source + mask as two separate images is unreliable — the model sometimes misinterprets which region maps where.
 - **Semi-transparent overlay preserves context.** The model can see what's under the red tint, which helps it blend the new content naturally. Solid fills (black, green) destroy that context.
-- **Simple prompt contract.** Always the same instruction pattern: *"Edit the area highlighted in red: [description]. Keep everything else unchanged."*
+- **Simple prompt contract.** Always the same instruction pattern: _"Edit the area highlighted in red: [description]. Keep everything else unchanged."_
 
 ### Implementation
 
@@ -80,9 +80,9 @@ import sharp from "sharp";
 async function compositeRedHint(
   sourceBuffer: Buffer,
   maskBuffer: Buffer,
-  opacity = 100
+  opacity = 100,
 ): Promise<Buffer> {
-  const { width, height } = await sharp(sourceBuffer).metadata() as {
+  const { width, height } = (await sharp(sourceBuffer).metadata()) as {
     width: number;
     height: number;
   };
@@ -136,16 +136,16 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const editImage = onRequest(
   {
-    region: "us-central1",
+    region: "europe-west1",
     timeoutSeconds: 120,
     memory: "1GiB",
   },
   async (req, res) => {
     try {
       const {
-        prompt,                // e.g. "Replace with a golden retriever"
-        sourceImageBase64,     // base64-encoded JPEG/PNG (no data URI prefix)
-        maskImageBase64,       // optional base64 PNG mask (white = edit area)
+        prompt, // e.g. "Replace with a golden retriever"
+        sourceImageBase64, // base64-encoded JPEG/PNG (no data URI prefix)
+        maskImageBase64, // optional base64 PNG mask (white = edit area)
         sourceMimeType = "image/png",
       } = req.body;
 
@@ -219,7 +219,7 @@ export const editImage = onRequest(
       console.error("editImage error:", err);
       res.status(500).json({ error: err.message });
     }
-  }
+  },
 );
 ```
 
@@ -247,18 +247,18 @@ The `generateContent` call stays identical. The Cloud Function's default service
 
 ### Prompt tips
 
-- **Insertion:** *"Edit the area highlighted in red: add a straw hat. Keep everything else unchanged. Remove the red overlay in the output."*
-- **Removal:** *"Edit the area highlighted in red: remove the object and fill with the surrounding background. Remove the red overlay."*
-- **Style change:** *"Edit the area highlighted in red: make it look like a watercolor painting. Keep everything else as-is. Remove the red overlay."*
-- The instruction to *"remove the red overlay"* ensures the output is clean.
+- **Insertion:** _"Edit the area highlighted in red: add a straw hat. Keep everything else unchanged. Remove the red overlay in the output."_
+- **Removal:** _"Edit the area highlighted in red: remove the object and fill with the surrounding background. Remove the red overlay."_
+- **Style change:** _"Edit the area highlighted in red: make it look like a watercolor painting. Keep everything else as-is. Remove the red overlay."_
+- The instruction to _"remove the red overlay"_ ensures the output is clean.
 
 ### Model selection guide
 
-| Use case | Model | Why |
-|---|---|---|
-| Development / prototyping | `gemini-2.5-flash-image` | Free tier, stable, fast |
-| Production (quality matters) | `gemini-3.1-flash-image-preview` | Best quality/speed ratio, paid |
-| Max quality (complex compositions) | `gemini-3-pro-image-preview` | Thinking mode, 4K, paid |
+| Use case                           | Model                            | Why                            |
+| ---------------------------------- | -------------------------------- | ------------------------------ |
+| Development / prototyping          | `gemini-2.5-flash-image`         | Free tier, stable, fast        |
+| Production (quality matters)       | `gemini-3.1-flash-image-preview` | Best quality/speed ratio, paid |
+| Max quality (complex compositions) | `gemini-3-pro-image-preview`     | Thinking mode, 4K, paid        |
 
 All three use the exact same API and code — just swap the model string.
 

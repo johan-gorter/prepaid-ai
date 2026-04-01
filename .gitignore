@@ -27,6 +27,7 @@ playwright/.cache/
 
 # Cloud Functions compiled output
 functions/lib/
+functions/.env.*
 
 # Firebase
 .firebase/

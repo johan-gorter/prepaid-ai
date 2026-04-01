@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { beforeUserCreated, HttpsError } from "firebase-functions/v2/identity";
 
 // Jimp and PNG chunk packages are devDependencies (emulator-only).
 // They are lazy-imported inside dummyProcess() to avoid crashing in production.
@@ -13,9 +14,8 @@ async function loadDummyDeps() {
   const { SANS_32_WHITE } = await import("jimp/fonts");
   const extractChunks = (await import("png-chunks-extract")).default;
   const encodeChunks = (await import("png-chunks-encode")).default;
-  const textChunk = (await import(
-    "png-chunk-text"
-  )) as unknown as TextChunkModule;
+  const textChunk =
+    (await import("png-chunk-text")) as unknown as TextChunkModule;
   return {
     Jimp,
     loadFont,
@@ -160,7 +160,7 @@ function createGenAI(
     return new GoogleGenAI({
       vertexai: true,
       project: process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT,
-      location: "us-central1",
+      location: "europe-west1",
     });
   }
   const apiKey = process.env.GEMINI_API_KEY;
@@ -225,6 +225,7 @@ export const processImpression = onDocumentCreated(
   {
     document:
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
+    region: "europe-west1",
     secrets: ["GEMINI_API_KEY"],
     timeoutSeconds: 120,
     memory: "512MiB",
@@ -287,6 +288,27 @@ export const processImpression = onDocumentCreated(
         status: "failed",
         error: errorMessage,
       });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Blocking function — restrict non-production sign-ups to @johangorter.com
+// ---------------------------------------------------------------------------
+const ALLOWED_DOMAIN = "johangorter.com";
+
+export const beforeCreate = beforeUserCreated(
+  { region: "europe-west1" },
+  (event) => {
+    const env = process.env.ENVIRONMENT;
+    if (env === "production") return;
+
+    const email = event.data?.email;
+    if (!email || !email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      throw new HttpsError(
+        "permission-denied",
+        `Only @${ALLOWED_DOMAIN} accounts are allowed in this environment`,
+      );
     }
   },
 );

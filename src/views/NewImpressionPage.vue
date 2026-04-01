@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { doc, getDoc } from "firebase/firestore";
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref as storageRef, uploadBytes } from "firebase/storage";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import StorageImage from "../components/StorageImage.vue";
 import { useAuth } from "../composables/useAuth";
-import { useRenovations } from "../composables/useRenovations";
 import { useImpressions } from "../composables/useImpressions";
+import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db, storage } from "../firebase";
 
@@ -19,7 +20,13 @@ const sourceParam = computed(() => (route.query.source as string) ?? "before");
 
 // Step state: 0=Loading source, 1=Mask, 2=Prompt, 3=Processing, 4=Result
 const step = ref(0);
-const stepTitles = ["Loading...", "1. Mark Area", "2. Describe Change", "3. Processing", "4. Result"];
+const stepTitles = [
+  "Loading...",
+  "1. Mark Area",
+  "2. Describe Change",
+  "3. Processing",
+  "4. Result",
+];
 
 const prompt = ref("");
 const submitting = ref(false);
@@ -28,14 +35,16 @@ const loadedImage = ref<HTMLImageElement | null>(null);
 
 // Created impression tracking
 const createdImpressionId = ref<string | null>(null);
-const resultImageUrl = ref<string | null>(null);
+const resultImagePath = ref<string | null>(null);
 
 // Source image path for upload
 let sourceImagePath = "";
 
 // Use impressions watcher for result polling
 const renovationIdRef = ref(renovationId.value);
-watch(renovationId, (val) => { renovationIdRef.value = val; });
+watch(renovationId, (val) => {
+  renovationIdRef.value = val;
+});
 const { impressions } = useImpressions(renovationIdRef);
 
 // Watch for impression completion
@@ -43,9 +52,7 @@ watch(impressions, (items) => {
   if (!createdImpressionId.value) return;
   const imp = items.find((i) => i.id === createdImpressionId.value);
   if (imp && imp.status === "completed" && imp.resultImagePath) {
-    resolveStorageUrl(imp.resultImagePath).then((url) => {
-      resultImageUrl.value = url;
-    }).catch(() => {});
+    resultImagePath.value = imp.resultImagePath;
   }
 });
 
@@ -103,8 +110,13 @@ async function loadSourceImage() {
     } else {
       const impDoc = await getDoc(
         doc(
-          db, "users", uid, "renovations", renovationId.value,
-          "impressions", sourceParam.value,
+          db,
+          "users",
+          uid,
+          "renovations",
+          renovationId.value,
+          "impressions",
+          sourceParam.value,
         ),
       );
       if (!impDoc.exists()) {
@@ -134,7 +146,8 @@ async function loadSourceImage() {
     step.value = 1;
     requestAnimationFrame(renderCanvas);
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error ? err.message : "Failed to load source image.";
+    errorMessage.value =
+      err instanceof Error ? err.message : "Failed to load source image.";
   }
 }
 
@@ -294,7 +307,7 @@ async function handleTrash() {
     // Ignore deletion errors
   }
   createdImpressionId.value = null;
-  resultImageUrl.value = null;
+  resultImagePath.value = null;
   prompt.value = "";
   step.value = 1;
   clearMask();
@@ -307,7 +320,9 @@ function handleTimeline() {
 
 function handleNextChange() {
   if (!createdImpressionId.value) return;
-  router.push(`/renovation/${renovationId.value}/new?source=${createdImpressionId.value}`);
+  router.push(
+    `/renovation/${renovationId.value}/new?source=${createdImpressionId.value}`,
+  );
 }
 
 function resetState() {
@@ -317,7 +332,7 @@ function resetState() {
   errorMessage.value = null;
   loadedImage.value = null;
   createdImpressionId.value = null;
-  resultImageUrl.value = null;
+  resultImagePath.value = null;
   sourceImagePath = "";
   maskCanvas = null;
   maskCtx = null;
@@ -404,8 +419,8 @@ onUnmounted(() => {
 
       <!-- Step 4: Result -->
       <div v-show="step === 4">
-        <div v-if="impressionCompleted && resultImageUrl" class="center-align">
-          <img :src="resultImageUrl" alt="Result" class="responsive round" />
+        <div v-if="impressionCompleted && resultImagePath" class="center-align">
+          <StorageImage :path="resultImagePath" alt="Result" class="responsive round" />
         </div>
         <div v-else class="center-align large-padding">
           <progress class="circle"></progress>

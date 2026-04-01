@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import {
-    initializeFirestore,
-    persistentLocalCache,
-    persistentMultipleTabManager,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -34,7 +34,7 @@ if (import.meta.env.VITE_USE_EMULATORS === "true") {
     authModule.connectAuthEmulator(auth, "http://127.0.0.1:9099", {
       disableWarnings: true,
     });
-    firestoreModule.connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    firestoreModule.connectFirestoreEmulator(db, "127.0.0.1", 8081);
     storageModule.connectStorageEmulator(storage, "127.0.0.1", 9199);
 
     // Expose test helpers so Playwright can interact without bare module imports
@@ -42,8 +42,16 @@ if (import.meta.env.VITE_USE_EMULATORS === "true") {
     (window as any).__testSignIn = (email: string, password: string) =>
       authModule.signInWithEmailAndPassword(auth, email, password);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__testSignUp = async (email: string, password: string, displayName: string) => {
-      const cred = await authModule.createUserWithEmailAndPassword(auth, email, password);
+    (window as any).__testSignUp = async (
+      email: string,
+      password: string,
+      displayName: string,
+    ) => {
+      const cred = await authModule.createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       await authModule.updateProfile(cred.user, { displayName });
       return cred.user.uid;
     };
