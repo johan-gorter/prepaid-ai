@@ -113,12 +113,12 @@ onMounted(() => {
   <div class="page-layout">
     <header class="fixed primary">
       <nav>
-        <button class="transparent circle" @click="router.push('/')">
-          <i>arrow_back</i>
+        <button class="transparent circle" @click="router.push('/')" aria-label="← Back">
+          <i aria-hidden="true">arrow_back</i>
         </button>
         <h5 class="max">Renovation Details</h5>
-        <button class="transparent circle" @click="showDeleteDialog = true" title="Delete renovation">
-          <i>delete</i>
+        <button class="transparent circle" @click="showDeleteDialog = true" title="Delete renovation" aria-label="Delete renovation">
+          <i aria-hidden="true">delete</i>
         </button>
       </nav>
     </header>
@@ -209,8 +209,9 @@ onMounted(() => {
               :class="{ starred: renovation?.afterImpressionId === impression.id }"
               @click.stop="handleStar(impression.id)"
               title="Set as after image"
+              aria-label="Set as after image"
             >
-              <i>{{ renovation?.afterImpressionId === impression.id ? 'star' : 'star_border' }}</i>
+              <i aria-hidden="true">{{ renovation?.afterImpressionId === impression.id ? 'star' : 'star_border' }}</i>
             </button>
 
             <!-- Trash button (top-left) -->
@@ -218,8 +219,9 @@ onMounted(() => {
               class="transparent circle absolute-btn-trash"
               @click.stop="handleDeleteImpression(impression.id)"
               title="Delete impression"
+              aria-label="Delete impression"
             >
-              <i>delete</i>
+              <i aria-hidden="true">delete</i>
             </button>
           </div>
 

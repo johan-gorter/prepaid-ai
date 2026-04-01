@@ -398,8 +398,8 @@ onUnmounted(() => {
   <div class="page-layout">
     <header class="fixed primary">
       <nav>
-        <button class="transparent circle" @click="router.push('/')">
-          <i>arrow_back</i>
+        <button class="transparent circle" @click="router.push('/')" aria-label="← Back">
+          <i aria-hidden="true">arrow_back</i>
         </button>
         <h5 class="max">{{ stepTitles[step] }}</h5>
       </nav>
@@ -411,7 +411,7 @@ onUnmounted(() => {
         <div class="field border label" style="margin-bottom: 1rem;">
           <nav>
             <button @click="($refs.fileInput as HTMLInputElement)?.click()">
-              <i>photo_camera</i>
+              <i aria-hidden="true">photo_camera</i>
               <span>Select or Capture Photo</span>
             </button>
           </nav>
@@ -447,7 +447,7 @@ onUnmounted(() => {
           ></canvas>
         </div>
         <button class="transparent small-round" @click="clearMask">
-          <i>delete_sweep</i>
+          <i aria-hidden="true">delete_sweep</i>
           <span>Clear Mask</span>
         </button>
       </div>
@@ -495,7 +495,7 @@ onUnmounted(() => {
           :disabled="step === 0"
           @click="goPrev"
         >
-          <i>arrow_back</i>
+          <i aria-hidden="true">arrow_back</i>
           <span>Back</span>
         </button>
         <div class="small-space"></div>
@@ -504,7 +504,7 @@ onUnmounted(() => {
           :disabled="!canGoNext"
           @click="goNext"
         >
-          <i>{{ step === 2 ? 'auto_awesome' : 'arrow_forward' }}</i>
+          <i aria-hidden="true">{{ step === 2 ? 'auto_awesome' : 'arrow_forward' }}</i>
           <span>{{ nextLabel }}</span>
         </button>
       </nav>
@@ -513,16 +513,16 @@ onUnmounted(() => {
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="fixed">
       <nav>
-        <button class="max small-round" @click="handleTimeline">
-          <i>timeline</i>
+        <button class="max small-round" @click="handleTimeline" aria-label="Renovation Details">
+          <i aria-hidden="true">timeline</i>
           <span>Details</span>
         </button>
         <button class="max small-round error" @click="handleTrash">
-          <i>delete</i>
+          <i aria-hidden="true">delete</i>
           <span>Trash</span>
         </button>
-        <button class="max small-round" :disabled="!impressionCompleted" @click="handleNextChange">
-          <i>edit</i>
+        <button class="max small-round" :disabled="!impressionCompleted" @click="handleNextChange" aria-label="Next Change">
+          <i aria-hidden="true">edit</i>
           <span>Next</span>
         </button>
       </nav>

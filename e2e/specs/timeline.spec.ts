@@ -26,7 +26,7 @@ test.describe("Renovation Details Page", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Header
-      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
 
       // Original image pinned at top
       await expect(page.getByAltText("Original")).toBeVisible();

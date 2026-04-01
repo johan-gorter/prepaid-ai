@@ -86,7 +86,7 @@ test.describe("Impression processing", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, { timeout: 5000 });
 
       // 8. Verify the timeline page shows the result
-      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
       const timelineResultImage = page.getByAltText("Result");
       await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
 
