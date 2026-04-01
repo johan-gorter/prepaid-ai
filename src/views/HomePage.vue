@@ -3,16 +3,16 @@ import { doc, getDoc } from "firebase/firestore";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import StorageImage from "../components/StorageImage.vue";
+import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db } from "../firebase";
 
 const { renovations, loading: renovationsLoading, error } = useRenovations();
-const { currentUser, signOut } = useAuth();
+const { currentUser } = useAuth();
 const router = useRouter();
 const cardDataUrls = ref<Record<string, string>>({});
-const showMenu = ref(false);
 
 /**
  * Draw a diagonal before/after composite on a canvas.
@@ -149,48 +149,27 @@ watch(
   },
   { immediate: true },
 );
-
-async function handleSignOut() {
-  await signOut();
-  router.push("/login");
-}
 </script>
 
 <template>
   <header class="fixed primary">
     <nav>
       <h5 class="max">Prepaid AI</h5>
-      <div v-if="currentUser" style="position: relative;">
-        <button class="transparent circle" @click="showMenu = !showMenu" aria-label="User menu">
-          <img
-            v-if="currentUser.photoURL"
-            :src="currentUser.photoURL"
-            :alt="currentUser.displayName ?? 'User'"
-            class="circle"
-            style="width: 2rem; height: 2rem;"
-          />
-          <i v-else aria-hidden="true">account_circle</i>
-        </button>
-        <menu :class="{ active: showMenu }" class="right no-wrap">
-          <li v-if="currentUser.displayName">
-            <span>{{ currentUser.displayName }}</span>
-          </li>
-          <li class="divider"></li>
-          <li>
-            <a @click="handleSignOut">
-              <i aria-hidden="true">logout</i>
-              <span>Sign out</span>
-            </a>
-          </li>
-        </menu>
-      </div>
+      <UserMenu />
     </nav>
   </header>
 
-  <main class="responsive" style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem;">
+  <main
+    class="responsive"
+    style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
+  >
     <nav>
       <h5 class="max">My Renovations</h5>
-      <router-link to="/renovation/new" class="button small-round" aria-label="+ New Renovation">
+      <router-link
+        to="/renovation/new"
+        class="button small-round"
+        aria-label="+ New Renovation"
+      >
         <i aria-hidden="true">add</i>
         <span>New Renovation</span>
       </router-link>
@@ -205,7 +184,10 @@ async function handleSignOut() {
       <p class="error-text">Error loading renovations: {{ error }}</p>
     </div>
 
-    <div v-else-if="renovations.length === 0" class="center-align large-padding">
+    <div
+      v-else-if="renovations.length === 0"
+      class="center-align large-padding"
+    >
       <article class="round">
         <i class="extra" aria-hidden="true">photo_camera</i>
         <h5>No renovations yet</h5>
@@ -224,11 +206,15 @@ async function handleSignOut() {
       >
         <article
           class="round no-padding small-elevate"
-          style="cursor: pointer;"
+          style="cursor: pointer"
           data-testid="renovation-card"
           @click="router.push(`/renovation/${renovation.id}`)"
         >
-          <StorageImage :src="cardDataUrls[renovation.id]" alt="Renovation" data-testid="renovation-thumbnail" />
+          <StorageImage
+            :src="cardDataUrls[renovation.id]"
+            alt="Renovation"
+            data-testid="renovation-thumbnail"
+          />
         </article>
       </div>
     </div>

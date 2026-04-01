@@ -3,6 +3,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import StorageImage from "../components/StorageImage.vue";
+import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
 import { useImpressions } from "../composables/useImpressions";
 import { useRenovations } from "../composables/useRenovations";
@@ -26,6 +27,8 @@ const { impressions, loading } = useImpressions(renovationIdRef);
 const renovation = ref<Renovation | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 const showDeleteDialog = ref(false);
+const showRenovationMenu = ref(false);
+const openImpressionMenuId = ref<string | null>(null);
 
 // Load renovation document
 async function loadRenovation() {
@@ -68,9 +71,9 @@ watch(
       // Scroll to starred impression, or bottom if none starred
       await nextTick();
       if (scrollContainer.value) {
-        const starred = scrollContainer.value.querySelector('.starred');
+        const starred = scrollContainer.value.querySelector(".starred");
         if (starred) {
-          const item = starred.closest('article');
+          const item = starred.closest("article");
           if (item) {
             (item as HTMLElement).scrollIntoView({ block: "center" });
           }
@@ -113,13 +116,36 @@ onMounted(() => {
   <div class="page-layout">
     <header class="fixed primary">
       <nav>
-        <button class="transparent circle" @click="router.push('/')" aria-label="← Back">
+        <button
+          class="transparent circle"
+          @click="router.push('/')"
+          aria-label="← Back"
+        >
           <i aria-hidden="true">arrow_back</i>
         </button>
         <h5 class="max">Renovation Details</h5>
-        <button class="transparent circle" @click="showDeleteDialog = true" title="Delete renovation" aria-label="Delete renovation">
-          <i aria-hidden="true">delete</i>
-        </button>
+        <div style="position: relative">
+          <button
+            class="transparent circle"
+            @click="showRenovationMenu = !showRenovationMenu"
+          >
+            <i aria-hidden="true">more_vert</i>
+          </button>
+          <menu v-if="showRenovationMenu" class="active right no-wrap">
+            <li>
+              <a
+                @click="
+                  showRenovationMenu = false;
+                  showDeleteDialog = true;
+                "
+              >
+                <i aria-hidden="true">delete</i>
+                <span>Delete renovation</span>
+              </a>
+            </li>
+          </menu>
+        </div>
+        <UserMenu />
       </nav>
     </header>
 
@@ -133,7 +159,11 @@ onMounted(() => {
       </nav>
     </dialog>
 
-    <main ref="scrollContainer" class="responsive" style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem;">
+    <main
+      ref="scrollContainer"
+      class="responsive"
+      style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem"
+    >
       <div v-if="loading" class="center-align large-padding">
         <progress class="circle"></progress>
         <p>Loading...</p>
@@ -144,17 +174,21 @@ onMounted(() => {
         <article
           v-if="renovation?.originalImagePath"
           class="round no-padding small-elevate"
-          style="cursor: pointer; margin-bottom: 1rem;"
+          style="cursor: pointer; margin-bottom: 1rem"
           @click="navigateToNewImpression('before')"
         >
-          <div style="position: relative;">
+          <div style="position: relative">
             <StorageImage
               :path="renovation.originalImagePath"
               :fallback-url="renovation.originalImageUrl"
               alt="Original"
               class="responsive"
             />
-            <span class="chip small" style="position: absolute; bottom: 0.5rem; left: 0.5rem;">Original</span>
+            <span
+              class="chip small"
+              style="position: absolute; bottom: 0.5rem; left: 0.5rem"
+              >Original</span
+            >
           </div>
         </article>
 
@@ -163,9 +197,9 @@ onMounted(() => {
           v-for="impression in impressions"
           :key="impression.id"
           class="round no-padding small-elevate"
-          style="margin-bottom: 1rem;"
+          style="margin-bottom: 1rem"
         >
-          <div style="position: relative;">
+          <div style="position: relative">
             <!-- Completed: show result image -->
             <template
               v-if="
@@ -178,26 +212,35 @@ onMounted(() => {
                 :fallback-url="impression.resultImageUrl"
                 alt="Result"
                 class="responsive"
-                style="display: block; cursor: pointer;"
+                style="display: block; cursor: pointer"
                 @click="navigateToNewImpression(impression.id)"
               />
             </template>
             <!-- Processing -->
             <template v-else-if="impression.status === 'processing'">
-              <div class="center-align medium-padding" style="min-height: 150px;">
+              <div
+                class="center-align medium-padding"
+                style="min-height: 150px"
+              >
                 <progress class="circle"></progress>
                 <p>Processing...</p>
               </div>
             </template>
             <!-- Failed -->
             <template v-else-if="impression.status === 'failed'">
-              <div class="center-align medium-padding error-text" style="min-height: 150px;">
+              <div
+                class="center-align medium-padding error-text"
+                style="min-height: 150px"
+              >
                 <p>Failed: {{ impression.error }}</p>
               </div>
             </template>
             <!-- Pending -->
             <template v-else>
-              <div class="center-align medium-padding" style="min-height: 150px;">
+              <div
+                class="center-align medium-padding"
+                style="min-height: 150px"
+              >
                 <p>Pending...</p>
               </div>
             </template>
@@ -206,23 +249,56 @@ onMounted(() => {
             <button
               v-if="impression.status === 'completed'"
               class="transparent circle absolute-btn-star"
-              :class="{ starred: renovation?.afterImpressionId === impression.id }"
+              :class="{
+                starred: renovation?.afterImpressionId === impression.id,
+              }"
               @click.stop="handleStar(impression.id)"
               title="Set as after image"
               aria-label="Set as after image"
             >
-              <i aria-hidden="true">{{ renovation?.afterImpressionId === impression.id ? 'star' : 'star_border' }}</i>
+              <i aria-hidden="true">{{
+                renovation?.afterImpressionId === impression.id
+                  ? "star"
+                  : "star_border"
+              }}</i>
             </button>
 
-            <!-- Trash button (top-left) -->
-            <button
-              class="transparent circle absolute-btn-trash"
-              @click.stop="handleDeleteImpression(impression.id)"
-              title="Delete impression"
-              aria-label="Delete impression"
+            <!-- More menu (top-left) -->
+            <div
+              class="absolute-btn-more"
+              style="position: relative"
+              @click.stop
             >
-              <i aria-hidden="true">delete</i>
-            </button>
+              <button
+                class="transparent circle"
+                style="background: rgba(0, 0, 0, 0.5) !important; color: #fff"
+                @click="
+                  openImpressionMenuId =
+                    openImpressionMenuId === impression.id
+                      ? null
+                      : impression.id
+                "
+              >
+                <i aria-hidden="true">more_vert</i>
+              </button>
+              <menu
+                v-if="openImpressionMenuId === impression.id"
+                class="active no-wrap"
+                style="left: 0; right: auto"
+              >
+                <li>
+                  <a
+                    @click="
+                      openImpressionMenuId = null;
+                      handleDeleteImpression(impression.id);
+                    "
+                  >
+                    <i aria-hidden="true">delete</i>
+                    <span>Delete</span>
+                  </a>
+                </li>
+              </menu>
+            </div>
           </div>
 
           <div class="padding">
@@ -254,11 +330,9 @@ onMounted(() => {
   color: #f1c40f;
 }
 
-.absolute-btn-trash {
+.absolute-btn-more {
   position: absolute;
   top: 0.25rem;
   left: 0.25rem;
-  background: rgba(0, 0, 0, 0.5) !important;
-  color: #fff;
 }
 </style>

@@ -4,6 +4,7 @@ import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import StorageImage from "../components/StorageImage.vue";
+import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
 import { useImpressions } from "../composables/useImpressions";
 import { useRenovations } from "../composables/useRenovations";
@@ -364,14 +365,27 @@ onUnmounted(() => {
   <div class="page-layout">
     <header class="fixed primary">
       <nav>
-        <button class="transparent circle" @click="router.push(`/renovation/${renovationId}`)" aria-label="← Back">
+        <button
+          class="transparent circle"
+          @click="router.push(`/renovation/${renovationId}`)"
+          aria-label="← Back"
+        >
           <i aria-hidden="true">arrow_back</i>
         </button>
         <h5 class="max">{{ stepTitles[step] }}</h5>
+        <UserMenu />
       </nav>
     </header>
 
-    <main class="responsive" style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem; padding-bottom: 5rem;">
+    <main
+      class="responsive"
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        padding-top: 4.5rem;
+        padding-bottom: 5rem;
+      "
+    >
       <!-- Step 0: Loading source image -->
       <div v-show="step === 0" class="center-align large-padding">
         <progress class="circle"></progress>
@@ -380,7 +394,9 @@ onUnmounted(() => {
 
       <!-- Step 1: Mask Drawing -->
       <div v-show="step === 1" class="center-align">
-        <p class="small-text">Paint the area you want to change (shown in red)</p>
+        <p class="small-text">
+          Paint the area you want to change (shown in red)
+        </p>
         <div ref="canvasWrapperRef" class="canvas-wrapper">
           <canvas
             ref="mainCanvasRef"
@@ -414,22 +430,30 @@ onUnmounted(() => {
       <!-- Step 3: Processing -->
       <div v-show="step === 3" class="center-align large-padding">
         <progress class="circle"></progress>
-        <p>{{ submitting ? 'Creating impression...' : 'Processing...' }}</p>
+        <p>{{ submitting ? "Creating impression..." : "Processing..." }}</p>
       </div>
 
       <!-- Step 4: Result -->
       <div v-show="step === 4">
         <div v-if="impressionCompleted && resultImagePath" class="center-align">
-          <StorageImage :path="resultImagePath" alt="Result" class="responsive round" />
+          <StorageImage
+            :path="resultImagePath"
+            alt="Result"
+            class="responsive round"
+          />
         </div>
         <div v-else class="center-align large-padding">
           <progress class="circle"></progress>
-          <p v-if="impressionStatus === 'failed'" class="error-text">Processing failed.</p>
+          <p v-if="impressionStatus === 'failed'" class="error-text">
+            Processing failed.
+          </p>
           <p v-else>Processing your image...</p>
         </div>
       </div>
 
-      <p v-if="errorMessage" class="error-text center-align">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="error-text center-align">
+        {{ errorMessage }}
+      </p>
     </main>
 
     <!-- Step 1-2 controls -->
@@ -444,12 +468,10 @@ onUnmounted(() => {
           <span>Back</span>
         </button>
         <div class="small-space"></div>
-        <button
-          class="max small-round"
-          :disabled="!canGoNext"
-          @click="goNext"
-        >
-          <i aria-hidden="true">{{ step === 2 ? 'auto_awesome' : 'arrow_forward' }}</i>
+        <button class="max small-round" :disabled="!canGoNext" @click="goNext">
+          <i aria-hidden="true">{{
+            step === 2 ? "auto_awesome" : "arrow_forward"
+          }}</i>
           <span>{{ nextLabel }}</span>
         </button>
       </nav>
@@ -458,7 +480,11 @@ onUnmounted(() => {
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="fixed">
       <nav>
-        <button class="max small-round" @click="handleTimeline" aria-label="Renovation Details">
+        <button
+          class="max small-round"
+          @click="handleTimeline"
+          aria-label="Renovation Details"
+        >
           <i aria-hidden="true">timeline</i>
           <span>Details</span>
         </button>
@@ -466,7 +492,12 @@ onUnmounted(() => {
           <i aria-hidden="true">delete</i>
           <span>Trash</span>
         </button>
-        <button class="max small-round" :disabled="!impressionCompleted" @click="handleNextChange" aria-label="Next Change">
+        <button
+          class="max small-round"
+          :disabled="!impressionCompleted"
+          @click="handleNextChange"
+          aria-label="Next Change"
+        >
           <i aria-hidden="true">edit</i>
           <span>Next</span>
         </button>

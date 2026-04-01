@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { firebaseApp } from "../firebase";
-import { useRouter } from "vue-router";
 
 const { signInWithGoogle, signInWithMicrosoft, signInWithApple, loading } =
   useAuth();
@@ -29,9 +29,8 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
 
 async function handleDevLogin() {
   try {
-    const { signInWithEmailAndPassword, getAuth } = await import(
-      "firebase/auth"
-    );
+    const { signInWithEmailAndPassword, getAuth } =
+      await import("firebase/auth");
     await signInWithEmailAndPassword(
       getAuth(firebaseApp),
       DEV_EMAIL,
@@ -50,44 +49,60 @@ async function handleDevLogin() {
 </script>
 
 <template>
-  <div class="dark">
-    <main class="responsive" style="max-width: 400px; margin: 0 auto; padding-top: 15vh;">
-      <article class="round large-elevate">
-        <div class="center-align">
-          <h4>Prepaid AI</h4>
-          <p class="small-text">Reimagine your space with AI</p>
-        </div>
+  <main
+    class="responsive"
+    style="max-width: 400px; margin: 0 auto; padding-top: 15vh"
+  >
+    <article class="round large-elevate">
+      <div class="center-align">
+        <h4>Prepaid AI</h4>
+        <p class="small-text">Reimagine your space with AI</p>
+      </div>
 
-        <div class="space"></div>
+      <div class="space"></div>
 
-        <button class="responsive border" @click="handleSignIn('google')" :disabled="loading" aria-label="Sign in with Google">
-          <span class="bold" aria-hidden="true">G</span>
-          <span>Sign in with Google</span>
-        </button>
-        <div class="small-space"></div>
-        <button class="responsive border" @click="handleSignIn('microsoft')" :disabled="loading" aria-label="Sign in with Microsoft">
-          <span class="bold" aria-hidden="true">M</span>
-          <span>Sign in with Microsoft</span>
-        </button>
-        <div class="small-space"></div>
-        <button class="responsive border" @click="handleSignIn('apple')" :disabled="loading" aria-label="Sign in with Apple">
-          <span class="bold" aria-hidden="true">A</span>
-          <span>Sign in with Apple</span>
-        </button>
+      <button
+        class="responsive border"
+        @click="handleSignIn('google')"
+        :disabled="loading"
+        aria-label="Sign in with Google"
+      >
+        <span class="bold" aria-hidden="true">G</span>
+        <span>Sign in with Google</span>
+      </button>
+      <div class="small-space"></div>
+      <button
+        class="responsive border"
+        @click="handleSignIn('microsoft')"
+        :disabled="loading"
+        aria-label="Sign in with Microsoft"
+      >
+        <span class="bold" aria-hidden="true">M</span>
+        <span>Sign in with Microsoft</span>
+      </button>
+      <div class="small-space"></div>
+      <button
+        class="responsive border"
+        @click="handleSignIn('apple')"
+        :disabled="loading"
+        aria-label="Sign in with Apple"
+      >
+        <span class="bold" aria-hidden="true">A</span>
+        <span>Sign in with Apple</span>
+      </button>
 
-        <!-- Dev login panel — only rendered when running with emulators -->
-        <template v-if="isEmulatorMode">
-          <div class="divider" style="margin-top: 1.5rem;"></div>
-          <p class="center-align small-text">Dev / Emulator mode</p>
-          <p class="center-align small-text">
-            Run <code>npm run emulators:seed</code> once to create this user.
-          </p>
-          <button class="responsive amber-container" @click="handleDevLogin">
-            <i aria-hidden="true">bolt</i>
-            <span>Dev Login ({{ DEV_EMAIL }})</span>
-          </button>
-        </template>
-      </article>
-    </main>
-  </div>
+      <!-- Dev login panel — only rendered when running with emulators -->
+      <template v-if="isEmulatorMode">
+        <div class="divider" style="margin-top: 1.5rem"></div>
+        <p class="center-align small-text">Dev / Emulator mode</p>
+        <p class="center-align small-text">
+          Run <code>npm run emulators:seed</code> once to create this user.
+        </p>
+        <button class="responsive amber-container" @click="handleDevLogin">
+          <i aria-hidden="true">bolt</i>
+          <span>Dev Login ({{ DEV_EMAIL }})</span>
+        </button>
+      </template>
+    </article>
+  </main>
 </template>
