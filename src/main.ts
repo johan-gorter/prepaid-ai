@@ -1,3 +1,5 @@
+import "beercss";
+import "material-dynamic-colors";
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import App from "./App.vue";

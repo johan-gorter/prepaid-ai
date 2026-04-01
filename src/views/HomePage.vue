@@ -12,6 +12,7 @@ const { renovations, loading: renovationsLoading, error } = useRenovations();
 const { currentUser, signOut } = useAuth();
 const router = useRouter();
 const cardDataUrls = ref<Record<string, string>>({});
+const showMenu = ref(false);
 
 /**
  * Draw a diagonal before/after composite on a canvas.
@@ -34,19 +35,11 @@ function drawBeforeAfterComposite(
   }
 
   const theta = (15 * Math.PI) / 180;
-  // Compute x-intercept so left polygon is ~30% of area
-  // Line goes vertically: x = tanTheta*(size-y) + b
-  // At y=0 (top): x = tanTheta*size + b
-  // At y=size (bottom): x = b
-  // Area of left trapezoid = size * (top_width + bottom_width) / 2
-  //   = size * (tanTheta*size + b + b) / 2 = size*b + 0.5*tanTheta*size^2
-  // Set = 0.3*size^2: b = size*(0.3 - 0.5*tanTheta)
   const tanTheta = Math.tan(theta);
   const b = size * (0.3 - 0.5 * tanTheta);
   const xTop = tanTheta * size + b; // where line meets top edge
   const xBot = b; // where line meets bottom edge
 
-  // Clip region for "before" (left polygon)
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -58,7 +51,6 @@ function drawBeforeAfterComposite(
   ctx.drawImage(beforeImg, 0, 0, size, size);
   ctx.restore();
 
-  // Clip region for "after" (right polygon)
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(xTop, 0);
@@ -70,7 +62,6 @@ function drawBeforeAfterComposite(
   ctx.drawImage(afterImg, 0, 0, size, size);
   ctx.restore();
 
-  // Draw the dividing line
   ctx.strokeStyle = "#000";
   ctx.lineWidth = 6;
   ctx.beginPath();
@@ -113,7 +104,6 @@ watch(
 
           let afterImg: HTMLImageElement | null = null;
           if (renovation.afterImpressionId) {
-            // Fetch after impression's resultImagePath
             const impDoc = await getDoc(
               doc(
                 db,
@@ -139,7 +129,6 @@ watch(
           const dataUrl = drawBeforeAfterComposite(beforeImg, afterImg, 400);
           return [renovation.id, dataUrl] as const;
         } catch {
-          // Fallback: try to show just the before image
           try {
             const beforeUrl = await resolveStorageUrl(
               renovation.originalImagePath,
@@ -168,203 +157,79 @@ async function handleSignOut() {
 </script>
 
 <template>
-  <div class="home-page">
-    <header class="app-header">
-      <h1>Prepaid AI</h1>
-      <div class="user-info" v-if="currentUser">
-        <img
-          v-if="currentUser.photoURL"
-          :src="currentUser.photoURL"
-          :alt="currentUser.displayName ?? 'User'"
-          class="avatar"
-        />
-        <span class="user-name">{{ currentUser.displayName }}</span>
-        <button class="btn-text" @click="handleSignOut">Sign out</button>
+  <header class="fixed primary">
+    <nav>
+      <h5 class="max">Prepaid AI</h5>
+      <div v-if="currentUser" style="position: relative;">
+        <button class="transparent circle" @click="showMenu = !showMenu">
+          <img
+            v-if="currentUser.photoURL"
+            :src="currentUser.photoURL"
+            :alt="currentUser.displayName ?? 'User'"
+            class="circle"
+            style="width: 2rem; height: 2rem;"
+          />
+          <i v-else>account_circle</i>
+        </button>
+        <menu :class="{ active: showMenu }" class="right no-wrap">
+          <li v-if="currentUser.displayName">
+            <span>{{ currentUser.displayName }}</span>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a @click="handleSignOut">
+              <i>logout</i>
+              <span>Sign out</span>
+            </a>
+          </li>
+        </menu>
       </div>
-    </header>
+    </nav>
+  </header>
 
-    <main class="content">
-      <div class="section-header">
-        <h2>My Renovations</h2>
-        <router-link to="/renovation/new" class="btn-primary">
-          + New Renovation
-        </router-link>
-      </div>
+  <main class="responsive" style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem;">
+    <nav>
+      <h5 class="max">My Renovations</h5>
+      <router-link to="/renovation/new" class="button small-round">
+        <i>add</i>
+        <span>New Renovation</span>
+      </router-link>
+    </nav>
 
-      <div v-if="renovationsLoading" class="state-message">
-        <p>Loading renovations...</p>
-      </div>
+    <div v-if="renovationsLoading" class="center-align medium-padding">
+      <progress class="circle"></progress>
+      <p>Loading renovations...</p>
+    </div>
 
-      <div v-else-if="error" class="state-message error">
-        <p>Error loading renovations: {{ error }}</p>
-      </div>
+    <div v-else-if="error" class="center-align medium-padding">
+      <p class="error-text">Error loading renovations: {{ error }}</p>
+    </div>
 
-      <div v-else-if="renovations.length === 0" class="empty-state">
-        <div class="empty-icon">📷</div>
-        <h3>No renovations yet</h3>
+    <div v-else-if="renovations.length === 0" class="center-align large-padding">
+      <article class="round">
+        <i class="extra">photo_camera</i>
+        <h5>No renovations yet</h5>
         <p>Take or upload a photo of your space and let AI reimagine it.</p>
-        <router-link to="/renovation/new" class="btn-primary">
+        <router-link to="/renovation/new" class="button small-round">
           Start your first renovation
         </router-link>
-      </div>
+      </article>
+    </div>
 
-      <div v-else class="renovation-grid">
-        <div
-          v-for="renovation in renovations"
-          :key="renovation.id"
-          class="renovation-card"
+    <div v-else class="grid">
+      <div
+        v-for="renovation in renovations"
+        :key="renovation.id"
+        class="s6 m4 l3"
+      >
+        <article
+          class="round no-padding small-elevate"
+          style="cursor: pointer;"
           @click="router.push(`/renovation/${renovation.id}`)"
         >
           <StorageImage :src="cardDataUrls[renovation.id]" alt="Renovation" />
-        </div>
+        </article>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
 </template>
-
-<style scoped>
-.home-page {
-  min-height: 100vh;
-  background: #f8f9fa;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  background: #1a1a2e;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.app-header h1 {
-  font-size: 1.25rem;
-  margin: 0;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-}
-
-.user-name {
-  font-size: 0.9rem;
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 0.85rem;
-  text-decoration: underline;
-}
-
-.btn-text:hover {
-  color: #fff;
-}
-
-.content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-  margin: 0;
-  color: #1a1a2e;
-}
-
-.btn-primary {
-  display: inline-block;
-  background: #0f3460;
-  color: #fff;
-  padding: 0.6rem 1.2rem;
-  border-radius: 0.5rem;
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background: #1a1a2e;
-}
-
-.state-message {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #666;
-}
-
-.state-message.error {
-  color: #c0392b;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  margin: 0 0 0.5rem;
-  color: #1a1a2e;
-}
-
-.empty-state p {
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-
-.renovation-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-}
-
-.renovation-card {
-  background: #fff;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
-.renovation-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.renovation-thumbnail {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  display: block;
-}
-</style>

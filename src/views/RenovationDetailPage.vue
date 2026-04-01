@@ -25,6 +25,7 @@ const { impressions, loading } = useImpressions(renovationIdRef);
 
 const renovation = ref<Renovation | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
+const showDeleteDialog = ref(false);
 
 // Load renovation document
 async function loadRenovation() {
@@ -67,10 +68,9 @@ watch(
       // Scroll to starred impression, or bottom if none starred
       await nextTick();
       if (scrollContainer.value) {
-        const starred =
-          scrollContainer.value.querySelector(".btn-star.starred");
+        const starred = scrollContainer.value.querySelector('.starred');
         if (starred) {
-          const item = starred.closest(".timeline-item");
+          const item = starred.closest('article');
           if (item) {
             (item as HTMLElement).scrollIntoView({ block: "center" });
           }
@@ -85,7 +85,6 @@ watch(
 
 async function handleStar(impressionId: string) {
   await setAfterImpression(renovationId.value, impressionId);
-  // Update local renovation object
   if (renovation.value) {
     renovation.value = { ...renovation.value, afterImpressionId: impressionId };
   }
@@ -96,7 +95,7 @@ async function handleDeleteImpression(impressionId: string) {
 }
 
 async function handleDeleteRenovation() {
-  if (!confirm("Delete this renovation and all its impressions?")) return;
+  showDeleteDialog.value = false;
   await deleteRenovation(renovationId.value);
   router.push("/");
 }
@@ -111,49 +110,62 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="timeline-page">
-    <header class="page-header">
-      <button class="btn-back" @click="router.push('/')">← Back</button>
-      <h1>Renovation Details</h1>
-      <button
-        class="btn-delete-renovation"
-        @click="handleDeleteRenovation"
-        title="Delete renovation"
-      >
-        🗑
-      </button>
+  <div class="page-layout">
+    <header class="fixed primary">
+      <nav>
+        <button class="transparent circle" @click="router.push('/')">
+          <i>arrow_back</i>
+        </button>
+        <h5 class="max">Renovation Details</h5>
+        <button class="transparent circle" @click="showDeleteDialog = true" title="Delete renovation">
+          <i>delete</i>
+        </button>
+      </nav>
     </header>
 
-    <main ref="scrollContainer" class="content">
-      <div v-if="loading" class="state-message">
+    <!-- Delete confirmation dialog -->
+    <dialog :class="{ active: showDeleteDialog }">
+      <h5>Delete Renovation</h5>
+      <p>Delete this renovation and all its impressions?</p>
+      <nav>
+        <button class="border" @click="showDeleteDialog = false">Cancel</button>
+        <button class="error" @click="handleDeleteRenovation">Delete</button>
+      </nav>
+    </dialog>
+
+    <main ref="scrollContainer" class="responsive" style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem;">
+      <div v-if="loading" class="center-align large-padding">
+        <progress class="circle"></progress>
         <p>Loading...</p>
       </div>
 
-      <div v-else class="timeline-list">
-        <!-- Original "before" image (pinned first) -->
-        <div
+      <div v-else>
+        <!-- Original "before" image -->
+        <article
           v-if="renovation?.originalImagePath"
-          class="timeline-item timeline-original"
+          class="round no-padding small-elevate"
+          style="cursor: pointer; margin-bottom: 1rem;"
           @click="navigateToNewImpression('before')"
         >
-          <div class="image-container">
+          <div style="position: relative;">
             <StorageImage
               :path="renovation.originalImagePath"
               :fallback-url="renovation.originalImageUrl"
               alt="Original"
-              class="timeline-image"
+              class="responsive"
             />
-            <span class="image-label">Original</span>
+            <span class="chip small" style="position: absolute; bottom: 0.5rem; left: 0.5rem;">Original</span>
           </div>
-        </div>
+        </article>
 
         <!-- Impressions -->
-        <div
+        <article
           v-for="impression in impressions"
           :key="impression.id"
-          class="timeline-item"
+          class="round no-padding small-elevate"
+          style="margin-bottom: 1rem;"
         >
-          <div class="image-container">
+          <div style="position: relative;">
             <!-- Completed: show result image -->
             <template
               v-if="
@@ -165,26 +177,27 @@ onMounted(() => {
                 :path="impression.resultImagePath"
                 :fallback-url="impression.resultImageUrl"
                 alt="Result"
-                class="timeline-image clickable"
+                class="responsive"
+                style="display: block; cursor: pointer;"
                 @click="navigateToNewImpression(impression.id)"
               />
             </template>
             <!-- Processing -->
             <template v-else-if="impression.status === 'processing'">
-              <div class="status-placeholder">
-                <div class="spinner"></div>
+              <div class="center-align medium-padding" style="min-height: 150px;">
+                <progress class="circle"></progress>
                 <p>Processing...</p>
               </div>
             </template>
             <!-- Failed -->
             <template v-else-if="impression.status === 'failed'">
-              <div class="status-placeholder status-error">
+              <div class="center-align medium-padding error-text" style="min-height: 150px;">
                 <p>Failed: {{ impression.error }}</p>
               </div>
             </template>
             <!-- Pending -->
             <template v-else>
-              <div class="status-placeholder">
+              <div class="center-align medium-padding" style="min-height: 150px;">
                 <p>Pending...</p>
               </div>
             </template>
@@ -192,216 +205,58 @@ onMounted(() => {
             <!-- Star toggle (top-right) -->
             <button
               v-if="impression.status === 'completed'"
-              class="btn-star"
-              :class="{
-                starred: renovation?.afterImpressionId === impression.id,
-              }"
+              class="transparent circle absolute-btn-star"
+              :class="{ starred: renovation?.afterImpressionId === impression.id }"
               @click.stop="handleStar(impression.id)"
               title="Set as after image"
             >
-              {{ renovation?.afterImpressionId === impression.id ? "★" : "☆" }}
+              <i>{{ renovation?.afterImpressionId === impression.id ? 'star' : 'star_border' }}</i>
             </button>
 
             <!-- Trash button (top-left) -->
             <button
-              class="btn-trash"
+              class="transparent circle absolute-btn-trash"
               @click.stop="handleDeleteImpression(impression.id)"
               title="Delete impression"
             >
-              🗑
+              <i>delete</i>
             </button>
           </div>
 
-          <p class="prompt-text">{{ impression.prompt }}</p>
-        </div>
+          <div class="padding">
+            <p class="small-text">{{ impression.prompt }}</p>
+          </div>
+        </article>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-.timeline-page {
+.page-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  background: #f8f9fa;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: #1a1a2e;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  flex: 1;
-}
-
-.btn-delete-renovation {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.btn-delete-renovation:hover {
-  color: #e74c3c;
-}
-
-.btn-back {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.btn-back:hover {
-  color: #fff;
-}
-
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.state-message {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #666;
-}
-
-.timeline-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.timeline-item {
-  background: #fff;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
-
-.image-container {
-  position: relative;
-}
-
-.timeline-image {
-  width: 100%;
-  display: block;
-}
-
-.timeline-image.clickable {
-  cursor: pointer;
-}
-
-.timeline-original {
-  cursor: pointer;
-}
-
-.image-label {
+.absolute-btn-star {
   position: absolute;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  background: rgba(0, 0, 0, 0.6);
+  top: 0.25rem;
+  right: 0.25rem;
+  background: rgba(0, 0, 0, 0.5) !important;
   color: #fff;
-  padding: 0.2rem 0.6rem;
-  border-radius: 0.25rem;
-  font-size: 0.8rem;
 }
 
-.btn-star {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  color: #fff;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  line-height: 1;
-}
-
-.btn-star.starred {
+.absolute-btn-star.starred i {
   color: #f1c40f;
 }
 
-.btn-star:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.btn-trash {
+.absolute-btn-trash {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
+  top: 0.25rem;
+  left: 0.25rem;
+  background: rgba(0, 0, 0, 0.5) !important;
   color: #fff;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  line-height: 1;
-}
-
-.btn-trash:hover {
-  background: rgba(192, 57, 43, 0.8);
-}
-
-.prompt-text {
-  padding: 0.5rem 1rem;
-  margin: 0;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.status-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 150px;
-  color: #666;
-  padding: 2rem;
-}
-
-.status-error {
-  color: #c0392b;
-}
-
-.spinner {
-  border: 4px solid #eee;
-  border-top: 4px solid #0f3460;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 </style>
