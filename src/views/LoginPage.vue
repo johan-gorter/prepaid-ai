@@ -50,7 +50,7 @@ async function handleDevLogin() {
 </script>
 
 <template>
-  <body class="dark">
+  <div class="dark">
     <main class="responsive" style="max-width: 400px; margin: 0 auto; padding-top: 15vh;">
       <article class="round large-elevate">
         <div class="center-align">
@@ -60,18 +60,18 @@ async function handleDevLogin() {
 
         <div class="space"></div>
 
-        <button class="responsive border" @click="handleSignIn('google')" :disabled="loading">
-          <span class="bold">G</span>
+        <button class="responsive border" @click="handleSignIn('google')" :disabled="loading" aria-label="Sign in with Google">
+          <span class="bold" aria-hidden="true">G</span>
           <span>Sign in with Google</span>
         </button>
         <div class="small-space"></div>
-        <button class="responsive border" @click="handleSignIn('microsoft')" :disabled="loading">
-          <span class="bold">M</span>
+        <button class="responsive border" @click="handleSignIn('microsoft')" :disabled="loading" aria-label="Sign in with Microsoft">
+          <span class="bold" aria-hidden="true">M</span>
           <span>Sign in with Microsoft</span>
         </button>
         <div class="small-space"></div>
-        <button class="responsive border" @click="handleSignIn('apple')" :disabled="loading">
-          <span class="bold">A</span>
+        <button class="responsive border" @click="handleSignIn('apple')" :disabled="loading" aria-label="Sign in with Apple">
+          <span class="bold" aria-hidden="true">A</span>
           <span>Sign in with Apple</span>
         </button>
 
@@ -83,11 +83,11 @@ async function handleDevLogin() {
             Run <code>npm run emulators:seed</code> once to create this user.
           </p>
           <button class="responsive amber-container" @click="handleDevLogin">
-            <i>bolt</i>
+            <i aria-hidden="true">bolt</i>
             <span>Dev Login ({{ DEV_EMAIL }})</span>
           </button>
         </template>
       </article>
     </main>
-  </body>
+  </div>
 </template>

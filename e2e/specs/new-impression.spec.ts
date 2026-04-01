@@ -161,7 +161,7 @@ test.describe("New Impression Page", () => {
       // Click header back button
       await page.getByRole("button", { name: "← Back" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }

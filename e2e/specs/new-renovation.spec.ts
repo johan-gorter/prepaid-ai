@@ -199,7 +199,7 @@ test.describe("New Renovation Page", () => {
         await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, {
           timeout: 5000,
         });
-        await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
       }

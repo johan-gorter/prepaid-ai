@@ -264,7 +264,7 @@ test.describe("PWA Requirements", () => {
       await page.goto("/");
       await page.waitForURL("/");
 
-      const thumbnail = page.locator(".renovation-thumbnail").first();
+      const thumbnail = page.getByTestId("renovation-card").first().locator("img");
       await expect(thumbnail).toBeVisible({ timeout: 30000 });
       await expect
         .poll(async () => {
@@ -286,7 +286,7 @@ test.describe("PWA Requirements", () => {
       await page.reload();
       await page.waitForURL("/");
 
-      const offlineThumbnail = page.locator(".renovation-thumbnail").first();
+      const offlineThumbnail = page.getByTestId("renovation-card").first().locator("img");
       await expect(offlineThumbnail).toBeVisible({ timeout: 15000 });
       await expect
         .poll(async () => {

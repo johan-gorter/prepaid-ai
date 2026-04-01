@@ -30,12 +30,14 @@ test.describe("Home Page", () => {
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {
     await expect(page.getByText("Prepaid AI")).toBeVisible();
+    await page.getByRole("button", { name: "User menu" }).click();
     await expect(page.getByText("Sign out")).toBeVisible();
   });
 
   test("empty state has link to start first renovation", async ({
     authenticatedPage: page,
   }) => {
+    await expect(page.getByText("No renovations yet")).toBeVisible({ timeout: 10000 });
     const startLink = page.getByRole("link", {
       name: "Start your first renovation",
     });
@@ -47,6 +49,7 @@ test.describe("Home Page", () => {
   test("sign out navigates to login page", async ({
     authenticatedPage: page,
   }) => {
+    await page.getByRole("button", { name: "User menu" }).click();
     await page.getByText("Sign out").click();
     await page.waitForURL(/\/login/);
     await expect(page.getByText("Reimagine your space with AI")).toBeVisible();
@@ -81,7 +84,7 @@ test.describe("Home Page with renovations", () => {
       await expect(page.getByText("No renovations yet")).not.toBeVisible();
 
       // Should see a card with an image (the diagonal composite)
-      const card = page.locator(".renovation-card");
+      const card = page.getByTestId("renovation-card");
       await expect(card).toBeVisible({ timeout: 10000 });
       await expect(card.locator("img")).toBeVisible();
     } finally {
@@ -106,13 +109,13 @@ test.describe("Home Page with renovations", () => {
       await page.waitForURL("/");
 
       // Click the card
-      const card = page.locator(".renovation-card");
+      const card = page.getByTestId("renovation-card");
       await expect(card).toBeVisible({ timeout: 10000 });
       await card.click();
 
       // Should navigate to timeline
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await expect(page.locator("h1", { hasText: "Renovation Details" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }

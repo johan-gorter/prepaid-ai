@@ -161,7 +161,7 @@ async function handleSignOut() {
     <nav>
       <h5 class="max">Prepaid AI</h5>
       <div v-if="currentUser" style="position: relative;">
-        <button class="transparent circle" @click="showMenu = !showMenu">
+        <button class="transparent circle" @click="showMenu = !showMenu" aria-label="User menu">
           <img
             v-if="currentUser.photoURL"
             :src="currentUser.photoURL"
@@ -169,7 +169,7 @@ async function handleSignOut() {
             class="circle"
             style="width: 2rem; height: 2rem;"
           />
-          <i v-else>account_circle</i>
+          <i v-else aria-hidden="true">account_circle</i>
         </button>
         <menu :class="{ active: showMenu }" class="right no-wrap">
           <li v-if="currentUser.displayName">
@@ -178,7 +178,7 @@ async function handleSignOut() {
           <li class="divider"></li>
           <li>
             <a @click="handleSignOut">
-              <i>logout</i>
+              <i aria-hidden="true">logout</i>
               <span>Sign out</span>
             </a>
           </li>
@@ -190,8 +190,8 @@ async function handleSignOut() {
   <main class="responsive" style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem;">
     <nav>
       <h5 class="max">My Renovations</h5>
-      <router-link to="/renovation/new" class="button small-round">
-        <i>add</i>
+      <router-link to="/renovation/new" class="button small-round" aria-label="+ New Renovation">
+        <i aria-hidden="true">add</i>
         <span>New Renovation</span>
       </router-link>
     </nav>
@@ -207,7 +207,7 @@ async function handleSignOut() {
 
     <div v-else-if="renovations.length === 0" class="center-align large-padding">
       <article class="round">
-        <i class="extra">photo_camera</i>
+        <i class="extra" aria-hidden="true">photo_camera</i>
         <h5>No renovations yet</h5>
         <p>Take or upload a photo of your space and let AI reimagine it.</p>
         <router-link to="/renovation/new" class="button small-round">
@@ -225,9 +225,10 @@ async function handleSignOut() {
         <article
           class="round no-padding small-elevate"
           style="cursor: pointer;"
+          data-testid="renovation-card"
           @click="router.push(`/renovation/${renovation.id}`)"
         >
-          <StorageImage :src="cardDataUrls[renovation.id]" alt="Renovation" />
+          <StorageImage :src="cardDataUrls[renovation.id]" alt="Renovation" data-testid="renovation-thumbnail" />
         </article>
       </div>
     </div>
