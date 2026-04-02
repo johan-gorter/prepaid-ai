@@ -31,7 +31,7 @@ function drawBeforeAfterComposite(
   if (!afterImg) {
     // No after image, show only before
     ctx.drawImage(beforeImg, 0, 0, size, size);
-    return canvas.toDataURL();
+    return canvas.toDataURL("image/webp");
   }
 
   const theta = (15 * Math.PI) / 180;
@@ -69,7 +69,7 @@ function drawBeforeAfterComposite(
   ctx.lineTo(xBot, size);
   ctx.stroke();
 
-  return canvas.toDataURL();
+  return canvas.toDataURL("image/webp");
 }
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
