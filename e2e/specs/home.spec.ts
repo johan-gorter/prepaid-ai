@@ -34,15 +34,13 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Sign out")).toBeVisible();
   });
 
-  test("empty state has link to start first renovation", async ({
+  test("empty state has button to take photo", async ({
     authenticatedPage: page,
   }) => {
     await expect(page.getByText("No renovations yet")).toBeVisible({ timeout: 10000 });
-    const startLink = page.getByRole("link", {
-      name: "Start your first renovation",
-    });
-    await expect(startLink).toBeVisible();
-    await startLink.click();
+    const takePhotoButton = page.getByRole("button", { name: "Take Photo" });
+    await expect(takePhotoButton).toBeVisible();
+    await takePhotoButton.click();
     await page.waitForURL("/renovation/new");
   });
 
