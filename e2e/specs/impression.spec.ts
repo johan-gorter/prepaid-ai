@@ -22,7 +22,7 @@ test.describe("Impression processing", () => {
     test.skip(testInfo.project.name !== "chromium", "chromium only");
   });
 
-  test("uploads image, triggers Cloud Function, and produces PNG with PromptLog metadata", async ({
+  test("uploads image, triggers Cloud Function, and produces a result image", async ({
     authenticatedPage: page,
   }) => {
     test.setTimeout(15000);
@@ -90,7 +90,7 @@ test.describe("Impression processing", () => {
       const timelineResultImage = page.getByAltText("Result");
       await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
 
-      // 9. Download the result image via its src URL and verify PNG metadata
+      // 9. Download the result image and verify it is valid
       const resultSrc = await timelineResultImage.getAttribute("src");
       expect(resultSrc).toBeTruthy();
 
@@ -99,27 +99,7 @@ test.describe("Impression processing", () => {
       });
       expect(res.ok).toBe(true);
       const resultBuffer = Buffer.from(await res.arrayBuffer());
-
-      // 10. Verify the PNG has PromptLog tEXt metadata
-      const extractChunks = (await import("png-chunks-extract")).default;
-      const textChunk = (await import("png-chunk-text")).default;
-
-      const chunks = extractChunks(new Uint8Array(resultBuffer)) as Array<{
-        name: string;
-        data: Uint8Array;
-      }>;
-      const textChunks = chunks
-        .filter((c) => c.name === "tEXt")
-        .map(
-          (c) => textChunk.decode(c.data) as { keyword: string; text: string },
-        );
-
-      const promptLogChunk = textChunks.find((c) => c.keyword === "PromptLog");
-      expect(promptLogChunk).toBeTruthy();
-
-      // 11. Verify the prompt log contains our prompt
-      const promptLog = JSON.parse(promptLogChunk!.text) as string[];
-      expect(promptLog).toContain(promptText);
+      expect(resultBuffer.length).toBeGreaterThan(0);
     } finally {
       fs.unlinkSync(grayPngPath);
     }

@@ -2,28 +2,13 @@ import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { beforeUserCreated, HttpsError } from "firebase-functions/v2/identity";
 
-// Jimp and PNG chunk packages are devDependencies (emulator-only).
-// They are lazy-imported inside dummyProcess() to avoid crashing in production.
-type TextChunkModule = {
-  encode(keyword: string, text: string): { name: string; data: Uint8Array };
-  decode(data: Uint8Array): { keyword: string; text: string };
-};
+// Jimp is a devDependency (emulator-only).
+// It is lazy-imported inside dummyProcess() to avoid crashing in production.
 
 async function loadDummyDeps() {
   const { Jimp, loadFont } = await import("jimp");
   const { SANS_32_WHITE } = await import("jimp/fonts");
-  const extractChunks = (await import("png-chunks-extract")).default;
-  const encodeChunks = (await import("png-chunks-encode")).default;
-  const textChunk =
-    (await import("png-chunk-text")) as unknown as TextChunkModule;
-  return {
-    Jimp,
-    loadFont,
-    SANS_32_WHITE,
-    extractChunks,
-    encodeChunks,
-    textChunk,
-  };
+  return { Jimp, loadFont, SANS_32_WHITE };
 }
 
 admin.initializeApp();
@@ -59,86 +44,27 @@ function storagePathFromUrl(url: string): string {
 }
 
 /**
- * Read the PromptLog from PNG tEXt metadata chunks.
- */
-function readPromptLog(
-  textChunk: TextChunkModule,
-  chunks: Array<{ name: string; data: Uint8Array }>,
-): string[] {
-  for (const chunk of chunks) {
-    if (chunk.name === "tEXt") {
-      const decoded = textChunk.decode(chunk.data);
-      if (decoded.keyword === "PromptLog") {
-        try {
-          return JSON.parse(decoded.text) as string[];
-        } catch {
-          return [];
-        }
-      }
-    }
-  }
-  return [];
-}
-
-/**
- * Replace or insert a PromptLog tEXt chunk in the PNG chunks array.
- */
-function writePromptLog(
-  textChunk: TextChunkModule,
-  chunks: Array<{ name: string; data: Uint8Array }>,
-  promptLog: string[],
-): Array<{ name: string; data: Uint8Array }> {
-  const filtered = chunks.filter((chunk) => {
-    if (chunk.name !== "tEXt") return true;
-    const decoded = textChunk.decode(chunk.data);
-    return decoded.keyword !== "PromptLog";
-  });
-  const newChunk = textChunk.encode("PromptLog", JSON.stringify(promptLog));
-  filtered.splice(-1, 0, newChunk);
-  return filtered;
-}
-
-/**
- * Dummy image processing: overlay prompt log as white text on the image.
+ * Dummy image processing: overlay prompt as white text on the image.
  * Used when no AI backend is configured (emulator only).
  */
 async function dummyProcess(
   imageBuffer: Buffer,
   prompt: string,
 ): Promise<Buffer> {
-  const {
-    Jimp,
-    loadFont,
-    SANS_32_WHITE,
-    extractChunks,
-    encodeChunks,
-    textChunk,
-  } = await loadDummyDeps();
+  const { Jimp, loadFont, SANS_32_WHITE } = await loadDummyDeps();
 
-  const pngBuffer = await Jimp.read(imageBuffer).then((img) =>
-    img.getBuffer("image/png"),
-  );
-  const chunks = extractChunks(new Uint8Array(pngBuffer));
-  const promptLog = readPromptLog(textChunk, chunks);
-  promptLog.push(prompt);
-
-  const image = await Jimp.read(pngBuffer);
+  const image = await Jimp.read(imageBuffer);
   const font = await loadFont(SANS_32_WHITE);
-  const textLines = promptLog.map((p: string, i: number) => `${i + 1}. ${p}`);
-  const fullText = ["Modification Log:", ...textLines].join("\n");
 
   image.print({
     font,
     x: 20,
     y: 20,
-    text: fullText,
+    text: prompt,
     maxWidth: image.width - 40,
   });
 
-  const resultBuffer = await image.getBuffer("image/png");
-  const resultChunks = extractChunks(new Uint8Array(resultBuffer));
-  const finalChunks = writePromptLog(textChunk, resultChunks, promptLog);
-  return Buffer.from(encodeChunks(finalChunks));
+  return Buffer.from(await image.getBuffer("image/png"));
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +115,7 @@ async function geminiProcess(
           { text: editPrompt },
           {
             inlineData: {
-              mimeType: "image/png",
+              mimeType: "image/webp",
               data: imageBuffer.toString("base64"),
             },
           },
@@ -263,17 +189,26 @@ export const processImpression = onDocumentCreated(
       const backend = getAiBackend();
       console.log(`Processing with backend: ${backend}`);
 
+      // Dummy backend outputs PNG (Jimp has no WebP support).
+      // Production backends output WebP.
+      let resultContentType: string;
+      let resultExt: string;
+
       if (backend === "dummy") {
         resultBuffer = await dummyProcess(fileBuffer, prompt);
+        resultContentType = "image/png";
+        resultExt = "png";
       } else {
         resultBuffer = await geminiProcess(backend, fileBuffer, prompt);
+        resultContentType = "image/webp";
+        resultExt = "webp";
       }
 
       // Upload result to Storage
-      const resultPath = `users/${userId}/results/${renovationId}/${impressionId}.png`;
+      const resultPath = `users/${userId}/results/${renovationId}/${impressionId}.${resultExt}`;
       const resultFile = bucket.file(resultPath);
       await resultFile.save(resultBuffer, {
-        metadata: { contentType: "image/png" },
+        metadata: { contentType: resultContentType },
       });
 
       await impressionRef.update({

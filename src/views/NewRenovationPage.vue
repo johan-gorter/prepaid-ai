@@ -283,7 +283,7 @@ function getCompositeBlob(): Promise<Blob> {
     ctx.drawImage(maskCanvas, 0, 0);
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/png",
+      "image/webp",
     );
   });
 }
@@ -296,7 +296,7 @@ function getOriginalBlob(): Promise<Blob> {
     }
     sourceCanvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/png",
+      "image/webp",
     );
   });
 }
@@ -320,11 +320,11 @@ async function handleSubmit() {
     const uid = currentUser.value.uid;
     const timestamp = Date.now();
 
-    const originalImagePath = `users/${uid}/originals/${timestamp}.png`;
+    const originalImagePath = `users/${uid}/originals/${timestamp}.webp`;
     const originalBlob = await getOriginalBlob();
     await uploadBytes(storageRef(storage, originalImagePath), originalBlob);
 
-    const compositeImagePath = `users/${uid}/composites/${timestamp}.png`;
+    const compositeImagePath = `users/${uid}/composites/${timestamp}.webp`;
     const compositeBlob = await getCompositeBlob();
     await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
