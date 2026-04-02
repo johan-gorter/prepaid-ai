@@ -288,7 +288,8 @@ onMounted(() => {
               >
                 <li>
                   <a
-                    @click="
+                    href="#"
+                    @click.prevent="
                       openImpressionMenuId = null;
                       handleDeleteImpression(impression.id);
                     "

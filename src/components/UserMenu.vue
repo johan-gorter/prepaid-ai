@@ -37,7 +37,7 @@ function chooseScheme(scheme: "light" | "dark") {
 
 <template>
   <div v-if="currentUser" style="position: relative" data-user-menu>
-    <button class="transparent circle" @click="showMenu = !showMenu">
+    <button class="transparent circle" aria-label="User menu" @click="showMenu = !showMenu">
       <img
         v-if="currentUser.photoURL"
         :src="currentUser.photoURL"
