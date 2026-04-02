@@ -1,0 +1,53 @@
+<script setup lang="ts">
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const fileInput = ref<HTMLInputElement | null>(null);
+
+function onTakePhoto() {
+  router.push("/renovation/new");
+}
+
+function onFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+
+  // Read the file and navigate to the crop page with the image data
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target?.result as string;
+    // Store in sessionStorage so the crop page can access it
+    sessionStorage.setItem("cropImage", dataUrl);
+    router.push("/renovation/crop");
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+
+<template>
+  <article class="round">
+    <i class="extra" aria-hidden="true">photo_camera</i>
+    <h5>No renovations yet</h5>
+    <p>Take or upload a photo of your space and let AI reimagine it.</p>
+    <nav class="no-space">
+      <button class="small-round border max" @click="onTakePhoto">
+        <i aria-hidden="true">photo_camera</i>
+        <span>Take Photo</span>
+      </button>
+      <div class="small-space"></div>
+      <button class="small-round max" @click="fileInput?.click()">
+        <i aria-hidden="true">upload</i>
+        <span>Upload Image</span>
+      </button>
+    </nav>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      hidden
+      @change="onFileSelected"
+    />
+  </article>
+</template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import StorageImage from "../components/StorageImage.vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
@@ -10,6 +10,7 @@ import { useRenovations } from "../composables/useRenovations";
 import { storage } from "../firebase";
 
 const router = useRouter();
+const route = useRoute();
 const { createRenovation, createImpression, deleteImpression } =
   useRenovations();
 const { currentUser } = useAuth();
@@ -388,6 +389,28 @@ onMounted(() => {
   });
   const wrapper = canvasWrapperRef.value;
   if (wrapper) resizeObserver.observe(wrapper);
+
+  // Load cropped image from crop page if available
+  if (route.query.source === "cropped") {
+    const dataUrl = sessionStorage.getItem("croppedImage");
+    if (dataUrl) {
+      sessionStorage.removeItem("croppedImage");
+      imagePreview.value = dataUrl;
+      const img = new Image();
+      img.onload = () => {
+        loadedImage.value = img;
+        // The image is already cropped to 1024x1024, so create a fake file
+        fetch(dataUrl)
+          .then((res) => res.blob())
+          .then((blob) => {
+            selectedFile.value = new File([blob], "cropped.webp", {
+              type: "image/webp",
+            });
+          });
+      };
+      img.src = dataUrl;
+    }
+  }
 });
 
 onUnmounted(() => {

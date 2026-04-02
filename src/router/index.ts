@@ -21,6 +21,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/renovation/crop",
+    name: "crop-image",
+    component: () => import("../views/CropImagePage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/renovation/:id",
     name: "renovation-detail",
     component: () => import("../views/RenovationDetailPage.vue"),
