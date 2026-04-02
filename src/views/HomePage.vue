@@ -2,6 +2,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import NewRenovationCard from "../components/NewRenovationCard.vue";
 import StorageImage from "../components/StorageImage.vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
@@ -188,14 +189,7 @@ watch(
       v-else-if="renovations.length === 0"
       class="center-align large-padding"
     >
-      <article class="round">
-        <i class="extra" aria-hidden="true">photo_camera</i>
-        <h5>No renovations yet</h5>
-        <p>Take or upload a photo of your space and let AI reimagine it.</p>
-        <router-link to="/renovation/new" class="button small-round">
-          Start your first renovation
-        </router-link>
-      </article>
+      <NewRenovationCard />
     </div>
 
     <div v-else class="grid">
