@@ -23,6 +23,12 @@ let dragStartOffsetX = 0;
 let dragStartOffsetY = 0;
 let resizeObserver: ResizeObserver | null = null;
 
+// Pinch-to-zoom touch state
+let lastTouchDist = 0;
+let lastTouchCenterX = 0;
+let lastTouchCenterY = 0;
+let isPinching = false;
+
 onMounted(() => {
   const dataUrl = sessionStorage.getItem("cropImage");
   if (!dataUrl) {
@@ -47,11 +53,24 @@ onMounted(() => {
   img.src = dataUrl;
 
   resizeObserver = new ResizeObserver(() => renderCanvas());
-  if (wrapperRef.value) resizeObserver.observe(wrapperRef.value);
+  const wrapper = wrapperRef.value;
+  if (wrapper) {
+    resizeObserver.observe(wrapper);
+    // Register touch events with { passive: false } so preventDefault works
+    wrapper.addEventListener("touchstart", onTouchStart, { passive: false });
+    wrapper.addEventListener("touchmove", onTouchMove, { passive: false });
+    wrapper.addEventListener("touchend", onTouchEnd);
+  }
 });
 
 onUnmounted(() => {
   resizeObserver?.disconnect();
+  const wrapper = wrapperRef.value;
+  if (wrapper) {
+    wrapper.removeEventListener("touchstart", onTouchStart);
+    wrapper.removeEventListener("touchmove", onTouchMove);
+    wrapper.removeEventListener("touchend", onTouchEnd);
+  }
 });
 
 function renderCanvas() {
@@ -81,6 +100,7 @@ function getCanvasCoords(e: PointerEvent) {
 }
 
 function onPointerDown(e: PointerEvent) {
+  if (isPinching) return;
   isDragging = true;
   const canvas = canvasRef.value;
   if (canvas) canvas.setPointerCapture(e.pointerId);
@@ -159,6 +179,83 @@ function adjustZoom(factor: number) {
   offsetY.value = cy - (cy - offsetY.value) * ratio;
 
   renderCanvas();
+}
+
+function getTouchCanvasCoords(clientX: number, clientY: number) {
+  const canvas = canvasRef.value;
+  if (!canvas) return { x: 0, y: 0 };
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: ((clientX - rect.left) / rect.width) * CANVAS_SIZE,
+    y: ((clientY - rect.top) / rect.height) * CANVAS_SIZE,
+  };
+}
+
+function touchDist(t1: Touch, t2: Touch) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    isPinching = true;
+    isDragging = false;
+    const t0 = e.touches[0]!;
+    const t1 = e.touches[1]!;
+    lastTouchDist = touchDist(t0, t1);
+    const center = getTouchCanvasCoords(
+      (t0.clientX + t1.clientX) / 2,
+      (t0.clientY + t1.clientY) / 2,
+    );
+    lastTouchCenterX = center.x;
+    lastTouchCenterY = center.y;
+  }
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (e.touches.length !== 2 || !isPinching) return;
+  e.preventDefault();
+  const img = loadedImage.value;
+  if (!img) return;
+
+  const t0 = e.touches[0]!;
+  const t1 = e.touches[1]!;
+  const dist = touchDist(t0, t1);
+  const center = getTouchCanvasCoords(
+    (t0.clientX + t1.clientX) / 2,
+    (t0.clientY + t1.clientY) / 2,
+  );
+
+  // Pinch zoom
+  const factor = dist / lastTouchDist;
+  const oldScale = scale.value;
+  const minScale =
+    Math.max(CANVAS_SIZE / img.naturalWidth, CANVAS_SIZE / img.naturalHeight) *
+    0.5;
+  const maxScale = minScale * 10;
+  scale.value = Math.min(maxScale, Math.max(minScale, oldScale * factor));
+
+  const ratio = scale.value / oldScale;
+  offsetX.value = center.x - (center.x - offsetX.value) * ratio;
+  offsetY.value = center.y - (center.y - offsetY.value) * ratio;
+
+  // Pan with two-finger drag
+  offsetX.value += center.x - lastTouchCenterX;
+  offsetY.value += center.y - lastTouchCenterY;
+
+  lastTouchDist = dist;
+  lastTouchCenterX = center.x;
+  lastTouchCenterY = center.y;
+
+  renderCanvas();
+}
+
+function onTouchEnd(e: TouchEvent) {
+  if (e.touches.length < 2) {
+    isPinching = false;
+  }
 }
 
 function handleConfirm() {
