@@ -48,12 +48,14 @@ function storagePathFromUrl(url: string): string {
  * Used when no AI backend is configured (emulator only).
  */
 async function dummyProcess(
-  imageBuffer: Buffer,
+  _imageBuffer: Buffer,
   prompt: string,
 ): Promise<Buffer> {
   const { Jimp, loadFont, SANS_32_WHITE } = await loadDummyDeps();
 
-  const image = await Jimp.read(imageBuffer);
+  // Jimp does not support WebP decoding, so create a fresh image instead
+  // of reading the uploaded (WebP) buffer. This is fine for testing.
+  const image = new Jimp({ width: 800, height: 600, color: 0x808080ff });
   const font = await loadFont(SANS_32_WHITE);
 
   image.print({
