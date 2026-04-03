@@ -198,44 +198,8 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
       - name: Deploy to dev project
-        id: firebase-deploy
-        continue-on-error: true
         run: |
-          set -o pipefail
           npx firebase deploy \
             --only hosting,functions,firestore:rules,storage \
             --project prepaid-ai-dev \
-            --force \
-            2>&1 | tee "$RUNNER_TEMP/deploy-output.txt"
-
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Grant Firebase Auth service agent invoker access to beforeCreate
-        continue-on-error: true
-        run: |
-          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa-key.json"
-          PROJECT_NUMBER=$(gcloud projects describe prepaid-ai-dev --format='value(projectNumber)')
-          gcloud run services add-iam-policy-binding beforecreate \
-            --region=europe-west1 \
-            --member="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-identitytoolkit.iam.gserviceaccount.com" \
-            --role="roles/run.invoker" \
-            --project=prepaid-ai-dev
-
-      - name: Verify deploy succeeded
-        run: |
-          if [ "${{ steps.firebase-deploy.outcome }}" = "success" ]; then
-            echo "Deploy succeeded."
-            exit 0
-          fi
-          # Pass if the only error was the IAM invoker policy — functions are deployed,
-          # and the gcloud step above grants the missing binding.
-          iam_errors=$(grep -c "Unable to set the invoker for the IAM policy" "$RUNNER_TEMP/deploy-output.txt" || true)
-          total_errors=$(grep -cE "^Error: " "$RUNNER_TEMP/deploy-output.txt" || true)
-          if [ "$iam_errors" -ge 1 ] && [ "$total_errors" -eq 1 ]; then
-            echo "Deploy failed only due to IAM invoker policy; binding was granted via gcloud above."
-            exit 0
-          fi
-          echo "Deploy failed:"
-          cat "$RUNNER_TEMP/deploy-output.txt"
-          exit 1
+            --force
