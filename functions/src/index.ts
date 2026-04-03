@@ -1,7 +1,6 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { HttpsError } from "firebase-functions/v2/identity";
-import { region as v1Region } from "firebase-functions/v1";
+import { beforeUserCreated, HttpsError } from "firebase-functions/v2/identity";
 
 // Jimp is a devDependency (emulator-only).
 // It is lazy-imported inside dummyProcess() to avoid crashing in production.
@@ -235,19 +234,20 @@ export const processImpression = onDocumentCreated(
 // ---------------------------------------------------------------------------
 const ALLOWED_DOMAIN = "johangorter.com";
 
-export const beforeCreate = v1Region("europe-west1")
-  .auth.user()
-  .beforeCreate((user) => {
+export const beforeCreate = beforeUserCreated(
+  { region: "europe-west1" },
+  (event) => {
     // Skip domain check in production and when running in the Firebase emulator
     const env = process.env.ENVIRONMENT;
     if (env === "production") return;
     if (process.env.FUNCTIONS_EMULATOR === "true") return;
 
-    const email = user.email;
+    const email = event.data?.email;
     if (!email || !email.endsWith(`@${ALLOWED_DOMAIN}`)) {
       throw new HttpsError(
         "permission-denied",
         `Only @${ALLOWED_DOMAIN} accounts are allowed in this environment`,
       );
     }
-  });
+  },
+);

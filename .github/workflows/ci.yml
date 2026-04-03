@@ -197,30 +197,6 @@ jobs:
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa-key.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Delete old v2 beforeCreate if present (one-time v2→v1 migration)
-        continue-on-error: true
-        run: |
-          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa-key.json"
-          # firebase-tools inherits cpu from the previously-deployed v2 Cloud Run service,
-          # which then fails validation when redeploying as v1 ("Cannot set CPU on GCF gen 1").
-          # Deleting the v2 function first avoids this. After migration the gen2 list is empty
-          # and this becomes a permanent no-op.
-          if gcloud functions list \
-               --gen2 \
-               --regions=europe-west1 \
-               --project=prepaid-ai-dev \
-               --filter="name:beforeCreate" \
-               --format="value(name)" 2>/dev/null | grep -q .; then
-            gcloud functions delete beforeCreate \
-              --gen2 \
-              --region=europe-west1 \
-              --project=prepaid-ai-dev \
-              --quiet
-          fi
-
       - name: Deploy to dev project
         run: |
           npx firebase deploy \

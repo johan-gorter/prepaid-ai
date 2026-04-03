@@ -148,6 +148,7 @@ locals {
     "roles/serviceusage.serviceUsageConsumer",
     "roles/firebasestorage.admin",
     "roles/firebaseextensions.admin",
+    "roles/run.admin",
   ]
 }
 
