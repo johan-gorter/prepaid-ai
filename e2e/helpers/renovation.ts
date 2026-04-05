@@ -84,7 +84,7 @@ export async function createRenovationAndWaitForResult(
   // Wait for step 4 — three-button bar appears
   await expect(
     page.getByRole("button", { name: "Renovation Details" }),
-  ).toBeVisible({ timeout: 15000 });
+  ).toBeVisible();
 
   // Wait for the Cloud Function to produce the result image
   await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });

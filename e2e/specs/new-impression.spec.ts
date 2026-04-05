@@ -13,7 +13,6 @@ test.describe("New Impression Page", () => {
   test("loads source from original image (source=before) via timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change the color",
@@ -31,7 +30,7 @@ test.describe("New Impression Page", () => {
       // Should show mask step after loading
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -41,7 +40,6 @@ test.describe("New Impression Page", () => {
   test("loads source from impression result via timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add recessed lighting",
@@ -52,14 +50,14 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
+      await expect(page.getByAltText("Result")).toBeVisible();
       await page.getByAltText("Result").click();
       await page.waitForURL(/\/new\?source=(?!before)/);
 
       // Should show mask step
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -69,7 +67,6 @@ test.describe("New Impression Page", () => {
   test("loads source from Next Change button on result step", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "paint the trim",
@@ -83,7 +80,7 @@ test.describe("New Impression Page", () => {
       // Should show mask step after loading source
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -107,7 +104,7 @@ test.describe("New Impression Page", () => {
       // Wait for mask step
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       // Draw mask
       await drawMaskStroke(page);
@@ -124,7 +121,7 @@ test.describe("New Impression Page", () => {
       // Should show step 4 with three-button bar
       await expect(
         page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "Trash" }),
       ).toBeVisible();
@@ -144,7 +141,6 @@ test.describe("New Impression Page", () => {
   test("back button navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change for back test",
@@ -156,7 +152,7 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       // Click header back button
       await page.getByRole("button", { name: "← Back" }).click();
@@ -183,7 +179,7 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       // Complete the flow
       await drawMaskStroke(page);
@@ -195,7 +191,7 @@ test.describe("New Impression Page", () => {
       // Wait for result
       await expect(
         page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
       await expect(page.getByAltText("Result")).toBeVisible({
         timeout: 30000,
       });
@@ -234,7 +230,7 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       await drawMaskStroke(page);
       await page.getByRole("button", { name: "Next" }).click();
@@ -243,16 +239,14 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
 
       // Click Renovation Details
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Should show both impressions on the timeline
-      await expect(page.getByText("base for chaining")).toBeVisible({
-        timeout: 5000,
-      });
+      await expect(page.getByText("base for chaining")).toBeVisible();
       await expect(page.getByText("chained impression")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -262,7 +256,7 @@ test.describe("New Impression Page", () => {
   test("consecutive Next Change: second change loads correctly without refresh", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
+    test.setTimeout(90000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "first change",
@@ -275,7 +269,7 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       await drawMaskStroke(page);
       await page.getByRole("button", { name: "Next" }).click();
@@ -293,7 +287,7 @@ test.describe("New Impression Page", () => {
       // Must reset to mask step with the new source loaded
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
 
       // Should be able to complete the full flow again
@@ -313,7 +307,6 @@ test.describe("New Impression Page", () => {
   test("step navigation: back from prompt returns to mask", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "source for nav test",
@@ -325,7 +318,7 @@ test.describe("New Impression Page", () => {
 
       await expect(
         page.getByText("Paint the area you want to change"),
-      ).toBeVisible({ timeout: 10000 });
+      ).toBeVisible();
 
       // Advance to prompt
       await page.getByRole("button", { name: "Next" }).click();

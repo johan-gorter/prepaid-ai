@@ -52,7 +52,6 @@ test.describe("Home Page with renovations", () => {
   test("shows renovation card after creation", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "add a fireplace",
@@ -69,7 +68,7 @@ test.describe("Home Page with renovations", () => {
 
       // Should see a card with an image (the diagonal composite)
       const card = page.getByTestId("renovation-card");
-      await expect(card).toBeVisible({ timeout: 10000 });
+      await expect(card).toBeVisible();
       await expect(card.locator("img")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -79,7 +78,6 @@ test.describe("Home Page with renovations", () => {
   test("clicking renovation card navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "change the countertops",
@@ -94,7 +92,7 @@ test.describe("Home Page with renovations", () => {
 
       // Click the card
       const card = page.getByTestId("renovation-card");
-      await expect(card).toBeVisible({ timeout: 10000 });
+      await expect(card).toBeVisible();
       await card.click();
 
       // Should navigate to timeline

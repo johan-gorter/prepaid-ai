@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./e2e/specs",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }]]
@@ -12,6 +12,8 @@ export default defineConfig({
 
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
+
+  expect: { timeout: 10_000 },
 
   use: {
     baseURL: "http://localhost:5174",

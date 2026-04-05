@@ -93,7 +93,7 @@ Tracked service names:
 
 E2E tests use real Firebase Emulators for Auth, Firestore, Storage, and Functions.
 
-**One-time setup:** Run `npm -s run setup` (or manually install deps and browsers).
+**Prerequisites:** `npm -s run setup` must have been run at least once to install dependencies and Playwright browsers. In remote/CI environments the SessionStart hook handles this automatically. If tests fail with "browser not found," run `npx playwright install chromium`.
 
 Start the tracked services first, then run the test command you need.
 
@@ -166,6 +166,8 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## How to Verify Changes
 
+**All tests must pass before pushing.** If you change application code, update affected tests to match. If you change test code, ensure the tests pass. Do not push with known failures.
+
 After making code changes, run these commands in order:
 
 1. **Type-check:** `npm -s run typecheck:all` — checks app, tests, and Cloud Functions
@@ -175,7 +177,14 @@ After making code changes, run these commands in order:
 
 To validate the full matrix in one command, start and wait for the required services first, then run `npm -s run test:all`.
 
-For a quick validation without emulators, steps 1-2 are sufficient.
+For a quick validation without emulators, steps 1-3 are sufficient.
+
+### Debugging test failures
+
+- Run a single file: `npx playwright test --config=playwright.config.ts e2e/specs/home.spec.ts`
+- Get a concise summary: add `--reporter=list` (default) or `--reporter=line` for one-line-per-test
+- Traces are captured on first retry — find them in `test-results/` and open with `npx playwright show-trace <zip>`
+- Screenshots on failure are saved under `test-results/`
 
 ## TypeScript Configuration
 
@@ -202,6 +211,8 @@ For a quick validation without emulators, steps 1-2 are sufficient.
 - Use standard `page` from `@playwright/test` for unauthenticated tests (e.g., login page)
 - Each authenticated E2E test gets a fresh browser context and a unique emulator user created via `createUserWithEmailAndPassword` in the browser. This avoids IndexedDB auth state leaking between tests and eliminates the REST-vs-SDK consistency gap that previously caused `auth/user-not-found` flakes
 - The fixture uses SPA navigation (`history.pushState` + `popstate`) after sign-up to avoid a full page reload that can race with IndexedDB auth persistence
+- **Selectors:** Prefer `data-testid` attributes and ARIA roles/labels for locating elements. Use `page.getByTestId()`, `page.getByRole()`, and `page.getByText()` over CSS selectors. When UI components change, update both the component's `data-testid`/`aria-*` attributes and the corresponding test selectors
+- **Cloud Function–dependent tests:** Tests that wait for Firestore triggers (e.g., chained impression processing) may need longer timeouts than the default. Use `test.slow()` or increase the specific `expect` timeout rather than raising the global timeout
 
 ## Important Notes
 

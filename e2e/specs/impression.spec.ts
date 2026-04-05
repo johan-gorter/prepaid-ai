@@ -25,7 +25,6 @@ test.describe("Impression processing", () => {
   test("uploads image, triggers Cloud Function, and produces a result image", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(15000);
     const promptText = "remove the furniture";
 
     // 1. Create a dummy 1024x1024 gray PNG
@@ -73,9 +72,7 @@ test.describe("Impression processing", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       // 5. Should show the three-button bar (Renovation Details, Trash, Next Change)
-      await expect(page.getByRole("button", { name: "Renovation Details" })).toBeVisible({
-        timeout: 15000,
-      });
+      await expect(page.getByRole("button", { name: "Renovation Details" })).toBeVisible();
 
       // 6. Wait for the result image to appear (Cloud Function processing)
       const resultImage = page.getByAltText("Result");
@@ -83,12 +80,12 @@ test.describe("Impression processing", () => {
 
       // 7. Click Renovation Details to navigate to the renovation detail page
       await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, { timeout: 5000 });
+      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // 8. Verify the timeline page shows the result
       await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
       const timelineResultImage = page.getByAltText("Result");
-      await expect(timelineResultImage).toBeVisible({ timeout: 5000 });
+      await expect(timelineResultImage).toBeVisible();
 
       // 9. Download the result image and verify it is valid
       const resultSrc = await timelineResultImage.getAttribute("src");

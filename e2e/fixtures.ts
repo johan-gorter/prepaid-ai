@@ -45,12 +45,11 @@ export const test = base.extend<TestFixtures>({
       // getCurrentUser() which depends on the Vue loading ref, not auth.currentUser.
       await page.waitForFunction(
         () => (window as any).__testAuthReady?.().then((uid: string | null) => uid != null),
-        { timeout: 10000 },
       );
 
       // Navigate to home — the router guard will now see the authenticated user.
       await page.goto("/");
-      await page.waitForSelector('text=My Renovations', { timeout: 10000 });
+      await page.waitForSelector('text=My Renovations');
 
       try {
         await use(page);
