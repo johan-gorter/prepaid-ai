@@ -6,10 +6,8 @@ test.describe("Home Page", () => {
   test("shows new renovation card", async ({
     authenticatedPage: page,
   }) => {
-    await expect(page.getByText("New Renovation")).toBeVisible();
-    await expect(
-      page.getByText("Take or upload a photo of your space"),
-    ).toBeVisible();
+    await expect(page.getByTestId("new-renovation-card")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New Renovation" })).toBeVisible();
   });
 
   test("navigates to new renovation page via take photo", async ({

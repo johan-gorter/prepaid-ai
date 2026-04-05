@@ -33,7 +33,7 @@ test.describe("Impression processing", () => {
 
     try {
       // 2. Navigate to New Renovation page
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       // Step 1: Image capture — select file (no title)
