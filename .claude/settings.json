@@ -11,6 +11,17 @@
             "statusMessage": "Checking protected files..."
           }
         ]
+      },
+      {
+        "matcher": "Bash(git push*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'STOP: Before pushing, verify that typecheck (npm -s run typecheck:all), build (npm -s run build), and all relevant tests pass. If you have not run them yet, abort and run them first.' >&2",
+            "timeout": 5,
+            "statusMessage": "Pre-push reminder..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -32,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Reminders: Vue 3 Composition API + <script setup lang=ts> only. No enums (erasableSyntaxOnly). No ESLint — rely on vue-tsc strict. All tests are Playwright (E2E/CT/PWA). E2E needs Firebase emulators running.'"
+            "command": "echo 'Reminders: Vue 3 Composition API + <script setup lang=ts> only. No enums (erasableSyntaxOnly). No ESLint — rely on vue-tsc strict. All tests are Playwright (E2E/CT/PWA). E2E needs Firebase emulators running. ALL TESTS MUST PASS BEFORE PUSHING — update tests when changing app code.'"
           }
         ]
       },
