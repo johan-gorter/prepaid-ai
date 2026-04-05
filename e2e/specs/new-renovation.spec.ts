@@ -15,7 +15,7 @@ test.describe("New Renovation Page", () => {
     test("shows step 1 with photo selection, no title field", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       await expect(page.getByText("1. Capture Image")).toBeVisible();
@@ -31,7 +31,7 @@ test.describe("New Renovation Page", () => {
     test("Next button disabled until photo is selected", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       const nextBtn = page.getByRole("button", { name: "Next" });
@@ -51,7 +51,7 @@ test.describe("New Renovation Page", () => {
     test("can navigate forward to mask step and back", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       const grayPngPath = await createGrayPng();
@@ -76,7 +76,7 @@ test.describe("New Renovation Page", () => {
     test("can navigate through mask to prompt step", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       const grayPngPath = await createGrayPng();
@@ -114,7 +114,7 @@ test.describe("New Renovation Page", () => {
     test("clear mask button clears the drawn area", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       const grayPngPath = await createGrayPng();
@@ -147,7 +147,7 @@ test.describe("New Renovation Page", () => {
     test("back header button navigates to home", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
+      await page.getByRole("button", { name: "Take Photo" }).click();
       await page.waitForURL("/renovation/new");
 
       await page.getByRole("button", { name: "← Back" }).click();

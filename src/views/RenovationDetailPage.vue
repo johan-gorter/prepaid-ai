@@ -272,6 +272,8 @@ onMounted(() => {
               <button
                 class="transparent circle"
                 style="background: rgba(0, 0, 0, 0.5) !important; color: #fff"
+                data-testid="impression-more-menu"
+                aria-label="Impression menu"
                 @click="
                   openImpressionMenuId =
                     openImpressionMenuId === impression.id

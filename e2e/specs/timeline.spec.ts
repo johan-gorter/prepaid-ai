@@ -160,7 +160,7 @@ test.describe("Renovation Details Page", () => {
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 5000 });
 
       // Open the more menu then click Delete
-      await page.locator(".absolute-btn-more button").click();
+      await page.getByTestId("impression-more-menu").click();
       await page.getByRole("link", { name: "Delete" }).click();
 
       // Impression should be removed — no more Result images

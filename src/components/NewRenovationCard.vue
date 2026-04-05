@@ -27,7 +27,7 @@ function onFileSelected(event: Event) {
 </script>
 
 <template>
-  <article class="round center-align">
+  <article class="round center-align" data-testid="new-renovation-card">
     <i class="extra" aria-hidden="true">photo_camera</i>
     <h5>New Renovation</h5>
     <nav class="vertical">

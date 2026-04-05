@@ -32,7 +32,7 @@ export async function fillNewRenovationForm(
   const grayPngPath = await createGrayPng();
 
   // Navigate to New Renovation
-  await page.getByRole("link", { name: "+ New Renovation" }).click();
+  await page.getByRole("button", { name: "Take Photo" }).click();
   await page.waitForURL("/renovation/new");
 
   // Step 0: select photo
