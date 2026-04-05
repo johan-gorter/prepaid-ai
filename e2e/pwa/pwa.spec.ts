@@ -255,7 +255,7 @@ test.describe("PWA Requirements", () => {
       // Wait for three-button bar and result image
       await expect(
         page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible({ timeout: 15000 });
+      ).toBeVisible();
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
 
       // Navigate to home via Renovation Details → Back
@@ -287,7 +287,7 @@ test.describe("PWA Requirements", () => {
       await page.waitForURL("/");
 
       const offlineThumbnail = page.getByTestId("renovation-card").first().locator("img");
-      await expect(offlineThumbnail).toBeVisible({ timeout: 15000 });
+      await expect(offlineThumbnail).toBeVisible();
       await expect
         .poll(async () => {
           return offlineThumbnail.evaluate((img) => {

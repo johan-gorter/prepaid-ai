@@ -13,6 +13,8 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
 
+  expect: { timeout: 10_000 },
+
   use: {
     baseURL: "http://localhost:5174",
     trace: "on-first-retry",

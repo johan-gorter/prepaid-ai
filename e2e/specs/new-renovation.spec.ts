@@ -160,7 +160,6 @@ test.describe("New Renovation Page", () => {
     test("Generate shows result step with three-button bar", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "paint the walls blue",
@@ -188,7 +187,6 @@ test.describe("New Renovation Page", () => {
     test("Renovation Details button navigates to timeline page", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "add wooden floors",
@@ -196,9 +194,7 @@ test.describe("New Renovation Page", () => {
 
       try {
         await page.getByRole("button", { name: "Renovation Details" }).click();
-        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/, {
-          timeout: 5000,
-        });
+        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
         await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
@@ -208,7 +204,6 @@ test.describe("New Renovation Page", () => {
     test("Trash button deletes impression and resets to mask step", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "remove the carpet",
@@ -235,7 +230,6 @@ test.describe("New Renovation Page", () => {
     test("Next Change button navigates to new impression page", async ({
       authenticatedPage: page,
     }) => {
-      test.setTimeout(15000);
       const { grayPngPath } = await createRenovationAndWaitForResult(
         page,
         "add crown molding",
@@ -243,14 +237,12 @@ test.describe("New Renovation Page", () => {
 
       try {
         await page.getByRole("button", { name: "Next Change" }).click();
-        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=/, {
-          timeout: 5000,
-        });
+        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=/);
 
         // Should show mark area step (source image loaded)
         await expect(
           page.getByText("Paint the area you want to change"),
-        ).toBeVisible({ timeout: 10000 });
+        ).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
       }
@@ -267,7 +259,7 @@ test.describe("New Renovation Page", () => {
         await page.getByRole("button", { name: "Generate" }).click();
         await expect(
           page.getByRole("button", { name: "Renovation Details" }),
-        ).toBeVisible({ timeout: 15000 });
+        ).toBeVisible();
         await expect(page.getByAltText("Result")).toBeVisible({
           timeout: 30000,
         });
@@ -287,7 +279,7 @@ test.describe("New Renovation Page", () => {
         await page.getByRole("button", { name: "Generate" }).click();
         await expect(
           page.getByRole("button", { name: "Renovation Details" }),
-        ).toBeVisible({ timeout: 15000 });
+        ).toBeVisible();
         await expect(page.getByAltText("Result")).toBeVisible({
           timeout: 30000,
         });

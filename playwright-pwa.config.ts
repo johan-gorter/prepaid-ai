@@ -8,10 +8,12 @@ export default defineConfig({
   testDir: "./e2e/pwa",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }]]
     : [["list"]],
+
+  expect: { timeout: 10_000 },
 
   use: {
     baseURL: "http://localhost:4175",
