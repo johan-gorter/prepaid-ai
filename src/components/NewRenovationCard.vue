@@ -27,17 +27,15 @@ function onFileSelected(event: Event) {
 </script>
 
 <template>
-  <article class="round">
+  <article class="round center-align">
     <i class="extra" aria-hidden="true">photo_camera</i>
-    <h5>No renovations yet</h5>
-    <p>Take or upload a photo of your space and let AI reimagine it.</p>
-    <nav class="no-space">
-      <button class="small-round border max" @click="onTakePhoto">
+    <h5>New Renovation</h5>
+    <nav class="vertical">
+      <button class="small-round" @click="onTakePhoto">
         <i aria-hidden="true">photo_camera</i>
         <span>Take Photo</span>
       </button>
-      <div class="small-space"></div>
-      <button class="small-round max" @click="fileInput?.click()">
+      <button class="small-round" @click="fileInput?.click()">
         <i aria-hidden="true">upload</i>
         <span>Upload Image</span>
       </button>
@@ -51,3 +49,13 @@ function onFileSelected(event: Event) {
     />
   </article>
 </template>
+
+<style scoped>
+article {
+  aspect-ratio: 1 / 1;
+}
+nav button {
+  padding: 1rem;
+  width: calc(100% - 2rem);
+}
+</style>

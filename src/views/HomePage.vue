@@ -166,14 +166,6 @@ watch(
   >
     <nav>
       <h5 class="max">My Renovations</h5>
-      <router-link
-        to="/renovation/new"
-        class="button small-round"
-        aria-label="+ New Renovation"
-      >
-        <i aria-hidden="true">add</i>
-        <span>New Renovation</span>
-      </router-link>
     </nav>
 
     <div v-if="renovationsLoading" class="center-align medium-padding">
@@ -185,18 +177,13 @@ watch(
       <p class="error-text">Error loading renovations: {{ error }}</p>
     </div>
 
-    <div
-      v-else-if="renovations.length === 0"
-      class="center-align large-padding"
-    >
-      <NewRenovationCard />
-    </div>
-
-    <div v-else class="grid">
+    <div v-else class="card-grid">
+      <div>
+        <NewRenovationCard />
+      </div>
       <div
         v-for="renovation in renovations"
         :key="renovation.id"
-        class="s6 m4 l3"
       >
         <article
           class="round no-padding small-elevate"
@@ -214,3 +201,20 @@ watch(
     </div>
   </main>
 </template>
+
+<style scoped>
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.card-grid > div {
+  max-width: 512px;
+}
+
+.card-grid article {
+  min-height: 300px;
+  text-align: center;
+}
+</style>

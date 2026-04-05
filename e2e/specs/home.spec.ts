@@ -3,27 +3,19 @@ import { expect, test } from "../fixtures";
 import { createRenovationAndWaitForResult } from "../helpers/renovation";
 
 test.describe("Home Page", () => {
-  test("shows empty state when user has no renovations", async ({
+  test("shows new renovation card", async ({
     authenticatedPage: page,
   }) => {
-    await expect(page.getByText("No renovations yet")).toBeVisible();
+    await expect(page.getByText("New Renovation")).toBeVisible();
     await expect(
       page.getByText("Take or upload a photo of your space"),
     ).toBeVisible();
   });
 
-  test("shows the New Renovation button", async ({
+  test("navigates to new renovation page via take photo", async ({
     authenticatedPage: page,
   }) => {
-    await expect(
-      page.getByRole("link", { name: "+ New Renovation" }),
-    ).toBeVisible();
-  });
-
-  test("navigates to new renovation page", async ({
-    authenticatedPage: page,
-  }) => {
-    await page.getByRole("link", { name: "+ New Renovation" }).click();
+    await page.getByRole("button", { name: "Take Photo" }).click();
     await page.waitForURL("/renovation/new");
     await expect(page.getByText("1. Capture Image")).toBeVisible();
   });
@@ -34,14 +26,11 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Sign out")).toBeVisible();
   });
 
-  test("empty state has button to take photo", async ({
+  test("new renovation card has upload button", async ({
     authenticatedPage: page,
   }) => {
-    await expect(page.getByText("No renovations yet")).toBeVisible({ timeout: 10000 });
-    const takePhotoButton = page.getByRole("button", { name: "Take Photo" });
-    await expect(takePhotoButton).toBeVisible();
-    await takePhotoButton.click();
-    await page.waitForURL("/renovation/new");
+    const uploadButton = page.getByRole("button", { name: "Upload Image" });
+    await expect(uploadButton).toBeVisible();
   });
 
   test("sign out navigates to login page", async ({
@@ -78,8 +67,7 @@ test.describe("Home Page with renovations", () => {
       await page.getByRole("button", { name: "← Back" }).click();
       await page.waitForURL("/");
 
-      // Should show a renovation card (not empty state)
-      await expect(page.getByText("No renovations yet")).not.toBeVisible();
+      // Should show a renovation card alongside the new-renovation card
 
       // Should see a card with an image (the diagonal composite)
       const card = page.getByTestId("renovation-card");
