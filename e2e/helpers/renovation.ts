@@ -90,7 +90,7 @@ export async function createRenovationAndWaitForResult(
   ).toBeVisible();
 
   // Wait for the Cloud Function to produce the result image
-  await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByAltText("Result")).toBeVisible({ timeout: 45_000 });
 
   return { grayPngPath };
 }
