@@ -166,18 +166,17 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## How to Verify Changes
 
-**All tests must pass before pushing.** If you change application code, update affected tests to match. If you change test code, ensure the tests pass. Do not push with known failures.
+A **pre-push git hook** (`.githooks/pre-push`) automatically runs before every `git push`:
 
-After making code changes, run these commands in order:
+1. `npm -s run build` — type-check + Vite production build
+2. `npm -s run test:ct` — component tests
+3. `npx playwright test --retries=0` — E2E tests with no retries
 
-1. **Type-check:** `npm -s run typecheck:all` — checks app, tests, and Cloud Functions
-2. **Build:** `npm -s run build` — runs type-check + Vite production build, must complete without errors
-3. **Component tests:** `npm -s run test:ct` — no emulators needed
-4. **E2E tests:** `npm -s run services:start emulators && npm -s run services:start dev:emulators && npm -s run services:wait emulators && npm -s run services:wait dev:emulators && npm -s run test:e2e`
+The hook is activated by `git config core.hooksPath .githooks`, which the SessionStart hook sets automatically. If you need to set it up manually, run that git config command once.
 
-To validate the full matrix in one command, start and wait for the required services first, then run `npm -s run test:all`.
+**Emulators and dev:emulators services must be running** before pushing — the hook does not start them. Start them with `npm -s run services:start emulators && npm -s run services:start dev:emulators && npm -s run services:wait emulators && npm -s run services:wait dev:emulators`.
 
-For a quick validation without emulators, steps 1-3 are sufficient.
+If you change application code, update affected tests to match. If you change test code, ensure the tests pass. The pre-push hook will block pushes with failures. To bypass in emergencies: `git push --no-verify`.
 
 ### Debugging test failures
 

@@ -17,9 +17,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'STOP: Before pushing, verify that typecheck (npm -s run typecheck:all), build (npm -s run build), and all relevant tests pass. If you have not run them yet, abort and run them first.' >&2",
+            "command": "git config core.hooksPath .githooks 2>/dev/null; echo 'Note: .githooks/pre-push will run build + E2E tests automatically.' >&2",
             "timeout": 5,
-            "statusMessage": "Pre-push reminder..."
+            "statusMessage": "Ensuring pre-push hook..."
           }
         ]
       }
