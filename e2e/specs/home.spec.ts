@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { expect, test } from "../fixtures";
-import { createRenovationAndWaitForResult } from "../helpers/renovation";
+import { createGrayPng, createRenovationAndWaitForResult } from "../helpers/renovation";
 
 test.describe("Home Page", () => {
   test("shows new renovation card", async ({
@@ -10,12 +10,31 @@ test.describe("Home Page", () => {
     await expect(page.getByRole("heading", { name: "New Renovation" })).toBeVisible();
   });
 
-  test("navigates to new renovation page via take photo", async ({
+  test("Take Photo navigates to mask step with captured image", async ({
     authenticatedPage: page,
   }) => {
-    await page.getByRole("button", { name: "Take Photo" }).click();
-    await page.waitForURL("/renovation/new");
-    await expect(page.getByText("1. Capture Image")).toBeVisible();
+    // Take Photo opens a camera file input; selecting a photo reads it as a
+    // data URL, stores it in sessionStorage, and navigates directly to the
+    // mask step at /renovation/new?source=cropped (skipping the old image-
+    // capture step).
+    const grayPngPath = await createGrayPng();
+    try {
+      await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+      await page.waitForURL("/renovation/new?source=cropped");
+      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
+  });
+
+  test("cancelling camera input keeps user on home page", async ({
+    authenticatedPage: page,
+  }) => {
+    // When the native file dialog is dismissed without selecting a photo,
+    // no navigation occurs and the home page remains visible.
+    await page.locator('[data-testid="camera-input"]').setInputFiles([]);
+    await expect(page).toHaveURL("/");
+    await expect(page.getByTestId("new-renovation-card")).toBeVisible();
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {

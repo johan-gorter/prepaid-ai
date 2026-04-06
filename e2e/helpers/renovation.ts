@@ -20,8 +20,15 @@ export async function createGrayPng(): Promise<string> {
 }
 
 /**
- * Navigate through the New Renovation flow up to (but not including) the
- * Generate step. Ends on step 2 (prompt) with the given prompt filled in.
+ * Navigate through the streamlined New Renovation flow up to (but not
+ * including) the Generate step.
+ *
+ * Flow: Home (camera input) → Mask → Prompt
+ *
+ * Sets a file on the camera input, which reads it as a data URL, stores it
+ * in sessionStorage, and navigates directly to the mask step
+ * (/renovation/new?source=cropped). Then draws a mask stroke and advances
+ * to the prompt step with the given text filled in.
  *
  * Assumes the page is on the home page ("/") with the NewRenovationCard visible.
  *
@@ -33,10 +40,8 @@ export async function fillNewRenovationForm(
 ): Promise<string> {
   const grayPngPath = await createGrayPng();
 
-  // Set the camera input directly (simulates Take Photo → camera)
+  // Select photo via camera input → auto-navigates to mask step
   await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
-
-  // Auto-navigates to mask step
   await page.waitForURL("/renovation/new?source=cropped");
   await expect(page.getByText("Paint the area you want to change")).toBeVisible();
 
@@ -64,9 +69,11 @@ export async function fillNewRenovationForm(
 }
 
 /**
- * Create a full renovation: fill form, click Generate, wait for step 4 result.
+ * Create a full renovation: fill form, click Generate, wait for result step.
  *
- * Returns { grayPngPath, renovationId } for cleanup and further navigation.
+ * Flow: Home (camera input) → Mask → Prompt → Generate → Result
+ *
+ * Returns { grayPngPath } for cleanup.
  */
 export async function createRenovationAndWaitForResult(
   page: Page,
