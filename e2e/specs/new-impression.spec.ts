@@ -90,7 +90,7 @@ test.describe("New Impression Page", () => {
   test("full flow: mask, prompt, generate, result with three-button bar", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(90000);
+    test.slow(); // Two sequential Cloud Function round-trips
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "first change for chaining",
@@ -131,7 +131,7 @@ test.describe("New Impression Page", () => {
 
       // Wait for result image
       await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 30000,
+        timeout: 45_000,
       });
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -166,7 +166,7 @@ test.describe("New Impression Page", () => {
   test("Trash on result resets to mask step with same source", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(90000);
+    test.slow(); // Two sequential Cloud Function round-trips
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "initial impression",
@@ -193,7 +193,7 @@ test.describe("New Impression Page", () => {
         page.getByRole("button", { name: "Renovation Details" }),
       ).toBeVisible();
       await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 30000,
+        timeout: 45_000,
       });
 
       // Trash it
@@ -217,7 +217,7 @@ test.describe("New Impression Page", () => {
   test("Renovation Details button on result navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(90000);
+    test.slow(); // Two sequential Cloud Function round-trips
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "base for chaining",
@@ -256,7 +256,7 @@ test.describe("New Impression Page", () => {
   test("consecutive Next Change: second change loads correctly without refresh", async ({
     authenticatedPage: page,
   }) => {
-    test.setTimeout(90000);
+    test.slow(); // Three sequential Cloud Function round-trips
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "first change",
@@ -277,7 +277,7 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 30000,
+        timeout: 45_000,
       });
 
       // --- Second consecutive Next Change (this was the bug) ---
@@ -297,7 +297,7 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 30000,
+        timeout: 45_000,
       });
     } finally {
       fs.unlinkSync(grayPngPath);
