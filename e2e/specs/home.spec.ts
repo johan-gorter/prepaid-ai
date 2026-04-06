@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { expect, test } from "../fixtures";
-import { createRenovationAndWaitForResult } from "../helpers/renovation";
+import { createGrayPng, createRenovationAndWaitForResult } from "../helpers/renovation";
 
 test.describe("Home Page", () => {
   test("shows new renovation card", async ({
@@ -13,9 +13,24 @@ test.describe("Home Page", () => {
   test("navigates to new renovation page via take photo", async ({
     authenticatedPage: page,
   }) => {
-    await page.getByRole("button", { name: "Take Photo" }).click();
-    await page.waitForURL("/renovation/new");
-    await expect(page.getByText("1. Capture Image")).toBeVisible();
+    const grayPngPath = await createGrayPng();
+    try {
+      await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+      await page.waitForURL("/renovation/new?source=cropped");
+      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
+  });
+
+  test("stays on home page when camera input is cancelled", async ({
+    authenticatedPage: page,
+  }) => {
+    // Simulate cancelling the file dialog by setting empty files
+    await page.locator('[data-testid="camera-input"]').setInputFiles([]);
+    // Should remain on the home page
+    await expect(page).toHaveURL("/");
+    await expect(page.getByTestId("new-renovation-card")).toBeVisible();
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {
