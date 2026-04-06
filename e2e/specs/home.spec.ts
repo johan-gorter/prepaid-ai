@@ -10,12 +10,19 @@ test.describe("Home Page", () => {
     await expect(page.getByRole("heading", { name: "New Renovation" })).toBeVisible();
   });
 
-  test("navigates to new renovation page via take photo", async ({
+  test("Take Photo opens camera and navigates to mask step", async ({
     authenticatedPage: page,
   }) => {
-    await page.getByRole("button", { name: "Take Photo" }).click();
-    await page.waitForURL("/renovation/new");
-    await expect(page.getByText("1. Capture Image")).toBeVisible();
+    const { createGrayPng } = await import("../helpers/renovation");
+    const fs = await import("node:fs");
+    const grayPngPath = await createGrayPng();
+    try {
+      await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+      await page.waitForURL("/renovation/new?source=cropped");
+      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {

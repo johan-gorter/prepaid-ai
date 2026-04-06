@@ -31,18 +31,9 @@ test.describe("Impression processing", () => {
     const grayPngPath = await createGrayPng();
 
     try {
-      // 2. Navigate to New Renovation page
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
-      // Step 1: Image capture — select file (no title)
-      const fileInput = page.locator('input[type="file"]');
-      await fileInput.setInputFiles(grayPngPath);
-
-      await expect(page.getByAltText("Preview")).toBeVisible();
-
-      // Advance to Step 2: Mask
-      await page.getByRole("button", { name: "Next" }).click();
+      // 2. Take Photo → directly opens camera, auto-navigates to mask step
+      await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+      await page.waitForURL("/renovation/new?source=cropped");
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
