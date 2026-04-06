@@ -53,6 +53,7 @@ watch(impressions, (items) => {
 // Mask canvas state
 const canvasWrapperRef = ref<HTMLElement | null>(null);
 const mainCanvasRef = ref<HTMLCanvasElement | null>(null);
+const retakeInputRef = ref<HTMLInputElement | null>(null);
 let maskCanvas: HTMLCanvasElement | null = null;
 let maskCtx: CanvasRenderingContext2D | null = null;
 let sourceCanvas: HTMLCanvasElement | null = null;
@@ -371,6 +372,32 @@ async function handleTrash() {
   requestAnimationFrame(renderCanvas);
 }
 
+function onRetakeSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+  selectedFile.value = file;
+  errorMessage.value = null;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target?.result as string;
+    imagePreview.value = dataUrl;
+    const img = new Image();
+    img.onload = () => {
+      loadedImage.value = img;
+      initCanvases();
+      clearMask();
+      requestAnimationFrame(renderCanvas);
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleTrashAtMask() {
+  router.push("/");
+}
+
 function handleTimeline() {
   if (!createdRenovationId.value) return;
   router.push(`/renovation/${createdRenovationId.value}`);
@@ -399,6 +426,9 @@ onMounted(() => {
       const img = new Image();
       img.onload = () => {
         loadedImage.value = img;
+        initCanvases();
+        step.value = 1;
+        requestAnimationFrame(renderCanvas);
         // The image is already cropped to 1024x1024, so create a fake file
         fetch(dataUrl)
           .then((res) => res.blob())
@@ -536,8 +566,8 @@ onUnmounted(() => {
       </p>
     </main>
 
-    <!-- Step 0-2 controls -->
-    <footer v-if="step < 3" class="fixed">
+    <!-- Step 0 and step 2 controls -->
+    <footer v-if="step === 0 || step === 2" class="fixed">
       <nav>
         <button
           class="max border small-round"
@@ -556,6 +586,36 @@ onUnmounted(() => {
         </button>
       </nav>
     </footer>
+
+    <!-- Step 1: Mask controls -->
+    <footer v-if="step === 1" class="fixed">
+      <nav>
+        <button
+          class="max border small-round"
+          @click="retakeInputRef?.click()"
+        >
+          <i aria-hidden="true">photo_camera</i>
+          <span>Retake</span>
+        </button>
+        <button class="max small-round error" @click="handleTrashAtMask">
+          <i aria-hidden="true">delete</i>
+          <span>Trash</span>
+        </button>
+        <button class="max small-round" @click="goNext">
+          <i aria-hidden="true">arrow_forward</i>
+          <span>Next</span>
+        </button>
+      </nav>
+    </footer>
+    <input
+      ref="retakeInputRef"
+      data-testid="retake-input"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      hidden
+      @change="onRetakeSelected"
+    />
 
     <!-- Step 4: Three-button bar -->
     <footer v-if="step === 4" class="fixed">

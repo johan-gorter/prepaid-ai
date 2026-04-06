@@ -12,80 +12,66 @@ test.describe("New Renovation Page", () => {
   });
 
   test.describe("step navigation (no emulators needed beyond auth)", () => {
-    test("shows step 1 with photo selection, no title field", async ({
+    test("shows mask step immediately after taking photo", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
-      await expect(page.getByText("1. Capture Image")).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: "Select or Capture Photo" }),
-      ).toBeVisible();
-
-      // No title field
-      await expect(page.locator("#title")).not.toBeAttached();
-      await expect(page.getByLabel("Title")).not.toBeAttached();
-    });
-
-    test("Next button disabled until photo is selected", async ({
-      authenticatedPage: page,
-    }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
-      const nextBtn = page.getByRole("button", { name: "Next" });
-      await expect(nextBtn).toBeDisabled();
-
-      // Select a photo
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('input[type="file"]').setInputFiles(grayPngPath);
-        await expect(page.getByAltText("Preview")).toBeVisible();
-        await expect(nextBtn).toBeEnabled();
-      } finally {
-        fs.unlinkSync(grayPngPath);
-      }
-    });
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
 
-    test("can navigate forward to mask step and back", async ({
-      authenticatedPage: page,
-    }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
-      const grayPngPath = await createGrayPng();
-      try {
-        await page.locator('input[type="file"]').setInputFiles(grayPngPath);
-
-        // Advance to mask step
-        await page.getByRole("button", { name: "Next" }).click();
         await expect(
           page.getByText("Paint the area you want to change"),
         ).toBeVisible();
         await expect(page.locator("canvas")).toBeVisible();
 
-        // Back to capture step
-        await page.getByRole("button", { name: "Back", exact: true }).click();
-        await expect(page.getByText("1. Capture Image")).toBeVisible();
+        // No title field
+        await expect(page.locator("#title")).not.toBeAttached();
+        await expect(page.getByLabel("Title")).not.toBeAttached();
       } finally {
         fs.unlinkSync(grayPngPath);
       }
     });
 
-    test("can navigate through mask to prompt step", async ({
+    test("mask step shows Retake, Trash, and Next buttons", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('input[type="file"]').setInputFiles(grayPngPath);
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
 
-        // Advance to mask
-        await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.locator("canvas")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+      } finally {
+        fs.unlinkSync(grayPngPath);
+      }
+    });
+
+    test("Trash at mask step navigates to home", async ({
+      authenticatedPage: page,
+    }) => {
+      const grayPngPath = await createGrayPng();
+      try {
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
+
+        await page.getByRole("button", { name: "Trash" }).click();
+        await page.waitForURL("/");
+        await expect(page.getByText("My Renovations")).toBeVisible();
+      } finally {
+        fs.unlinkSync(grayPngPath);
+      }
+    });
+
+    test("can navigate from mask to prompt step", async ({
+      authenticatedPage: page,
+    }) => {
+      const grayPngPath = await createGrayPng();
+      try {
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
 
         // Advance to prompt
         await page.getByRole("button", { name: "Next" }).click();
@@ -114,13 +100,10 @@ test.describe("New Renovation Page", () => {
     test("clear mask button clears the drawn area", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
-
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('input[type="file"]').setInputFiles(grayPngPath);
-        await page.getByRole("button", { name: "Next" }).click();
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
 
         await expect(page.locator("canvas")).toBeVisible();
         await expect(
@@ -147,12 +130,17 @@ test.describe("New Renovation Page", () => {
     test("back header button navigates to home", async ({
       authenticatedPage: page,
     }) => {
-      await page.getByRole("button", { name: "Take Photo" }).click();
-      await page.waitForURL("/renovation/new");
+      const grayPngPath = await createGrayPng();
+      try {
+        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page.waitForURL("/renovation/new?source=cropped");
 
-      await page.getByRole("button", { name: "← Back" }).click();
-      await page.waitForURL("/");
-      await expect(page.getByText("My Renovations")).toBeVisible();
+        await page.getByRole("button", { name: "← Back" }).click();
+        await page.waitForURL("/");
+        await expect(page.getByText("My Renovations")).toBeVisible();
+      } finally {
+        fs.unlinkSync(grayPngPath);
+      }
     });
   });
 
@@ -264,7 +252,7 @@ test.describe("New Renovation Page", () => {
           timeout: 30000,
         });
 
-        // Trash it
+        // Trash it (from result step → resets to mask step)
         await page.getByRole("button", { name: "Trash" }).click();
         await expect(
           page.getByText("Paint the area you want to change"),
