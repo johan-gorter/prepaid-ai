@@ -4,9 +4,20 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
+const cameraInput = ref<HTMLInputElement | null>(null);
 
-function onTakePhoto() {
-  router.push("/renovation/new");
+function onCameraSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target?.result as string;
+    sessionStorage.setItem("croppedImage", dataUrl);
+    router.push("/renovation/new?source=cropped");
+  };
+  reader.readAsDataURL(file);
 }
 
 function onFileSelected(event: Event) {
@@ -31,7 +42,7 @@ function onFileSelected(event: Event) {
     <i class="extra" aria-hidden="true">photo_camera</i>
     <h5>New Renovation</h5>
     <nav class="vertical">
-      <button class="small-round" @click="onTakePhoto">
+      <button class="small-round" @click="cameraInput?.click()">
         <i aria-hidden="true">photo_camera</i>
         <span>Take Photo</span>
       </button>
@@ -40,6 +51,15 @@ function onFileSelected(event: Event) {
         <span>Upload Image</span>
       </button>
     </nav>
+    <input
+      ref="cameraInput"
+      data-testid="camera-input"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      hidden
+      @change="onCameraSelected"
+    />
     <input
       ref="fileInput"
       type="file"
