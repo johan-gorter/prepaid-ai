@@ -1,0 +1,19 @@
+#!/bin/bash
+# pre-push hook — runs build and E2E tests before allowing a push.
+# Installed automatically by the SessionStart hook (core.hooksPath).
+#
+# To bypass in emergencies: git push --no-verify
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+echo "▸ pre-push: type-checking and building..."
+npm -s run build
+
+echo "▸ pre-push: running component tests..."
+npm -s run test:ct
+
+echo "▸ pre-push: running E2E tests (no retries)..."
+npx playwright test --config=playwright.config.ts --retries=0
+
+echo "✔ pre-push: all checks passed"

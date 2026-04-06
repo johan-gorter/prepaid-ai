@@ -12,6 +12,9 @@ fi
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
+# --- Configure git to use project hooks directory ----------------------------
+git config core.hooksPath .githooks 2>/dev/null || true
+
 # --- Cleanup trap: kill any background processes we started ----------------
 BACKGROUND_PIDS=()
 cleanup() {
@@ -73,7 +76,7 @@ if [ -d "$PW_CACHE" ] && ls "$PW_CACHE"/chromium-* &>/dev/null; then
   echo "Playwright chromium already cached, skipping" >&2
 else
   echo "Installing Playwright chromium..." >&2
-  if ! timeout 90 npx playwright install chromium >&2 2>&1; then
+  if ! timeout 120 npx playwright install --with-deps chromium >&2 2>&1; then
     echo "Warning: Playwright install failed or timed out" >&2
   fi
 fi

@@ -3,7 +3,7 @@
     "SessionStart": [
       {
         "type": "command",
-        "command": "npm install && npm run devservices",
+        "command": "git config core.hooksPath .githooks && npm install && npx playwright install --with-deps chromium && npm run devservices",
         "cwd": ".",
         "timeout": 600
       }
