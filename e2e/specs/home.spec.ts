@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { expect, test } from "../fixtures";
-import { createRenovationAndWaitForResult } from "../helpers/renovation";
+import { createGrayPng, createRenovationAndWaitForResult } from "../helpers/renovation";
 
 test.describe("Home Page", () => {
   test("shows new renovation card", async ({
@@ -10,12 +10,20 @@ test.describe("Home Page", () => {
     await expect(page.getByRole("heading", { name: "New Renovation" })).toBeVisible();
   });
 
-  test("navigates to new renovation page via take photo", async ({
+  test("take photo flow navigates to mask step", async ({
     authenticatedPage: page,
   }) => {
-    await page.getByRole("button", { name: "Take Photo" }).click();
-    await page.waitForURL("/renovation/new");
-    await expect(page.getByText("1. Capture Image")).toBeVisible();
+    // Simulate the camera capture: set a file on the hidden camera input.
+    // Clicking the "Take Photo" button only triggers the native file picker
+    // (which Playwright cannot interact with), so we drive the input directly.
+    const grayPngPath = await createGrayPng();
+    try {
+      await page.getByTestId("camera-input").setInputFiles(grayPngPath);
+      await page.waitForURL("/renovation/new?source=cropped");
+      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+    } finally {
+      fs.unlinkSync(grayPngPath);
+    }
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {
