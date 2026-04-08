@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => ({
       srcDir: "src",
       filename: "sw.ts",
       registerType: "autoUpdate",
+      injectRegister: false,
       includeAssets: ["favicon.svg"],
       manifest: {
         name: "Prepaid AI",
