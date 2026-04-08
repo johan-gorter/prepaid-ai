@@ -43,13 +43,15 @@ export const test = base.extend<TestFixtures>({
       // Wait for Vue-side auth state (onAuthStateChanged in useAuth.ts) to
       // propagate, not just the Firebase SDK. The router guard calls
       // getCurrentUser() which depends on the Vue loading ref, not auth.currentUser.
-      await page.waitForFunction(
-        () => (window as any).__testAuthReady?.().then((uid: string | null) => uid != null),
+      await page.waitForFunction(() =>
+        (window as any)
+          .__testAuthReady?.()
+          .then((uid: string | null) => uid != null),
       );
 
-      // Navigate to home — the router guard will now see the authenticated user.
-      await page.goto("/");
-      await page.waitForSelector('text=My Renovations');
+      // Navigate to renovations — the router guard will now see the authenticated user.
+      await page.goto("/renovations");
+      await page.waitForSelector("text=My Renovations");
 
       try {
         await use(page);

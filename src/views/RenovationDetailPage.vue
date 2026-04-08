@@ -100,7 +100,7 @@ async function handleDeleteImpression(impressionId: string) {
 async function handleDeleteRenovation() {
   showDeleteDialog.value = false;
   await deleteRenovation(renovationId.value);
-  router.push("/");
+  router.push("/renovations");
 }
 
 function navigateToNewImpression(source: string) {
@@ -118,7 +118,7 @@ onMounted(() => {
       <nav>
         <button
           class="transparent circle"
-          @click="router.push('/')"
+          @click="router.push('/renovations')"
           aria-label="← Back"
         >
           <i aria-hidden="true">arrow_back</i>

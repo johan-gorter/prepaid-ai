@@ -395,7 +395,7 @@ function onRetakeSelected(event: Event) {
 }
 
 function handleTrashAtMask() {
-  router.push("/");
+  router.push("/renovations");
 }
 
 function handleTimeline() {
@@ -454,7 +454,7 @@ onUnmounted(() => {
       <nav>
         <button
           class="transparent circle"
-          @click="router.push('/')"
+          @click="router.push('/renovations')"
           aria-label="← Back"
         >
           <i aria-hidden="true">arrow_back</i>
@@ -590,10 +590,7 @@ onUnmounted(() => {
     <!-- Step 1: Mask controls -->
     <footer v-if="step === 1" class="fixed">
       <nav>
-        <button
-          class="max border small-round"
-          @click="retakeInputRef?.click()"
-        >
+        <button class="max border small-round" @click="retakeInputRef?.click()">
           <i aria-hidden="true">photo_camera</i>
           <span>Retake</span>
         </button>

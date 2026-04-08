@@ -14,5 +14,11 @@ service cloud.firestore {
         }
       }
     }
+
+    // Feedback — authenticated users can create; only the author can read/delete
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
   }
 }

@@ -9,6 +9,36 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/main",
+    name: "main",
+    component: () => import("../views/MainPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/renovations",
+    name: "renovations",
+    component: () => import("../views/RenovationsPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/balance",
+    name: "balance",
+    component: () => import("../views/BalancePage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/about",
+    name: "about",
+    component: () => import("../views/AboutPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/account",
+    name: "account",
+    component: () => import("../views/AccountPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/login",
     name: "login",
     component: () => import("../views/LoginPage.vue"),

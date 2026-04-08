@@ -28,4 +28,5 @@ export interface UserProfile {
   email: string;
   photoURL: string;
   createdAt: Timestamp;
+  lastActivity?: Timestamp;
 }

@@ -17,7 +17,9 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
         await expect(
@@ -38,10 +40,14 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
-        await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Retake" }),
+        ).toBeVisible();
         await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
       } finally {
@@ -54,11 +60,13 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
         await page.getByRole("button", { name: "Trash" }).click();
-        await page.waitForURL("/");
+        await page.waitForURL("/renovations");
         await expect(page.getByText("My Renovations")).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
@@ -70,7 +78,9 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
         // Advance to prompt
@@ -102,7 +112,9 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
         await expect(page.locator("canvas")).toBeVisible();
@@ -116,7 +128,10 @@ test.describe("New Renovation Page", () => {
         if (box) {
           await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
           await page.mouse.down();
-          await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2);
+          await page.mouse.move(
+            box.x + box.width / 2 + 30,
+            box.y + box.height / 2,
+          );
           await page.mouse.up();
         }
 
@@ -132,11 +147,13 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
         await page.waitForURL("/renovation/new?source=cropped");
 
         await page.getByRole("button", { name: "← Back" }).click();
-        await page.waitForURL("/");
+        await page.waitForURL("/renovations");
         await expect(page.getByText("My Renovations")).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
@@ -158,9 +175,7 @@ test.describe("New Renovation Page", () => {
         await expect(
           page.getByRole("button", { name: "Renovation Details" }),
         ).toBeVisible();
-        await expect(
-          page.getByRole("button", { name: "Trash" }),
-        ).toBeVisible();
+        await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
         await expect(
           page.getByRole("button", { name: "Next Change" }),
         ).toBeVisible();
@@ -183,7 +198,9 @@ test.describe("New Renovation Page", () => {
       try {
         await page.getByRole("button", { name: "Renovation Details" }).click();
         await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-        await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: "Renovation Details" }),
+        ).toBeVisible();
       } finally {
         fs.unlinkSync(grayPngPath);
       }

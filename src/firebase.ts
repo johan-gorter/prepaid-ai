@@ -4,6 +4,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -22,6 +23,7 @@ export const db = initializeFirestore(firebaseApp, {
   }),
 });
 export const storage = getStorage(firebaseApp);
+export const functions = getFunctions(firebaseApp, "europe-west1");
 
 // Connect to Firebase emulators in local dev/test
 if (import.meta.env.VITE_USE_EMULATORS === "true") {
@@ -36,6 +38,10 @@ if (import.meta.env.VITE_USE_EMULATORS === "true") {
     });
     firestoreModule.connectFirestoreEmulator(db, "127.0.0.1", 8081);
     storageModule.connectStorageEmulator(storage, "127.0.0.1", 9199);
+
+    import("firebase/functions").then((functionsModule) => {
+      functionsModule.connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+    });
 
     // Expose test helpers so Playwright can interact without bare module imports
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

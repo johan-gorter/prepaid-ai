@@ -20,9 +20,7 @@ function onDocumentClick(e: MouseEvent) {
 }
 
 onMounted(() => document.addEventListener("click", onDocumentClick, true));
-onUnmounted(() =>
-  document.removeEventListener("click", onDocumentClick, true),
-);
+onUnmounted(() => document.removeEventListener("click", onDocumentClick, true));
 
 async function handleSignOut() {
   await signOut();
@@ -37,7 +35,11 @@ function chooseScheme(scheme: "light" | "dark") {
 
 <template>
   <div v-if="currentUser" style="position: relative" data-user-menu>
-    <button class="transparent circle" aria-label="User menu" @click="showMenu = !showMenu">
+    <button
+      class="transparent circle"
+      aria-label="User menu"
+      @click="showMenu = !showMenu"
+    >
       <img
         v-if="currentUser.photoURL"
         :src="currentUser.photoURL"
@@ -47,24 +49,39 @@ function chooseScheme(scheme: "light" | "dark") {
       />
       <i v-else>account_circle</i>
     </button>
-    <menu :class="{ active: showMenu }" class="no-wrap" style="right: 0; left: auto">
+    <menu
+      :class="{ active: showMenu }"
+      class="no-wrap"
+      style="right: 0; left: auto"
+    >
       <li v-if="currentUser.displayName">
         <span>{{ currentUser.displayName }}</span>
       </li>
       <li class="divider"></li>
       <li>
         <a @click="chooseScheme('light')">
-          <i>{{ colorScheme === 'light' ? 'check' : 'light_mode' }}</i>
+          <i>{{ colorScheme === "light" ? "check" : "light_mode" }}</i>
           <span>Light</span>
         </a>
       </li>
       <li>
         <a @click="chooseScheme('dark')">
-          <i>{{ colorScheme === 'dark' ? 'check' : 'dark_mode' }}</i>
+          <i>{{ colorScheme === "dark" ? "check" : "dark_mode" }}</i>
           <span>Dark</span>
         </a>
       </li>
       <li class="divider"></li>
+      <li>
+        <a
+          @click="
+            router.push('/account');
+            showMenu = false;
+          "
+        >
+          <i>manage_accounts</i>
+          <span>Account</span>
+        </a>
+      </li>
       <li>
         <a @click="handleSignOut">
           <i>logout</i>

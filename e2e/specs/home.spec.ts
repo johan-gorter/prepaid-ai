@@ -1,13 +1,16 @@
 import fs from "node:fs";
 import { expect, test } from "../fixtures";
-import { createGrayPng, createRenovationAndWaitForResult } from "../helpers/renovation";
+import {
+  createGrayPng,
+  createRenovationAndWaitForResult,
+} from "../helpers/renovation";
 
 test.describe("Home Page", () => {
-  test("shows new renovation card", async ({
-    authenticatedPage: page,
-  }) => {
+  test("shows new renovation card", async ({ authenticatedPage: page }) => {
     await expect(page.getByTestId("new-renovation-card")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "New Renovation" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "New Renovation" }),
+    ).toBeVisible();
   });
 
   test("Take Photo navigates to mask step with captured image", async ({
@@ -19,9 +22,13 @@ test.describe("Home Page", () => {
     // capture step).
     const grayPngPath = await createGrayPng();
     try {
-      await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
+      await page
+        .locator('[data-testid="camera-input"]')
+        .setInputFiles(grayPngPath);
       await page.waitForURL("/renovation/new?source=cropped");
-      await expect(page.getByText("Paint the area you want to change")).toBeVisible();
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }
@@ -33,7 +40,7 @@ test.describe("Home Page", () => {
     // When the native file dialog is dismissed without selecting a photo,
     // no navigation occurs and the home page remains visible.
     await page.locator('[data-testid="camera-input"]').setInputFiles([]);
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/renovations");
     await expect(page.getByTestId("new-renovation-card")).toBeVisible();
   });
 
@@ -81,7 +88,7 @@ test.describe("Home Page with renovations", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await page.getByRole("button", { name: "← Back" }).click();
-      await page.waitForURL("/");
+      await page.waitForURL("/renovations");
 
       // Should show a renovation card alongside the new-renovation card
 
@@ -107,7 +114,7 @@ test.describe("Home Page with renovations", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await page.getByRole("button", { name: "← Back" }).click();
-      await page.waitForURL("/");
+      await page.waitForURL("/renovations");
 
       // Click the card
       const card = page.getByTestId("renovation-card");
@@ -116,7 +123,9 @@ test.describe("Home Page with renovations", () => {
 
       // Should navigate to timeline
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Renovation Details" }),
+      ).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
     }

@@ -271,7 +271,7 @@ function handleConfirm() {
 
 function handleCancel() {
   sessionStorage.removeItem("cropImage");
-  router.push("/");
+  router.push("/renovations");
 }
 </script>
 
@@ -314,7 +314,11 @@ function handleCancel() {
         ></canvas>
       </div>
       <nav class="center-align" style="margin-top: 0.5rem">
-        <button class="transparent circle" @click="zoomOut" aria-label="Zoom out">
+        <button
+          class="transparent circle"
+          @click="zoomOut"
+          aria-label="Zoom out"
+        >
           <i aria-hidden="true">remove</i>
         </button>
         <button class="transparent circle" @click="zoomIn" aria-label="Zoom in">

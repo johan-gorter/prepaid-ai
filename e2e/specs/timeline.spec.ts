@@ -25,7 +25,9 @@ test.describe("Renovation Details Page", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // Header
-      await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Renovation Details" }),
+      ).toBeVisible();
 
       // Original image pinned at top
       await expect(page.getByAltText("Original")).toBeVisible();
@@ -64,9 +66,7 @@ test.describe("Renovation Details Page", () => {
     }
   });
 
-  test("back button navigates to home", async ({
-    authenticatedPage: page,
-  }) => {
+  test("back button navigates to home", async ({ authenticatedPage: page }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "paint ceiling",
@@ -77,7 +77,7 @@ test.describe("Renovation Details Page", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       await page.getByRole("button", { name: "← Back" }).click();
-      await page.waitForURL("/");
+      await page.waitForURL("/renovations");
       await expect(page.getByText("My Renovations")).toBeVisible();
     } finally {
       fs.unlinkSync(grayPngPath);
@@ -182,7 +182,9 @@ test.describe("Renovation Details Page", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
       // First impression should be starred
-      await expect(page.getByTitle("Set as after image")).toHaveClass(/starred/);
+      await expect(page.getByTitle("Set as after image")).toHaveClass(
+        /starred/,
+      );
 
       // Create a second impression by clicking the result image from the timeline
       await expect(page.getByAltText("Result")).toBeVisible();
@@ -258,7 +260,9 @@ test.describe("Renovation Details Page", () => {
 
       // Click result image — should navigate to new impression with source=impressionId
       await page.getByAltText("Result").click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=(?!before)[a-zA-Z0-9]+/);
+      await page.waitForURL(
+        /\/renovation\/[a-zA-Z0-9]+\/new\?source=(?!before)[a-zA-Z0-9]+/,
+      );
 
       // Source image must load — mask step visible with canvas ready
       await expect(

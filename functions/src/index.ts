@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { beforeUserCreated, HttpsError } from "firebase-functions/v2/identity";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { beforeUserCreated } from "firebase-functions/v2/identity";
 
 // Jimp is a devDependency (emulator-only).
 // It is lazy-imported inside dummyProcess() to avoid crashing in production.
@@ -249,5 +250,50 @@ export const beforeCreate = beforeUserCreated(
         `Only @${ALLOWED_DOMAIN} accounts are allowed in this environment`,
       );
     }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Callable function — delete all user data (Firestore + Storage)
+// ---------------------------------------------------------------------------
+export const deleteUserAccount = onCall(
+  { region: "europe-west1", timeoutSeconds: 120 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Authentication required");
+    }
+
+    // Delete all renovations and their impressions subcollections
+    const renovationsRef = db.collection(`users/${uid}/renovations`);
+    const renovations = await renovationsRef.listDocuments();
+    for (const renoDoc of renovations) {
+      const impressions = await renoDoc
+        .collection("impressions")
+        .listDocuments();
+      for (const impDoc of impressions) {
+        await impDoc.delete();
+      }
+      await renoDoc.delete();
+    }
+
+    // Delete all user files from Storage
+    try {
+      await bucket.deleteFiles({ prefix: `users/${uid}/` });
+    } catch {
+      // Ignore if no files exist
+    }
+
+    // Delete feedback documents authored by this user
+    const feedbackQuery = db.collection("feedback").where("uid", "==", uid);
+    const feedbackDocs = await feedbackQuery.get();
+    for (const feedbackDoc of feedbackDocs.docs) {
+      await feedbackDoc.ref.delete();
+    }
+
+    // Delete the user profile document
+    await db.doc(`users/${uid}`).delete();
+
+    return { success: true };
   },
 );
