@@ -134,11 +134,13 @@ When a new version of the app is deployed, the following happens automatically:
 
 4. **Cache cleanup.** `cleanupOutdatedCaches()` removes stale Workbox precache entries left by the previous service worker version, keeping storage usage bounded.
 
-5. **Effect on the running page.** Because the new worker activates while the page is open, subsequent navigation requests (clicking a link, reloading) will be served by the new precache. The visible page content itself is not force-reloaded; the update takes full effect on the next navigation or reload.
+5. **Automatic page reload.** The main app (`src/main.ts`) listens for the `controllerchange` event on `navigator.serviceWorker`. When the new worker claims the page, the browser reloads automatically — no user action or prompt required. A guard ensures this only fires when replacing an existing controller, not on first install.
 
-This is a silent, automatic update cycle. There is no user-visible prompt. The design decision is that correctness (users always run the latest code within one navigation) matters more than explicit opt-in control.
+6. **Proactive update polling.** `registerSW()` from `virtual:pwa-register` is called with a 60-second interval that calls `registration.update()`, so a long-lived tab detects a deploy within one minute even without a navigation.
 
-The `registerType: "autoUpdate"` setting in `vite.config.ts` drives steps 1–2. Steps 3–4 are explicit calls in `src/sw.ts`.
+This is a silent, automatic update cycle. There is no user-visible prompt. The design decision is that immediacy (users always run the latest code within 60 seconds of deploy) matters more than explicit opt-in control.
+
+The `registerType: "autoUpdate"` setting in `vite.config.ts` drives steps 1–2. Steps 3–4 are explicit calls in `src/sw.ts`. Steps 5–6 are driven by `src/main.ts`.
 
 ---
 
