@@ -69,16 +69,14 @@ if [ "$NPM_OK" != true ]; then
   exit 0
 fi
 
-# --- 2. Install Playwright chromium (skip if already cached) ---------------
-# Check if chromium is already present by looking at the cache directory
-PW_CACHE="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
-if [ -d "$PW_CACHE" ] && ls "$PW_CACHE"/chromium-* &>/dev/null; then
-  echo "Playwright chromium already cached, skipping" >&2
-else
-  echo "Installing Playwright chromium..." >&2
-  if ! timeout 120 npx playwright install --with-deps chromium >&2 2>&1; then
-    echo "Warning: Playwright install failed or timed out" >&2
-  fi
+# --- 2. Install Playwright chromium ----------------------------------------
+# Let Playwright decide whether the correct browser revision is already
+# cached.  The previous manual "ls chromium-*" check caused false positives
+# when the pre-installed revision (e.g. 1194) didn't match what the current
+# Playwright version actually requires (e.g. 1208).
+echo "Installing Playwright chromium (idempotent — skips if up-to-date)..." >&2
+if ! timeout 120 npx playwright install --with-deps chromium >&2 2>&1; then
+  echo "Warning: Playwright install failed or timed out" >&2
 fi
 
 # --- 3. Pre-cache Firebase emulator JARs ----------------------------------
