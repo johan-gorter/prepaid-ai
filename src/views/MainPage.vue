@@ -60,6 +60,13 @@ async function submitFeedback() {
       to create a new project or continue working on an existing one.
     </p>
 
+    <h5>Private Chat</h5>
+    <p>
+      Have a private conversation with
+      <router-link to="/chat">Gemini Pro</router-link>. No conversation data is
+      stored — your chat stays on your device only.
+    </p>
+
     <h5>Coming soon</h5>
     <p>
       We are actively working on new features beyond renovations. Check your

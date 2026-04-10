@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import UserMenu from "../components/UserMenu.vue";
+import { useAuth } from "../composables/useAuth";
+
+const { currentUser } = useAuth();
 </script>
 
 <template>
@@ -68,9 +71,9 @@ import UserMenu from "../components/UserMenu.vue";
     </p>
 
     <div style="padding-top: 1rem">
-      <router-link to="/main" class="button">
+      <router-link :to="currentUser ? '/main' : '/login'" class="button">
         <i>arrow_back</i>
-        <span>Back to Main</span>
+        <span>Back</span>
       </router-link>
     </div>
   </main>

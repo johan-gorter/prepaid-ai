@@ -4,7 +4,11 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const lastPage = localStorage.getItem("prepaid-ai-last-page") ?? "main";
-router.replace(lastPage === "renovations" ? "/renovations" : "/main");
+const redirectMap: Record<string, string> = {
+  renovations: "/renovations",
+  chat: "/chat",
+};
+router.replace(redirectMap[lastPage] ?? "/main");
 </script>
 
 <template>

@@ -1,7 +1,13 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { beforeUserCreated } from "firebase-functions/v2/identity";
+import {
+  chatCostCredits,
+  estimateChatCredits,
+  imageGenerationCredits,
+  maxOutputTokensForBudget,
+} from "./credits.js";
 
 // Jimp is a devDependency (emulator-only).
 // It is lazy-imported inside dummyProcess() to avoid crashing in production.
@@ -34,6 +40,57 @@ function getAiBackend(): AiBackend {
 }
 
 const GEMINI_MODEL = "gemini-2.5-flash-image";
+const GEMINI_CHAT_MODEL = "gemini-2.5-pro";
+
+// ---------------------------------------------------------------------------
+// Balance transaction reason keys (translated client-side)
+// ---------------------------------------------------------------------------
+type TransactionReasonKey =
+  | "image_generation"
+  | "chat_message"
+  | "credit_purchase"
+  | "admin_adjustment";
+
+/**
+ * Deduct credits from a user's balance inside a Firestore transaction.
+ * Creates a document in `users/{uid}/balanceTransactions` and decrements
+ * `users/{uid}.balance`.
+ *
+ * Returns the new balance, or throws if insufficient funds.
+ */
+async function deductCredits(
+  userId: string,
+  credits: number,
+  reasonKey: TransactionReasonKey,
+  metadata?: Record<string, unknown>,
+): Promise<number> {
+  const userRef = db.doc(`users/${userId}`);
+  const txnCollection = db.collection(`users/${userId}/balanceTransactions`);
+
+  return db.runTransaction(async (txn) => {
+    const userSnap = await txn.get(userRef);
+    const currentBalance: number = userSnap.data()?.balance ?? 0;
+    const newBalance = currentBalance - credits;
+
+    if (newBalance < 0) {
+      throw new Error(
+        `Insufficient balance: need ${credits}, have ${currentBalance}`,
+      );
+    }
+
+    const txnRef = txnCollection.doc();
+    txn.set(txnRef, {
+      reasonKey,
+      amount: -credits,
+      balanceAfter: newBalance,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...metadata,
+    });
+    txn.update(userRef, { balance: newBalance });
+
+    return newBalance;
+  });
+}
 
 /**
  * Extract the Storage path from a Firebase Storage download URL.
@@ -218,6 +275,24 @@ export const processImpression = onDocumentCreated(
         status: "completed",
         resultImagePath: resultPath,
       });
+
+      // Deduct credits for image generation
+      try {
+        await deductCredits(
+          userId,
+          imageGenerationCredits(),
+          "image_generation",
+          {
+            renovationId,
+            impressionId,
+          },
+        );
+      } catch (balanceErr: unknown) {
+        console.warn(
+          "Balance deduction failed (processing still succeeded):",
+          balanceErr instanceof Error ? balanceErr.message : balanceErr,
+        );
+      }
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Unknown processing error";
@@ -295,5 +370,240 @@ export const deleteUserAccount = onCall(
     await db.doc(`users/${uid}`).delete();
 
     return { success: true };
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Streaming chat — Gemini 2.5 Pro via SSE (no conversation stored)
+// ---------------------------------------------------------------------------
+
+export const chat = onRequest(
+  {
+    region: "europe-west1",
+    cors: true,
+    secrets: ["GEMINI_API_KEY"],
+    timeoutSeconds: 300,
+    memory: "512MiB",
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
+      return;
+    }
+
+    // Authenticate via Firebase ID token
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).send("Unauthorized");
+      return;
+    }
+    let uid: string;
+    try {
+      const decoded = await admin
+        .auth()
+        .verifyIdToken(authHeader.split("Bearer ")[1]);
+      uid = decoded.uid;
+    } catch {
+      res.status(401).send("Invalid token");
+      return;
+    }
+
+    // Parse request
+    const { messages, maxCredits } = req.body as {
+      messages: Array<{ role: "user" | "model"; text: string }>;
+      maxCredits: number;
+    };
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      res.status(400).send("messages is required");
+      return;
+    }
+    if (typeof maxCredits !== "number" || maxCredits <= 0) {
+      res.status(400).send("maxCredits must be a positive number");
+      return;
+    }
+
+    // SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const sendEvent = (event: string, data: unknown) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Convert to Gemini content format
+    const contents = messages.map((m) => ({
+      role: m.role,
+      parts: [{ text: m.text }],
+    }));
+
+    const backend = getAiBackend();
+
+    // ----- Dummy backend (emulator) -----
+    if (backend === "dummy") {
+      const lastMessage = messages[messages.length - 1].text;
+      const dummyReply = `[dummy] Echo: ${lastMessage}`;
+      const inputTokens = messages.reduce(
+        (sum, m) => sum + Math.ceil(m.text.length / 4),
+        0,
+      );
+      const outputTokens = Math.ceil(dummyReply.length / 4);
+
+      sendEvent("estimate", {
+        inputTokens,
+        maxOutputTokens: 1000,
+        estimatedCredits: 1,
+      });
+
+      for (const char of dummyReply) {
+        sendEvent("chunk", { text: char });
+      }
+
+      sendEvent("done", {
+        inputTokens,
+        outputTokens,
+        thinkingTokens: 0,
+        credits: chatCostCredits(inputTokens, outputTokens),
+      });
+
+      // Deduct credits (best-effort in dummy mode)
+      const dummyCredits = chatCostCredits(inputTokens, outputTokens);
+      try {
+        await deductCredits(uid, dummyCredits, "chat_message", {
+          inputTokens,
+          outputTokens,
+        });
+      } catch {
+        /* ignore in dummy mode */
+      }
+
+      res.end();
+      return;
+    }
+
+    // ----- Real Gemini backend -----
+    try {
+      const GoogleGenAI = await loadGenAI();
+      const ai = createGenAI(GoogleGenAI, backend);
+
+      // Count input tokens
+      const tokenResponse = await ai.models.countTokens({
+        model: GEMINI_CHAT_MODEL,
+        contents,
+      });
+      const inputTokens = tokenResponse.totalTokens ?? 0;
+
+      // Compute max output tokens from credit budget
+      const maxTokens = maxOutputTokensForBudget(maxCredits, inputTokens);
+      if (maxTokens <= 0) {
+        sendEvent("error", {
+          message: "Insufficient credits for this prompt",
+        });
+        res.end();
+        return;
+      }
+
+      // Send cost estimate to client
+      sendEvent("estimate", {
+        inputTokens,
+        maxOutputTokens: maxTokens,
+        estimatedCredits: estimateChatCredits(inputTokens, maxTokens),
+      });
+
+      // Track client disconnect
+      let disconnected = false;
+      req.on("close", () => {
+        disconnected = true;
+      });
+
+      // Stream generation
+      let accumulatedText = "";
+      let usageMetadata: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        thoughtsTokenCount?: number;
+        totalTokenCount?: number;
+      } | null = null;
+
+      const stream = await ai.models.generateContentStream({
+        model: GEMINI_CHAT_MODEL,
+        contents,
+        config: {
+          maxOutputTokens: maxTokens,
+        },
+      });
+
+      for await (const chunk of stream) {
+        if (disconnected) break;
+
+        if (chunk.text) {
+          accumulatedText += chunk.text;
+          sendEvent("chunk", { text: chunk.text });
+        }
+        if (chunk.usageMetadata) {
+          usageMetadata = chunk.usageMetadata;
+        }
+      }
+
+      // Compute actual cost
+      let actualOutputTokens: number;
+      let thinkingTokens = 0;
+
+      if (usageMetadata) {
+        // Exact counts from the API
+        actualOutputTokens =
+          (usageMetadata.candidatesTokenCount ?? 0) +
+          (usageMetadata.thoughtsTokenCount ?? 0);
+        thinkingTokens = usageMetadata.thoughtsTokenCount ?? 0;
+      } else if (disconnected && accumulatedText) {
+        // Aborted — count the text we did receive
+        const countResult = await ai.models.countTokens({
+          model: GEMINI_CHAT_MODEL,
+          contents: [{ role: "model", parts: [{ text: accumulatedText }] }],
+        });
+        actualOutputTokens =
+          countResult.totalTokens ?? Math.ceil(accumulatedText.length / 4);
+      } else {
+        actualOutputTokens = Math.ceil(accumulatedText.length / 4);
+      }
+
+      const credits = chatCostCredits(inputTokens, actualOutputTokens);
+
+      if (!disconnected) {
+        sendEvent("done", {
+          inputTokens,
+          outputTokens: actualOutputTokens,
+          thinkingTokens,
+          credits,
+        });
+      }
+
+      // Deduct actual credits from user's balance
+      try {
+        await deductCredits(uid, credits, "chat_message", {
+          inputTokens,
+          outputTokens: actualOutputTokens,
+          thinkingTokens,
+        });
+      } catch (balanceErr: unknown) {
+        console.warn(
+          "Balance deduction failed:",
+          balanceErr instanceof Error ? balanceErr.message : balanceErr,
+        );
+      }
+
+      res.end();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Chat error";
+      console.error("Chat error:", message);
+      if (!res.headersSent) {
+        res.status(500).send(message);
+      } else {
+        sendEvent("error", { message });
+        res.end();
+      }
+    }
   },
 );

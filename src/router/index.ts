@@ -27,10 +27,16 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/chat",
+    name: "chat",
+    component: () => import("../views/PrivateChatPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/about",
     name: "about",
     component: () => import("../views/AboutPage.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: false },
   },
   {
     path: "/account",

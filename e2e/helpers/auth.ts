@@ -10,6 +10,7 @@ import { randomBytes } from "node:crypto";
 import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config";
 
 const RANDOM_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+const INITIAL_BALANCE = 100;
 
 export interface TestUser {
   uid?: string;
@@ -92,10 +93,31 @@ export async function createTestUser(
     }
   }
 
+  // Seed initial balance in Firestore
+  await seedTestUserBalance(data.localId);
+
   return {
     ...user,
     uid: data.localId,
   };
+}
+
+/**
+ * Set the initial balance for a test user in the Firestore Emulator.
+ */
+async function seedTestUserBalance(uid: string): Promise<void> {
+  await fetch(
+    `${EMULATOR_URLS.firestore}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=balance`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          balance: { integerValue: INITIAL_BALANCE },
+        },
+      }),
+    },
+  );
 }
 
 /**

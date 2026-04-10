@@ -12,6 +12,9 @@
 import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config.mjs";
 
 const AUTH_URL = EMULATOR_URLS.auth;
+const FIRESTORE_URL = EMULATOR_URLS.firestore;
+
+const INITIAL_BALANCE = 100;
 
 export const DEV_USER = {
   email: "dev@prepaid.test",
@@ -69,9 +72,26 @@ async function seedDevUser() {
     process.exit(1);
   }
 
+  const { localId: uid } = await res.json();
+
+  // Set initial balance in Firestore
+  await fetch(
+    `${FIRESTORE_URL}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=balance`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          balance: { integerValue: INITIAL_BALANCE },
+        },
+      }),
+    },
+  );
+
   console.log("✅ Dev user created in Auth Emulator:");
   console.log(`   Email:    ${DEV_USER.email}`);
   console.log(`   Password: ${DEV_USER.password}`);
+  console.log(`   Balance:  ${INITIAL_BALANCE} credits`);
   console.log(
     "\nOpen http://localhost:5174 and use the 'Dev Login' button, or",
   );

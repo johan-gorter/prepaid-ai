@@ -91,6 +91,11 @@ async function handleDevLogin() {
         <span>Sign in with Apple</span>
       </button>
 
+      <p class="center-align small-text" style="margin-top: 1rem">
+        By signing in, you agree to our
+        <router-link to="/about">Terms of Service</router-link>.
+      </p>
+
       <!-- Dev login panel — only rendered when running with emulators -->
       <template v-if="isEmulatorMode">
         <div class="divider" style="margin-top: 1.5rem"></div>

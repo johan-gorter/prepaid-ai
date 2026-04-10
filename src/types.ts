@@ -29,4 +29,27 @@ export interface UserProfile {
   photoURL: string;
   createdAt: Timestamp;
   lastActivity?: Timestamp;
+  balance?: number;
+}
+
+export type TransactionReasonKey =
+  | "image_generation"
+  | "chat_message"
+  | "credit_purchase"
+  | "admin_adjustment";
+
+/** Translations for balance transaction reason keys. */
+export const TRANSACTION_REASONS: Record<TransactionReasonKey, string> = {
+  image_generation: "Image generation",
+  chat_message: "Chat message",
+  credit_purchase: "Credit purchase",
+  admin_adjustment: "Admin adjustment",
+};
+
+export interface BalanceTransaction {
+  id: string;
+  reasonKey: TransactionReasonKey;
+  amount: number;
+  balanceAfter: number;
+  createdAt: Timestamp;
 }
