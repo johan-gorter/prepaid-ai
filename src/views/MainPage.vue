@@ -47,34 +47,35 @@ async function submitFeedback() {
     class="responsive"
     style="max-width: 700px; margin: 0 auto; padding-top: 4.5rem"
   >
-    <h4>Welcome to Prepaid AI</h4>
+    <p>
+      Prepaid AI gives you access to premium AI applications
+      <strong>without any ongoing subscription</strong>. We are a friendly and
+      fair platform allowing everyone to benefit from AI.
+    </p>
+
+    <h5>AI Impressions for your renovations</h5>
+
     <p>
       Reimagine your living spaces with AI-powered renovation visualizations.
       Upload a photo, mark the area you want to change, describe your vision,
       and see it come to life.
     </p>
-
-    <h5>Get started</h5>
-    <p>
-      Head over to <router-link to="/renovations">your Renovations</router-link>
-      to create a new project or continue working on an existing one.
-    </p>
+    <router-link to="/renovations">Start</router-link>
 
     <h5>Private Chat</h5>
     <p>
-      Have a private conversation with
-      <router-link to="/chat">Gemini Pro</router-link>. No conversation data is
-      stored — your chat stays on your device only.
+      Have a private conversation with a powerful AI model. For example, you can
+      use this to explain technical, legal or medical documents. Your chat stays
+      on your device only.
     </p>
+    <router-link to="/chat">Start</router-link>.
 
-    <h5>Coming soon</h5>
     <p>
-      We are actively working on new features beyond renovations. Check your
+      Check your
       <router-link to="/balance">Balance</router-link> to see your current
       credits, or read our
       <router-link to="/about">About &amp; Legal</router-link>
-      page for usage terms and policies. More functionality will be added over
-      time.
+      page for usage terms and policies.
     </p>
 
     <h5>We'd love your feedback</h5>
