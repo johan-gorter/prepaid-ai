@@ -15,10 +15,10 @@ function printUsage() {
 Prepaid AI Dev Service Manager
 
 Commands:
-  start <name>      Start one service
+  start <name...>   Start one or more services
   wait <name...>    Wait until one or more service ports are open
-  stop [name]       Stop one service, or all if omitted
-  restart [name]    Restart one service, or all if omitted
+  stop [name...]    Stop one or more services, or all if omitted
+  restart [name...] Restart one or more services, or all if omitted
   status            Show status of all tracked services
 
 Services:
@@ -41,13 +41,15 @@ async function main() {
 
   switch (command) {
     case "start": {
-      if (targets.length !== 1) {
-        console.error("Error: start requires exactly one service name.\n");
+      if (targets.length === 0) {
+        console.error("Error: start requires at least one service name.\n");
         printUsage();
         process.exit(1);
       }
 
-      start(resolveTarget(targets[0]));
+      for (const target of targets) {
+        start(resolveTarget(target));
+      }
       break;
     }
 
@@ -58,13 +60,9 @@ async function main() {
         break;
       }
 
-      if (targets.length !== 1) {
-        console.error("Error: stop accepts at most one service name.\n");
-        printUsage();
-        process.exit(1);
+      for (const target of targets) {
+        await stop(resolveTarget(target));
       }
-
-      await stop(resolveTarget(targets[0]));
       break;
     }
 
@@ -99,15 +97,13 @@ async function main() {
         break;
       }
 
-      if (targets.length !== 1) {
-        console.error("Error: restart accepts at most one service name.\n");
-        printUsage();
-        process.exit(1);
+      const names = targets.map(resolveTarget);
+      for (const name of names) {
+        await stop(name);
       }
-
-      const name = resolveTarget(targets[0]);
-      await stop(name);
-      start(name);
+      for (const name of names) {
+        start(name);
+      }
       break;
     }
 

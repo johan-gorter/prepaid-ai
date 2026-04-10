@@ -54,10 +54,10 @@ scripts/                # Developer utility scripts
 | ------------------------------------ | -------------------------------------------------------------------------- |
 | `npm -s run build`                   | Type-check with `vue-tsc` then build for production with Vite              |
 | `npm -s run build:preview`           | Build then preview the production bundle locally                           |
-| `npm -s run services:start <name>`   | Start one tracked background service                                       |
-| `npm -s run services:wait <name>`    | Wait up to 45 seconds until one tracked service port is open               |
-| `npm -s run services:stop <name>`    | Stop one tracked service, or all tracked services if omitted               |
-| `npm -s run services:restart <name>` | Restart one tracked service, or all tracked services if omitted            |
+| `npm -s run services:start <name...>`   | Start one or more tracked background services                           |
+| `npm -s run services:wait <name...>`    | Wait up to 45 seconds until one or more tracked service ports are open  |
+| `npm -s run services:stop [name...]`    | Stop one or more tracked services, or all if omitted                    |
+| `npm -s run services:restart [name...]` | Restart one or more tracked services, or all if omitted                 |
 | `npm -s run services:status`         | Show tracked service status, ports, error counts, and last useful log line |
 
 Tracked service names:
