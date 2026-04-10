@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { beforeUserCreated } from "firebase-functions/v2/identity";
@@ -83,7 +84,7 @@ async function deductCredits(
       reasonKey,
       amount: -credits,
       balanceAfter: newBalance,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       ...metadata,
     });
     txn.update(userRef, { balance: newBalance });
@@ -533,8 +534,8 @@ export const chat = onRequest(
           inputTokens,
           outputTokens,
         });
-      } catch {
-        /* ignore in dummy mode */
+      } catch (e) {
+        console.warn("Dummy chat credit deduction failed:", e);
       }
 
       res.end();

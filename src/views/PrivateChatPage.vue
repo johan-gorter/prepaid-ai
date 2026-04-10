@@ -120,7 +120,6 @@ function handleKeydown(e: KeyboardEvent) {
         Cost: {{ lastCost.credits }} credit{{
           lastCost.credits !== 1 ? "s" : ""
         }}
-        ({{ lastCost.inputTokens }} in / {{ lastCost.outputTokens }} out tokens)
       </div>
     </div>
 

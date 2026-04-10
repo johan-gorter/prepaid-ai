@@ -74,12 +74,15 @@ async function seedDevUser() {
 
   const { localId: uid } = await res.json();
 
-  // Set initial balance in Firestore
-  await fetch(
+  // Set initial balance in Firestore (use "Bearer owner" to bypass security rules)
+  const balanceRes = await fetch(
     `${FIRESTORE_URL}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=balance`,
     {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer owner",
+      },
       body: JSON.stringify({
         fields: {
           balance: { integerValue: INITIAL_BALANCE },
@@ -87,6 +90,12 @@ async function seedDevUser() {
       }),
     },
   );
+
+  if (!balanceRes.ok) {
+    const err = await balanceRes.text();
+    console.error("❌ Failed to set balance:", err);
+    process.exit(1);
+  }
 
   console.log("✅ Dev user created in Auth Emulator:");
   console.log(`   Email:    ${DEV_USER.email}`);
