@@ -140,7 +140,7 @@ resource "google_service_account" "ci_deployer" {
 locals {
   ci_roles = [
     "roles/firebasehosting.admin",
-    "roles/cloudfunctions.developer",
+    "roles/cloudfunctions.admin",
     "roles/datastore.owner",
     "roles/storage.admin",
     "roles/iam.serviceAccountUser",
