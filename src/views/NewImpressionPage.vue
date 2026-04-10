@@ -48,10 +48,12 @@ watch(renovationId, (val) => {
 });
 const { impressions } = useImpressions(renovationIdRef);
 
-// Watch for impression completion
-watch(impressions, (items) => {
-  if (!createdImpressionId.value) return;
-  const imp = items.find((i) => i.id === createdImpressionId.value);
+// Watch for impression completion — watch both the impressions list and the
+// createdImpressionId ref. When the Cloud Function completes before the client
+// sets createdImpressionId, the impressions watcher alone would miss it.
+watch([impressions, createdImpressionId], ([items, impId]) => {
+  if (!impId) return;
+  const imp = items.find((i) => i.id === impId);
   if (imp && imp.status === "completed" && imp.resultImagePath) {
     resultImagePath.value = imp.resultImagePath;
   }

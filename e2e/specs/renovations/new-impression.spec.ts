@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import { expect, test } from "../fixtures";
+import { rmSync } from "node:fs";
+import { expect, test } from "../../fixtures";
 import {
   createRenovationAndWaitForResult,
   drawMaskStroke,
-} from "../helpers/renovation";
+} from "../../helpers/renovation";
 
 test.describe("New Impression Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -33,7 +33,7 @@ test.describe("New Impression Page", () => {
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -60,7 +60,7 @@ test.describe("New Impression Page", () => {
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -83,7 +83,7 @@ test.describe("New Impression Page", () => {
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -134,7 +134,7 @@ test.describe("New Impression Page", () => {
         timeout: 45_000,
       });
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -159,7 +159,7 @@ test.describe("New Impression Page", () => {
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -210,7 +210,7 @@ test.describe("New Impression Page", () => {
         page.getByRole("button", { name: "Renovation Details" }),
       ).not.toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -249,7 +249,7 @@ test.describe("New Impression Page", () => {
       await expect(page.getByText("base for chaining")).toBeVisible();
       await expect(page.getByText("chained impression")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -300,7 +300,7 @@ test.describe("New Impression Page", () => {
         timeout: 45_000,
       });
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -331,7 +331,7 @@ test.describe("New Impression Page", () => {
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 });

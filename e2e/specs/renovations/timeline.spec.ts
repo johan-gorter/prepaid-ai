@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import { expect, test } from "../fixtures";
+import { rmSync } from "node:fs";
+import { expect, test } from "../../fixtures";
 import {
   createRenovationAndWaitForResult,
   drawMaskStroke,
-} from "../helpers/renovation";
+} from "../../helpers/renovation";
 
 test.describe("Renovation Details Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -39,7 +39,7 @@ test.describe("Renovation Details Page", () => {
       // Prompt text shown below the impression
       await expect(page.getByText(promptText)).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -62,7 +62,7 @@ test.describe("Renovation Details Page", () => {
       // Should be filled (★ = starred)
       await expect(starBtn).toHaveClass(/starred/);
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -80,7 +80,7 @@ test.describe("Renovation Details Page", () => {
       await page.waitForURL("/renovations");
       await expect(page.getByText("My Renovations")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -106,7 +106,7 @@ test.describe("Renovation Details Page", () => {
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -134,7 +134,7 @@ test.describe("Renovation Details Page", () => {
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -163,7 +163,7 @@ test.describe("Renovation Details Page", () => {
       // Original image should still be there
       await expect(page.getByAltText("Original")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -238,7 +238,7 @@ test.describe("Renovation Details Page", () => {
       const firstStar = starButtons.nth(0);
       await expect(firstStar).not.toHaveClass(/starred/);
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -301,7 +301,7 @@ test.describe("Renovation Details Page", () => {
       // Two result images present
       await expect(page.getByAltText("Result")).toHaveCount(2);
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 });

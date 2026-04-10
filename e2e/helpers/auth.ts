@@ -106,11 +106,14 @@ export async function createTestUser(
  * Set the initial balance for a test user in the Firestore Emulator.
  */
 async function seedTestUserBalance(uid: string): Promise<void> {
-  await fetch(
+  const res = await fetch(
     `${EMULATOR_URLS.firestore}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=balance`,
     {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer owner",
+      },
       body: JSON.stringify({
         fields: {
           balance: { integerValue: INITIAL_BALANCE },
@@ -118,6 +121,10 @@ async function seedTestUserBalance(uid: string): Promise<void> {
       }),
     },
   );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Failed to seed test user balance: ${err}`);
+  }
 }
 
 /**

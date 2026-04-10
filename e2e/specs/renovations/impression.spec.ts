@@ -1,6 +1,6 @@
-import fs from "node:fs";
-import { expect, test } from "../fixtures";
-import { createGrayPng } from "../helpers/renovation";
+import { rmSync } from "node:fs";
+import { expect, test } from "../../fixtures";
+import { createGrayPng } from "../../helpers/renovation";
 
 // Run only on chromium — this integration test uses shared emulator state
 // and cannot safely run in parallel across multiple browser projects.
@@ -81,7 +81,7 @@ test.describe("Impression processing", () => {
       const resultBuffer = Buffer.from(await res.arrayBuffer());
       expect(resultBuffer.length).toBeGreaterThan(0);
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 });
