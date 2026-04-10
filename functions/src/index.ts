@@ -235,6 +235,20 @@ export const processImpression = onDocumentCreated(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
     );
 
+    // Check balance before processing
+    const userRef = db.doc(`users/${userId}`);
+    const userBalanceSnap = await userRef.get();
+    const currentBalance: number = userBalanceSnap.data()?.balance ?? 0;
+    const requiredCredits = imageGenerationCredits();
+
+    if (currentBalance < requiredCredits) {
+      await impressionRef.update({
+        status: "failed",
+        error: `Insufficient balance: need ${requiredCredits} credits, have ${currentBalance}`,
+      });
+      return;
+    }
+
     try {
       await impressionRef.update({ status: "processing" });
 
@@ -352,6 +366,14 @@ export const deleteUserAccount = onCall(
       await renoDoc.delete();
     }
 
+    // Delete balance transactions
+    const balanceTxns = await db
+      .collection(`users/${uid}/balanceTransactions`)
+      .listDocuments();
+    for (const txnDoc of balanceTxns) {
+      await txnDoc.delete();
+    }
+
     // Delete all user files from Storage
     try {
       await bucket.deleteFiles({ prefix: `users/${uid}/` });
@@ -374,13 +396,30 @@ export const deleteUserAccount = onCall(
 );
 
 // ---------------------------------------------------------------------------
+// CORS — built from ALLOWED_ORIGINS env var (comma-separated URLs).
+// Falls back to localhost-only for emulator mode.
+// Set via `firebase functions:config` or env vars in firebase.json.
+// ---------------------------------------------------------------------------
+function getAllowedOrigins(): (string | RegExp)[] {
+  const raw = process.env.ALLOWED_ORIGINS;
+  if (raw) {
+    return raw
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+  }
+  // Default: localhost only (emulator / dev)
+  return [/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
+}
+
+// ---------------------------------------------------------------------------
 // Streaming chat — Gemini 2.5 Pro via SSE (no conversation stored)
 // ---------------------------------------------------------------------------
 
 export const chat = onRequest(
   {
     region: "europe-west1",
-    cors: true,
+    cors: getAllowedOrigins(),
     secrets: ["GEMINI_API_KEY"],
     timeoutSeconds: 300,
     memory: "512MiB",
@@ -422,6 +461,25 @@ export const chat = onRequest(
       res.status(400).send("maxCredits must be a positive number");
       return;
     }
+
+    // Validate message roles — only "user" and "model" are allowed
+    const validRoles = new Set(["user", "model"]);
+    for (const m of messages) {
+      if (!validRoles.has(m.role) || typeof m.text !== "string") {
+        res.status(400).send("Invalid message format");
+        return;
+      }
+    }
+
+    // Verify user has sufficient balance before proceeding
+    const userSnap = await db.doc(`users/${uid}`).get();
+    const userBalance: number = userSnap.data()?.balance ?? 0;
+    if (userBalance <= 0) {
+      res.status(402).send("Insufficient balance");
+      return;
+    }
+    // Cap maxCredits to actual balance
+    const effectiveMaxCredits = Math.min(maxCredits, userBalance);
 
     // SSE headers
     res.setHeader("Content-Type", "text/event-stream");
@@ -496,7 +554,10 @@ export const chat = onRequest(
       const inputTokens = tokenResponse.totalTokens ?? 0;
 
       // Compute max output tokens from credit budget
-      const maxTokens = maxOutputTokensForBudget(maxCredits, inputTokens);
+      const maxTokens = maxOutputTokensForBudget(
+        effectiveMaxCredits,
+        inputTokens,
+      );
       if (maxTokens <= 0) {
         sendEvent("error", {
           message: "Insufficient credits for this prompt",
@@ -510,6 +571,7 @@ export const chat = onRequest(
         inputTokens,
         maxOutputTokens: maxTokens,
         estimatedCredits: estimateChatCredits(inputTokens, maxTokens),
+        balance: userBalance,
       });
 
       // Track client disconnect

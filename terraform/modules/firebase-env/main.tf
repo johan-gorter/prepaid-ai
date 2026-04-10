@@ -164,15 +164,26 @@ resource "google_project_iam_member" "ci_deployer" {
 # ---------------------------------------------------------------------------
 # Identity Platform (Firebase Auth) — authorized domains + sign-in providers
 # ---------------------------------------------------------------------------
-resource "google_identity_platform_config" "auth" {
-  provider = google-beta
-  project  = var.project_id
+locals {
+  # Extract hostname from public_url (strip scheme and trailing slash)
+  public_host = replace(replace(var.public_url, "/^https?:\\/\\//", ""), "/\\/$/", "")
 
-  authorized_domains = [
+  # Default Firebase Hosting domains
+  default_domains = [
     "localhost",
     "${var.project_id}.firebaseapp.com",
     "${var.project_id}.web.app",
   ]
+
+  # Add public_host only when it differs from the default .web.app domain
+  authorized_domains = distinct(concat(local.default_domains, [local.public_host]))
+}
+
+resource "google_identity_platform_config" "auth" {
+  provider = google-beta
+  project  = var.project_id
+
+  authorized_domains = local.authorized_domains
 
   sign_in {
     allow_duplicate_emails = false

@@ -25,4 +25,7 @@ module "firebase_env" {
   microsoft_oauth_client_secret = var.microsoft_oauth_client_secret
   apple_services_id          = var.apple_services_id
   apple_private_key          = var.apple_private_key
+
+  # Public URL
+  public_url = var.public_url
 }

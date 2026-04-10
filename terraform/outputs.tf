@@ -12,3 +12,13 @@ output "gemini_secret_id" {
   description = "Secret Manager secret ID for GEMINI_API_KEY"
   value       = module.firebase_env.gemini_secret_id
 }
+
+output "public_url" {
+  description = "Primary public URL for this environment"
+  value       = module.firebase_env.public_url
+}
+
+output "allowed_origins" {
+  description = "Allowed CORS origins for Cloud Functions"
+  value       = module.firebase_env.allowed_origins
+}

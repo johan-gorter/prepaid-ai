@@ -19,3 +19,17 @@ output "gemini_secret_id" {
   description = "Secret Manager resource ID for GEMINI_API_KEY"
   value       = google_secret_manager_secret.gemini_api_key.id
 }
+
+output "public_url" {
+  description = "Primary public URL for this environment"
+  value       = var.public_url
+}
+
+output "allowed_origins" {
+  description = "Allowed CORS origins for Cloud Functions"
+  value = distinct([
+    "https://${var.project_id}.web.app",
+    "https://${var.project_id}.firebaseapp.com",
+    var.public_url,
+  ])
+}

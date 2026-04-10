@@ -57,3 +57,8 @@ variable "apple_private_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "public_url" {
+  description = "Primary public URL for this environment"
+  type        = string
+}

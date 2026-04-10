@@ -64,3 +64,11 @@ variable "apple_private_key" {
   sensitive   = true
   default     = ""
 }
+
+# ---------------------------------------------------------------------------
+# Public URLs
+# ---------------------------------------------------------------------------
+variable "public_url" {
+  description = "Primary public URL for this environment (used for CORS and display)"
+  type        = string
+}
