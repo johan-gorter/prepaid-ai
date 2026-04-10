@@ -1,10 +1,10 @@
-import fs from "node:fs";
-import { expect, test } from "../fixtures";
+import { rmSync } from "node:fs";
+import { expect, test } from "../../fixtures";
 import {
   createGrayPng,
   createRenovationAndWaitForResult,
   fillNewRenovationForm,
-} from "../helpers/renovation";
+} from "../../helpers/renovation";
 
 test.describe("New Renovation Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -31,7 +31,7 @@ test.describe("New Renovation Page", () => {
         await expect(page.locator("#title")).not.toBeAttached();
         await expect(page.getByLabel("Title")).not.toBeAttached();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -51,7 +51,7 @@ test.describe("New Renovation Page", () => {
         await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -69,7 +69,7 @@ test.describe("New Renovation Page", () => {
         await page.waitForURL("/renovations");
         await expect(page.getByText("My Renovations")).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -103,7 +103,7 @@ test.describe("New Renovation Page", () => {
           page.getByRole("button", { name: "Generate" }),
         ).toBeEnabled();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -138,7 +138,7 @@ test.describe("New Renovation Page", () => {
         // Clear mask — just verify button is clickable
         await page.getByRole("button", { name: "Clear Mask" }).click();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -156,7 +156,7 @@ test.describe("New Renovation Page", () => {
         await page.waitForURL("/renovations");
         await expect(page.getByText("My Renovations")).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
   });
@@ -183,7 +183,7 @@ test.describe("New Renovation Page", () => {
         // Result image is displayed
         await expect(page.getByAltText("Result")).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -202,7 +202,7 @@ test.describe("New Renovation Page", () => {
           page.getByRole("heading", { name: "Renovation Details" }),
         ).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -228,7 +228,7 @@ test.describe("New Renovation Page", () => {
           page.getByRole("button", { name: "Renovation Details" }),
         ).not.toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -249,7 +249,7 @@ test.describe("New Renovation Page", () => {
           page.getByText("Paint the area you want to change"),
         ).toBeVisible();
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
 
@@ -289,7 +289,7 @@ test.describe("New Renovation Page", () => {
           timeout: 30000,
         });
       } finally {
-        fs.unlinkSync(grayPngPath);
+        rmSync(grayPngPath, { force: true });
       }
     });
   });

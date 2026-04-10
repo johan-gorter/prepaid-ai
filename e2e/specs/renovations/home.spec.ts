@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import { expect, test } from "../fixtures";
+import { rmSync } from "node:fs";
+import { expect, test } from "../../fixtures";
 import {
   createGrayPng,
   createRenovationAndWaitForResult,
-} from "../helpers/renovation";
+} from "../../helpers/renovation";
 
 test.describe("Home Page", () => {
   test("shows new renovation card", async ({ authenticatedPage: page }) => {
@@ -30,7 +30,7 @@ test.describe("Home Page", () => {
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -97,7 +97,7 @@ test.describe("Home Page with renovations", () => {
       await expect(card).toBeVisible();
       await expect(card.locator("img")).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 
@@ -127,7 +127,7 @@ test.describe("Home Page with renovations", () => {
         page.getByRole("heading", { name: "Renovation Details" }),
       ).toBeVisible();
     } finally {
-      fs.unlinkSync(grayPngPath);
+      rmSync(grayPngPath, { force: true });
     }
   });
 });
