@@ -163,7 +163,7 @@ watch(
     <nav>
       <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
       <span class="breadcrumb-sep">&gt;</span>
-      <h5 class="max">Renovations</h5>
+      <h1 class="max">Renovations</h1>
       <UserMenu />
     </nav>
   </header>
@@ -173,7 +173,7 @@ watch(
     style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
   >
     <nav>
-      <h5 class="max">My Renovations</h5>
+      <h1 class="max">My Renovations</h1>
     </nav>
 
     <div v-if="renovationsLoading" class="center-align medium-padding">

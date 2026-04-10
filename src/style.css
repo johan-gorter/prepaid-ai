@@ -18,3 +18,8 @@ body {
 canvas {
   border-radius: 0;
 }
+
+/* Top bar heading: semantic h1 with compact size */
+header nav h1 {
+  font-size: 1.25rem;
+}

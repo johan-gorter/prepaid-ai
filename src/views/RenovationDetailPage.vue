@@ -123,7 +123,7 @@ onMounted(() => {
         >
           <i aria-hidden="true">arrow_back</i>
         </button>
-        <h5 class="max">Renovation Details</h5>
+        <h1 class="max">Renovation Details</h1>
         <div style="position: relative">
           <button
             class="transparent circle"

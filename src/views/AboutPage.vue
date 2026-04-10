@@ -10,7 +10,7 @@ const { currentUser } = useAuth();
     <nav>
       <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
       <span class="breadcrumb-sep">&gt;</span>
-      <h5 class="max">About</h5>
+      <h1 class="max">About</h1>
       <UserMenu />
     </nav>
   </header>

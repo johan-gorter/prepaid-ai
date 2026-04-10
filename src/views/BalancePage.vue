@@ -11,7 +11,7 @@ const { balance, transactions, loading } = useBalance();
     <nav>
       <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
       <span class="breadcrumb-sep">&gt;</span>
-      <h5 class="max">Balance</h5>
+      <h1 class="max">Balance</h1>
       <UserMenu />
     </nav>
   </header>

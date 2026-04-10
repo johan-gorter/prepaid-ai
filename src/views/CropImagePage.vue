@@ -286,7 +286,7 @@ function handleCancel() {
         >
           <i aria-hidden="true">arrow_back</i>
         </button>
-        <h5 class="max">Crop &amp; Scale</h5>
+        <h1 class="max">Crop &amp; Scale</h1>
         <UserMenu />
       </nav>
     </header>

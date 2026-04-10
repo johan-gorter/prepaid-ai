@@ -38,7 +38,7 @@ async function submitFeedback() {
 <template>
   <header class="fixed primary">
     <nav>
-      <h5 class="max">Prepaid AI</h5>
+      <h1 class="max">Prepaid AI</h1>
       <UserMenu />
     </nav>
   </header>

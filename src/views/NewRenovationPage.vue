@@ -459,7 +459,7 @@ onUnmounted(() => {
         >
           <i aria-hidden="true">arrow_back</i>
         </button>
-        <h5 class="max">{{ stepTitles[step] }}</h5>
+        <h1 class="max">{{ stepTitles[step] }}</h1>
         <UserMenu />
       </nav>
     </header>
