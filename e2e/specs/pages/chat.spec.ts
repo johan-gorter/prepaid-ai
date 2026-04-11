@@ -29,13 +29,11 @@ test.describe("PrivateChatPage", () => {
     await expect(page.getByTestId("chat-send")).toBeDisabled();
   });
 
-  test("shows balance display", async ({ authenticatedPage: page }) => {
+  test("shows balance display in header", async ({
+    authenticatedPage: page,
+  }) => {
     await page.goto("/chat");
-    await expect(page.getByTestId("chat-balance")).toBeVisible();
-    await expect(page.getByTestId("chat-balance")).toContainText(
-      "Balance:",
-    );
-    await expect(page.getByTestId("chat-balance")).toContainText("credits");
+    await expect(page.getByTestId("header-balance")).toBeVisible();
   });
 
   test("can send a message and receive response", async ({
@@ -51,29 +49,13 @@ test.describe("PrivateChatPage", () => {
       page.getByText("[dummy] Echo:"),
     ).toBeVisible({ timeout: 15000 });
 
-    await expect(page.getByText("Cost: 1 credit")).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByTestId("chat-estimate")).toBeVisible();
   });
 
-  test("shows clear button after messages", async ({
+  test("shows max credits input", async ({
     authenticatedPage: page,
   }) => {
     await page.goto("/chat");
-
-    const message = "Test message for clear button";
-    await page.getByTestId("chat-input").fill(message);
-    await page.getByTestId("chat-send").click();
-
-    // Wait for the response to arrive so streaming is done and clear button appears
-    await expect(page.getByText("[dummy] Echo:")).toBeVisible({
-      timeout: 15000,
-    });
-
-    await expect(page.getByTestId("chat-clear")).toBeVisible();
-    await expect(page.getByTestId("chat-clear")).toHaveAttribute(
-      "title",
-      "Clear chat",
-    );
+    await expect(page.getByTestId("max-credits")).toBeVisible();
   });
 });

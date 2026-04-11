@@ -2,9 +2,11 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
+import { useBalance } from "../composables/useBalance";
 import { useColorScheme } from "../composables/useColorScheme";
 
 const { currentUser, signOut } = useAuth();
+const { balance } = useBalance();
 const { colorScheme, setColorScheme } = useColorScheme();
 const router = useRouter();
 
@@ -34,7 +36,17 @@ function chooseScheme(scheme: "light" | "dark") {
 </script>
 
 <template>
-  <div v-if="currentUser" style="position: relative" data-user-menu>
+  <div v-if="currentUser" style="display: flex; align-items: center; gap: 0.25rem">
+    <router-link
+      to="/balance"
+      class="transparent"
+      style="display: flex; align-items: center; gap: 0.25rem; text-decoration: none; color: inherit; font-weight: 600; font-size: 1.1rem"
+      data-testid="header-balance"
+    >
+      <span style="font-size: 1.25rem">🪙</span>
+      <span>{{ balance }}</span>
+    </router-link>
+    <div style="position: relative" data-user-menu>
     <button
       class="transparent circle"
       aria-label="User menu"
@@ -89,5 +101,6 @@ function chooseScheme(scheme: "light" | "dark") {
         </a>
       </li>
     </menu>
+    </div>
   </div>
 </template>

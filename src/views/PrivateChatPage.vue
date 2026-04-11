@@ -1,18 +1,45 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
-import { useBalance } from "../composables/useBalance";
 import { useChat } from "../composables/useChat";
 
 const { currentUser } = useAuth();
-const { balance } = useBalance();
-const { messages, streaming, estimate, lastCost, error, send, stop, clear } =
+const { messages, streaming, estimate, lastCost, error, send, stop } =
   useChat();
 
 const userInput = ref("");
-const maxCredits = ref(10);
+const maxCredits = ref(15);
 const chatContainer = ref<HTMLElement | null>(null);
+const chatInputEl = ref<HTMLInputElement | null>(null);
+const messageCosts = ref<Map<number, number>>(new Map());
+let lastSendWasTouch = false;
+
+const estimatedCost = computed(() => {
+  if (lastCost.value) return lastCost.value.credits;
+  if (estimate.value) return estimate.value.estimatedCredits;
+  return 5;
+});
+
+// Track cost per model message when streaming finishes
+watch(lastCost, (cost) => {
+  if (cost) {
+    const lastModelIdx = messages.value.length - 1;
+    if (messages.value[lastModelIdx]?.role === "model") {
+      messageCosts.value.set(lastModelIdx, cost.credits);
+    }
+  }
+});
+
+const userInitials = computed(() => {
+  const name = currentUser.value?.displayName || "U";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+});
 
 onMounted(() => {
   localStorage.setItem("prepaid-ai-last-page", "chat");
@@ -38,8 +65,17 @@ watch(
 async function handleSend() {
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
+  const shouldRefocus = !lastSendWasTouch;
   userInput.value = "";
+  lastSendWasTouch = false;
   await send(text, maxCredits.value);
+  if (shouldRefocus) {
+    nextTick(() => chatInputEl.value?.focus());
+  }
+}
+
+function handleSendTouch() {
+  lastSendWasTouch = true;
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -55,24 +91,14 @@ function handleKeydown(e: KeyboardEvent) {
     <nav>
       <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
       <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">Private Chat</h1>
+      <h6 class="max">Chat</h6>
       <UserMenu />
     </nav>
   </header>
 
-  <main
-    class="responsive"
-    style="
-      max-width: 700px;
-      margin: 0 auto;
-      padding-top: 4.5rem;
-      display: flex;
-      flex-direction: column;
-      height: calc(100dvh - 4.5rem);
-    "
-  >
+  <main class="chat-page">
     <!-- Chat messages -->
-    <div ref="chatContainer" style="flex: 1; overflow-y: auto; padding: 1rem 0">
+    <div ref="chatContainer" class="chat-messages">
       <div
         v-if="messages.length === 0"
         class="center-align"
@@ -90,10 +116,13 @@ function handleKeydown(e: KeyboardEvent) {
             msg.role === 'user' ? 'chat-user' : 'chat-model',
           ]"
         >
+          <span
+            v-if="msg.role === 'model' && messageCosts.has(i)"
+            class="chat-cost"
+          >🪙 {{ messageCosts.get(i) }}</span>
           <div class="chat-role">
-            <i class="small">{{
-              msg.role === "user" ? "person" : "smart_toy"
-            }}</i>
+            <span v-if="msg.role === 'user'" class="chat-avatar user-avatar">{{ userInitials }}</span>
+            <i v-else class="chat-avatar model-avatar">smart_toy</i>
             <span class="bold">{{
               msg.role === "user" ? currentUser?.displayName || "You" : "Gemini"
             }}</span>
@@ -110,17 +139,6 @@ function handleKeydown(e: KeyboardEvent) {
           >
         </div>
       </div>
-
-      <!-- Cost info -->
-      <div
-        v-if="lastCost"
-        class="small"
-        style="padding: 0.5rem; opacity: 0.6; text-align: center"
-      >
-        Cost: {{ lastCost.credits }} credit{{
-          lastCost.credits !== 1 ? "s" : ""
-        }}
-      </div>
     </div>
 
     <!-- Error -->
@@ -129,73 +147,63 @@ function handleKeydown(e: KeyboardEvent) {
       <span>{{ error }}</span>
     </div>
 
-    <!-- Estimate bar -->
-    <div v-if="estimate && streaming" class="estimate-bar">
-      <i class="small">info</i>
-      <span
-        >Estimated max: {{ estimate.estimatedCredits }} credit{{
-          estimate.estimatedCredits !== 1 ? "s" : ""
-        }}</span
-      >
-    </div>
+    <!-- Bottom area -->
+    <div class="chat-bottom">
+      <div class="chat-bottom-inner">
+        <!-- Input row -->
+        <div class="chat-input-row">
+          <div class="field border round" style="margin: 0; flex: 1; min-width: 0">
+            <input
+              ref="chatInputEl"
+              v-model="userInput"
+              type="text"
+              placeholder="Type a message..."
+              autofocus
+              :disabled="streaming"
+              @keydown="handleKeydown"
+              data-testid="chat-input"
+            />
+          </div>
+          <button
+            v-if="streaming"
+            class="circle"
+            title="Stop"
+            @click="stop"
+            data-testid="chat-stop"
+          >
+            <i>stop</i>
+          </button>
+          <button
+            v-else
+            class="circle transparent"
+            :disabled="!userInput.trim()"
+            title="Send"
+            @touchstart="handleSendTouch"
+            @click="handleSend"
+            data-testid="chat-send"
+          >
+            <i>send</i>
+          </button>
+        </div>
 
-    <!-- Input area -->
-    <div style="padding: 0.5rem 0; flex-shrink: 0">
-      <div class="chat-controls">
-        <div class="field small" style="width: 6rem; flex-shrink: 0">
-          <input
-            v-model.number="maxCredits"
-            type="number"
-            min="1"
-            :disabled="streaming"
-            data-testid="max-credits"
-          />
-          <span class="helper">Max credits</span>
+        <!-- Cost & limit bar -->
+        <div class="chat-cost-bar">
+          <span class="cost-label" data-testid="chat-estimate">
+            Estimated cost: {{ estimatedCost }} <span class="coin">🪙</span>
+          </span>
+          <span class="cost-label">
+            Limit:
+            <input
+              v-model.number="maxCredits"
+              type="number"
+              min="1"
+              class="limit-input"
+              :disabled="streaming"
+              data-testid="max-credits"
+            />
+            <span class="coin">🪙</span>
+          </span>
         </div>
-        <span class="small" style="opacity: 0.6" data-testid="chat-balance"
-          >Balance: {{ balance }} credits</span
-        >
-        <span class="max"></span>
-        <button
-          v-if="messages.length > 0 && !streaming"
-          class="circle transparent small"
-          title="Clear chat"
-          @click="clear"
-          data-testid="chat-clear"
-        >
-          <i>delete</i>
-        </button>
-      </div>
-      <div class="chat-input-row">
-        <div class="field textarea border max">
-          <textarea
-            v-model="userInput"
-            placeholder="Type a message…"
-            rows="2"
-            :disabled="streaming"
-            @keydown="handleKeydown"
-            data-testid="chat-input"
-          ></textarea>
-        </div>
-        <button
-          v-if="streaming"
-          class="circle"
-          title="Stop"
-          @click="stop"
-          data-testid="chat-stop"
-        >
-          <i>stop</i>
-        </button>
-        <button
-          v-else
-          class="circle"
-          :disabled="!userInput.trim()"
-          title="Send"
-          @click="handleSend"
-          data-testid="chat-send"
-        >
-          <i>send</i>
-        </button>
       </div>
     </div>
   </main>
@@ -216,50 +224,133 @@ function handleKeydown(e: KeyboardEvent) {
   margin: 0 0.25rem;
   flex-shrink: 0;
 }
+.chat-page {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 4.5rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 4.5rem);
+  overflow: visible;
+}
+.chat-input-row .field {
+  min-height: 3.25rem;
+}
+.chat-input-row .field input {
+  height: 3.25rem;
+  font-size: 1.05rem;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
 .chat-message {
-  padding: 0.25rem 0;
+  padding: 0.35rem 0;
 }
 .chat-bubble {
   padding: 0.75rem 1rem;
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   max-width: 90%;
 }
 .chat-user {
-  background: var(--surface-variant, #e8e0f0);
+  background: var(--surface-variant, #e0e0e0);
   margin-left: auto;
 }
 .chat-model {
-  background: var(--surface, #f5f5f5);
+  background: var(--secondary-container, #b2dfdb);
 }
 .chat-role {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.4rem;
   margin-bottom: 0.25rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
+  font-size: 0.9rem;
+}
+.chat-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.user-avatar {
+  background: var(--primary, #6750a4);
+  color: var(--on-primary, #fff);
+}
+.model-avatar {
+  font-size: 1.1rem;
+  background: var(--secondary, #625b71);
+  color: var(--on-secondary, #fff);
 }
 .chat-text {
   word-break: break-word;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.chat-cost {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.chat-bottom {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  background: var(--surface-container, #f2ecf1);
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.chat-bottom-inner {
+  width: 100%;
+  max-width: 700px;
+  padding: 0 1rem;
+}
+.chat-cost-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+.cost-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0.8;
+}
+.coin {
+  font-size: 1.1rem;
+}
+.limit-input {
+  width: 3rem;
+  text-align: center;
+  border: 1px solid var(--outline, #ccc);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.9rem;
+  background: transparent;
+  color: inherit;
 }
 .chat-input-row {
   display: flex;
   gap: 0.5rem;
-  align-items: flex-end;
-}
-.chat-controls {
-  display: flex;
-  gap: 0.5rem;
   align-items: center;
-  margin-bottom: 0.25rem;
-}
-.estimate-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
 }
 .error-bar {
   display: flex;
@@ -275,11 +366,6 @@ function handleKeydown(e: KeyboardEvent) {
 @keyframes blink {
   50% {
     opacity: 0;
-  }
-}
-@media (max-width: 360px) {
-  .breadcrumb-root {
-    max-width: 5rem;
   }
 }
 </style>
