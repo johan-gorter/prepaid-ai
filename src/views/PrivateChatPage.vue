@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
-import { useChat } from "../composables/useChat";
+import { estimateLocalCredits, useChat } from "../composables/useChat";
 
 const { currentUser } = useAuth();
 const { messages, streaming, estimate, lastCost, error, send, stop } =
@@ -15,10 +15,24 @@ const chatInputEl = ref<HTMLInputElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
 let lastSendWasTouch = false;
 
+const localEstimate = ref(2);
+let lastEstimatedLength = 0;
+
 const estimatedCost = computed(() => {
   if (lastCost.value) return lastCost.value.credits;
   if (estimate.value) return estimate.value.estimatedCredits;
-  return 5;
+  return localEstimate.value;
+});
+
+watch(userInput, (newVal) => {
+  if (newVal.length === 0) {
+    lastEstimatedLength = 0;
+    return;
+  }
+  if (Math.abs(newVal.length - lastEstimatedLength) >= 200) {
+    localEstimate.value = estimateLocalCredits(messages.value, newVal);
+    lastEstimatedLength = newVal.length;
+  }
 });
 
 // Track cost per model message when streaming finishes
@@ -43,6 +57,10 @@ const userInitials = computed(() => {
 
 onMounted(() => {
   localStorage.setItem("prepaid-ai-last-page", "chat");
+  if (messages.value.length > 0) {
+    localEstimate.value = estimateLocalCredits(messages.value, userInput.value);
+    lastEstimatedLength = userInput.value.length;
+  }
 });
 
 function scrollToBottom() {
