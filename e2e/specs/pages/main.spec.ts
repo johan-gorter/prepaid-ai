@@ -10,7 +10,7 @@ test.describe("Main Page", () => {
     await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
 
     await expect(
-      page.getByRole("heading", { name: "AI Impressions for your renovations" }),
+      page.getByRole("heading", { name: "AI Impressions for renovations" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Private Chat" }),
@@ -23,11 +23,11 @@ test.describe("Main Page", () => {
     await page.goto("/main");
     await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
 
-    const renovationsLink = page.getByRole("link", { name: "Start" }).first();
+    const renovationsLink = page.getByRole("link", { name: "VISUALIZE NOW" });
     await expect(renovationsLink).toBeVisible();
     await expect(renovationsLink).toHaveAttribute("href", "/renovations");
 
-    const chatLink = page.getByRole("link", { name: "Start" }).nth(1);
+    const chatLink = page.getByRole("link", { name: "CHAT SECURELY" });
     await expect(chatLink).toBeVisible();
     await expect(chatLink).toHaveAttribute("href", "/chat");
   });
@@ -54,7 +54,7 @@ test.describe("Main Page", () => {
     await page.goto("/main");
     await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
 
-    await page.getByRole("link", { name: "Balance" }).click();
+    await page.getByRole("link", { name: "Check Credits" }).click();
     await page.waitForURL("/balance");
 
     await expect(page.getByRole("heading", { name: "Balance" })).toBeVisible();
