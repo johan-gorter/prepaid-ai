@@ -38,14 +38,20 @@ async function submitFeedback() {
 <template>
   <header class="fixed primary">
     <nav>
-      <h1 class="max">Prepaid AI</h1>
+      <i>forum</i>
+      <h6 class="max">Prepaid AI</h6>
       <UserMenu />
     </nav>
   </header>
 
   <main
     class="responsive"
-    style="max-width: 700px; margin: 0 auto; padding-top: 4.5rem"
+    style="
+      max-width: 700px;
+      margin: 0 auto;
+      padding-top: 1.25rem;
+      padding-bottom: 2rem;
+    "
   >
     <p>
       Prepaid AI gives you access to premium AI applications
@@ -53,57 +59,98 @@ async function submitFeedback() {
       fair platform allowing everyone to benefit from AI.
     </p>
 
-    <h5>AI Impressions for your renovations</h5>
-
-    <p>
-      Reimagine your living spaces with AI-powered renovation visualizations.
-      Upload a photo, mark the area you want to change, describe your vision,
-      and see it come to life.
-    </p>
-    <router-link to="/renovations">Start</router-link>
-
-    <h5>Private Chat</h5>
-    <p>
-      Have a private conversation with a powerful AI model. For example, you can
-      use this to explain technical, legal or medical documents. Your chat stays
-      on your device only.
-    </p>
-    <router-link to="/chat">Start</router-link>.
-
-    <p>
-      Check your
-      <router-link to="/balance">Balance</router-link> to see your current
-      credits, or read our
-      <router-link to="/about">About &amp; Legal</router-link>
-      page for usage terms and policies.
-    </p>
-
-    <h5>We'd love your feedback</h5>
-    <p>
-      What features would you like to see next? Let us know what you'd find most
-      useful.
-    </p>
-    <div v-if="feedbackSent" class="medium-padding">
-      <p><i class="small">check_circle</i> Thanks for your feedback!</p>
-    </div>
-    <div v-else>
-      <div class="field textarea border">
-        <textarea
-          v-model="feedbackMessage"
-          placeholder="Tell us what you'd like to see..."
-          rows="3"
-          data-testid="feedback-input"
-        ></textarea>
-      </div>
-      <button
-        class="small-margin"
-        :disabled="!feedbackMessage.trim() || feedbackSending"
-        @click="submitFeedback"
-        data-testid="feedback-submit"
+    <!-- AI Impressions card -->
+    <article class="round small-elevate">
+      <nav style="align-items: start">
+        <img
+          src="/assets/renovation-small.png"
+          alt="Renovation preview"
+          class="round"
+          style="width: 96px; height: 96px; object-fit: cover"
+        />
+        <div class="max">
+          <h5>AI Impressions for renovations</h5>
+          <p>
+            Reimagine your living spaces with AI-generated visualizations.
+            Upload a photo, mark the area you want to change, describe your
+            vision, and see it come to life.
+          </p>
+        </div>
+      </nav>
+      <router-link
+        to="/renovations"
+        class="button responsive small-round"
+        style="margin-top: 4px"
       >
-        <i>send</i>
-        <span>Send feedback</span>
-      </button>
-    </div>
+        <span>VISUALIZE NOW</span>
+        <i>photo_camera</i>
+      </router-link>
+    </article>
+
+    <!-- Private Chat card -->
+    <article class="round small-elevate" style="margin-top: 1rem">
+      <nav style="align-items: start">
+        <i class="extra primary-text">verified_user</i>
+        <div class="max">
+          <h5>Private Chat</h5>
+          <p>
+            Have a private conversation with a powerful AI model (Gemini Pro).
+            For example, you can use this to explain technical, legal or medical
+            documents. Your chat stays on your device only.
+          </p>
+        </div>
+      </nav>
+      <router-link to="/chat" class="button responsive small-round amber">
+        <span>CHAT SECURELY</span>
+        <i>public</i>
+      </router-link>
+    </article>
+
+    <!-- Credits & Terms -->
+    <nav class="center-align" style="margin-top: 1.5rem">
+      <router-link to="/balance" class="transparent button small-round">
+        <i>savings</i>
+        <span>Check Credits</span>
+      </router-link>
+      <router-link to="/about" class="transparent button small-round">
+        <i>gavel</i>
+        <span>View Usage Terms</span>
+      </router-link>
+    </nav>
+
+    <!-- Feedback card -->
+    <article
+      class="round border"
+      style="margin-top: 1.5rem; border-left: 4px solid var(--amber)"
+    >
+      <h5><strong>We'd love your feedback.</strong></h5>
+      <p>
+        What features would you like to see next? Let us know what you'd find
+        most useful.
+      </p>
+      <div v-if="feedbackSent" class="medium-padding">
+        <p><i class="small">check_circle</i> Thanks for your feedback!</p>
+      </div>
+      <div v-else>
+        <div class="field textarea border round">
+          <textarea
+            v-model="feedbackMessage"
+            placeholder="Tell us what you'd like to see..."
+            rows="3"
+            data-testid="feedback-input"
+            style="border-radius: 12px; background-color: var(--surface-container-lowest)"
+          ></textarea>
+        </div>
+        <button
+          :disabled="!feedbackMessage.trim() || feedbackSending"
+          @click="submitFeedback"
+          data-testid="feedback-submit"
+          style="margin-top: 8px"
+        >
+          <i>send</i>
+          <span>SEND FEEDBACK</span>
+        </button>
+      </div>
+    </article>
   </main>
 </template>

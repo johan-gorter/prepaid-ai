@@ -150,6 +150,7 @@ locals {
     "roles/firebaseextensions.admin",
     "roles/run.admin",
     "roles/artifactregistry.repoAdmin",
+    "roles/firebaseauth.admin",
   ]
 }
 
