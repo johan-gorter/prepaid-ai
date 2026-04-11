@@ -1,6 +1,26 @@
 import { ref } from "vue";
 import { firebaseApp } from "../firebase";
 
+// Mirror of server-side constants from functions/src/credits.ts
+const GEMINI_PRO_INPUT_PRICE_PER_M = 1.25; // USD per 1M input tokens
+const CREDIT_AI_USD = 0.008; // 1 credit = $0.008 of AI budget
+
+/**
+ * Client-side credit estimate for a chat turn.
+ * Uses ~4 chars/token approximation for input token count.
+ * Adds 2 credits to cover the response.
+ */
+export function estimateLocalCredits(
+  messages: ChatMessage[],
+  inputText: string,
+): number {
+  const allText = messages.map((m) => m.text).join(" ") + " " + inputText;
+  const estimatedTokens = Math.ceil(allText.length / 4);
+  const inputCostUsd = (estimatedTokens / 1_000_000) * GEMINI_PRO_INPUT_PRICE_PER_M;
+  const inputCredits = Math.ceil(inputCostUsd / CREDIT_AI_USD);
+  return inputCredits + 2;
+}
+
 export interface ChatMessage {
   role: "user" | "model";
   text: string;
