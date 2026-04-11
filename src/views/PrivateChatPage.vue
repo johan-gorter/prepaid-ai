@@ -13,10 +13,11 @@ const maxCredits = ref(15);
 const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLInputElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
-let lastSendWasTouch = false;
 
 const localEstimate = ref(2);
 let lastEstimatedLength = 0;
+
+const chatMode = ref<"input" | "streaming" | "result">("input");
 
 const estimatedCost = computed(() => {
   if (lastCost.value) return lastCost.value.credits;
@@ -32,6 +33,12 @@ watch(userInput, (newVal) => {
   if (Math.abs(newVal.length - lastEstimatedLength) >= 200) {
     localEstimate.value = estimateLocalCredits(messages.value, newVal);
     lastEstimatedLength = newVal.length;
+  }
+});
+
+watch(streaming, (isStreaming) => {
+  if (!isStreaming && chatMode.value === "streaming") {
+    chatMode.value = error.value ? "input" : "result";
   }
 });
 
@@ -83,17 +90,10 @@ watch(
 async function handleSend() {
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
-  const shouldRefocus = !lastSendWasTouch;
   userInput.value = "";
-  lastSendWasTouch = false;
+  lastEstimatedLength = 0;
+  chatMode.value = "streaming";
   await send(text, maxCredits.value);
-  if (shouldRefocus) {
-    nextTick(() => chatInputEl.value?.focus());
-  }
-}
-
-function handleSendTouch() {
-  lastSendWasTouch = true;
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -101,6 +101,28 @@ function handleKeydown(e: KeyboardEvent) {
     e.preventDefault();
     handleSend();
   }
+}
+
+function downloadConversation() {
+  const lines = messages.value.map((m) => {
+    const role = m.role === "user" ? "You" : "Gemini";
+    return `${role}:\n${m.text}`;
+  });
+  const content = lines.join("\n\n");
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "chat.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function continueChat() {
+  chatMode.value = "input";
+  localEstimate.value = estimateLocalCredits(messages.value, userInput.value);
+  lastEstimatedLength = userInput.value.length;
+  nextTick(() => chatInputEl.value?.focus());
 }
 </script>
 
@@ -168,8 +190,41 @@ function handleKeydown(e: KeyboardEvent) {
       <span>{{ error }}</span>
     </div>
 
-    <!-- Bottom area -->
-    <div class="chat-bottom">
+    <!-- Bottom: streaming — centered stop button -->
+    <div
+      v-if="chatMode === 'streaming'"
+      class="chat-bottom chat-bottom-streaming"
+    >
+      <button class="circle" title="Stop" @click="stop" data-testid="chat-stop">
+        <i>stop</i>
+      </button>
+    </div>
+
+    <!-- Bottom: result — download and continue chat -->
+    <div
+      v-else-if="chatMode === 'result'"
+      class="chat-bottom chat-bottom-result"
+    >
+      <button
+        class="extend border"
+        @click="downloadConversation"
+        data-testid="chat-download"
+      >
+        <i>download</i>
+        <span>Download</span>
+      </button>
+      <button
+        class="extend"
+        @click="continueChat"
+        data-testid="chat-continue"
+      >
+        <i>chat</i>
+        <span>Continue Chat</span>
+      </button>
+    </div>
+
+    <!-- Bottom: input -->
+    <div v-else class="chat-bottom">
       <div class="chat-bottom-inner">
         <!-- Input row -->
         <div class="chat-input-row">
@@ -183,26 +238,14 @@ function handleKeydown(e: KeyboardEvent) {
               type="text"
               placeholder="Type a message..."
               autofocus
-              :disabled="streaming"
               @keydown="handleKeydown"
               data-testid="chat-input"
             />
           </div>
           <button
-            v-if="streaming"
-            class="circle"
-            title="Stop"
-            @click="stop"
-            data-testid="chat-stop"
-          >
-            <i>stop</i>
-          </button>
-          <button
-            v-else
             class="circle transparent"
             :disabled="!userInput.trim()"
             title="Send"
-            @touchstart="handleSendTouch"
             @click="handleSend"
             data-testid="chat-send"
           >
@@ -222,11 +265,19 @@ function handleKeydown(e: KeyboardEvent) {
               type="number"
               min="1"
               class="limit-input"
-              :disabled="streaming"
               data-testid="max-credits"
             />
             <span class="coin">🪙</span>
           </span>
+          <button
+            v-if="messages.length > 0"
+            class="circle small transparent"
+            title="Download conversation"
+            @click="downloadConversation"
+            data-testid="chat-download-input"
+          >
+            <i>download</i>
+          </button>
         </div>
       </div>
     </div>
@@ -338,6 +389,17 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.chat-bottom-streaming {
+  justify-content: center;
+  min-height: 5rem;
+}
+.chat-bottom-result {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
 }
 .chat-bottom-inner {
   width: 100%;

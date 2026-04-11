@@ -49,6 +49,8 @@ test.describe("PrivateChatPage", () => {
       timeout: 15000,
     });
 
+    // After response completes, result footer shows with Continue Chat button
+    await page.getByTestId("chat-continue").click();
     await expect(page.getByTestId("chat-estimate")).toBeVisible();
   });
 
