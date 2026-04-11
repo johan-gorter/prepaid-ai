@@ -45,16 +45,14 @@ test.describe("PrivateChatPage", () => {
     await page.getByTestId("chat-input").fill(message);
     await page.getByTestId("chat-send").click();
 
-    await expect(
-      page.getByText("[dummy] Echo:"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("[dummy] Echo:")).toBeVisible({
+      timeout: 15000,
+    });
 
     await expect(page.getByTestId("chat-estimate")).toBeVisible();
   });
 
-  test("shows max credits input", async ({
-    authenticatedPage: page,
-  }) => {
+  test("shows max credits input", async ({ authenticatedPage: page }) => {
     await page.goto("/chat");
     await expect(page.getByTestId("max-credits")).toBeVisible();
   });

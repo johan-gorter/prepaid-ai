@@ -119,9 +119,12 @@ function handleKeydown(e: KeyboardEvent) {
           <span
             v-if="msg.role === 'model' && messageCosts.has(i)"
             class="chat-cost"
-          >🪙 {{ messageCosts.get(i) }}</span>
+            >🪙 {{ messageCosts.get(i) }}</span
+          >
           <div class="chat-role">
-            <span v-if="msg.role === 'user'" class="chat-avatar user-avatar">{{ userInitials }}</span>
+            <span v-if="msg.role === 'user'" class="chat-avatar user-avatar">{{
+              userInitials
+            }}</span>
             <i v-else class="chat-avatar model-avatar">smart_toy</i>
             <span class="bold">{{
               msg.role === "user" ? currentUser?.displayName || "You" : "Gemini"
@@ -152,7 +155,10 @@ function handleKeydown(e: KeyboardEvent) {
       <div class="chat-bottom-inner">
         <!-- Input row -->
         <div class="chat-input-row">
-          <div class="field border round" style="margin: 0; flex: 1; min-width: 0">
+          <div
+            class="field border round"
+            style="margin: 0; flex: 1; min-width: 0"
+          >
             <input
               ref="chatInputEl"
               v-model="userInput"
