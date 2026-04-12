@@ -63,14 +63,7 @@ function chooseScheme(scheme: "light" | "dark") {
         aria-label="User menu"
         @click="showMenu = !showMenu"
       >
-        <img
-          v-if="currentUser.photoURL"
-          :src="currentUser.photoURL"
-          :alt="currentUser.displayName ?? 'User'"
-          class="circle"
-          style="width: 2rem; height: 2rem"
-        />
-        <i v-else>account_circle</i>
+        <i>account_circle</i>
       </button>
       <menu
         :class="{ active: showMenu }"

@@ -21,7 +21,6 @@ import("firebase/auth").then(({ getAuth, onAuthStateChanged }) => {
         {
           displayName: user.displayName ?? "",
           email: user.email ?? "",
-          photoURL: user.photoURL ?? "",
           createdAt: serverTimestamp(),
         },
         { merge: true },
@@ -57,16 +56,14 @@ export function useAuth() {
   const isAuthenticated = computed(() => !!currentUser.value);
 
   async function signInWithGoogle() {
-    const { GoogleAuthProvider, signInWithPopup, getAuth } = await import(
-      "firebase/auth"
-    );
+    const { GoogleAuthProvider, signInWithPopup, getAuth } =
+      await import("firebase/auth");
     await signInWithPopup(getAuth(firebaseApp), new GoogleAuthProvider());
   }
 
   async function signInWithMicrosoft() {
-    const { OAuthProvider, signInWithPopup, getAuth } = await import(
-      "firebase/auth"
-    );
+    const { OAuthProvider, signInWithPopup, getAuth } =
+      await import("firebase/auth");
     await signInWithPopup(
       getAuth(firebaseApp),
       new OAuthProvider("microsoft.com"),
@@ -74,19 +71,13 @@ export function useAuth() {
   }
 
   async function signInWithApple() {
-    const { OAuthProvider, signInWithPopup, getAuth } = await import(
-      "firebase/auth"
-    );
-    await signInWithPopup(
-      getAuth(firebaseApp),
-      new OAuthProvider("apple.com"),
-    );
+    const { OAuthProvider, signInWithPopup, getAuth } =
+      await import("firebase/auth");
+    await signInWithPopup(getAuth(firebaseApp), new OAuthProvider("apple.com"));
   }
 
   async function signOut() {
-    const { signOut: firebaseSignOut, getAuth } = await import(
-      "firebase/auth"
-    );
+    const { signOut: firebaseSignOut, getAuth } = await import("firebase/auth");
     await firebaseSignOut(getAuth(firebaseApp));
   }
 

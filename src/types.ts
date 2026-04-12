@@ -26,7 +26,6 @@ export interface Impression {
 export interface UserProfile {
   displayName: string;
   email: string;
-  photoURL: string;
   createdAt: Timestamp;
   lastActivity?: Timestamp;
   balance?: number;

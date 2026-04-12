@@ -17,7 +17,7 @@
 
 ```
 users/{uid}
-  ├── displayName, email, photoURL, createdAt
+  ├── displayName, email, createdAt
   │
   ├── renovations/{renovationId}
   │     ├── title, createdAt, updatedAt
