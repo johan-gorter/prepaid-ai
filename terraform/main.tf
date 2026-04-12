@@ -26,6 +26,10 @@ module "firebase_env" {
   apple_services_id          = var.apple_services_id
   apple_private_key          = var.apple_private_key
 
+  # AI
+  ai_backend = var.ai_backend
+  ai_region  = var.ai_region
+
   # Public URL
   public_url = var.public_url
 }

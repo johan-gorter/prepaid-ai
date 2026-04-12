@@ -58,6 +58,18 @@ variable "apple_private_key" {
   default     = ""
 }
 
+variable "ai_backend" {
+  description = "AI backend for image generation: vertex, google-ai, or dummy"
+  type        = string
+  default     = "google-ai"
+}
+
+variable "ai_region" {
+  description = "GCP region for AI / Vertex AI workloads"
+  type        = string
+  default     = "europe-west1"
+}
+
 variable "public_url" {
   description = "Primary public URL for this environment"
   type        = string

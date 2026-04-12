@@ -79,36 +79,36 @@ Find your billing account ID with `gcloud billing accounts list`.
 
 Each environment gets its own state prefix. From the `terraform/` directory:
 
-```bash
+```powershell
 # Dev
-terraform init \
-  -backend-config="bucket=prepaid-ai-terraform-state" \
-  -backend-config="prefix=env/dev"
+terraform init `
+  "-backend-config=bucket=prepaid-ai-terraform-state" `
+  "-backend-config=prefix=env/dev"
 
-terraform plan  -var-file=environments/dev.tfvars
-terraform apply -var-file=environments/dev.tfvars
+terraform plan  "-var-file=environments/dev.tfvars"
+terraform apply "-var-file=environments/dev.tfvars"
 ```
 
 To switch environments, re-run `terraform init` with a different prefix (Terraform will ask to migrate — say no, it's a separate state):
 
-```bash
+```powershell
 # Production
-terraform init -reconfigure \
-  -backend-config="bucket=prepaid-ai-terraform-state" \
-  -backend-config="prefix=env/production"
+terraform init -reconfigure `
+  "-backend-config=bucket=prepaid-ai-terraform-state" `
+  "-backend-config=prefix=env/production"
 
-terraform plan  -var-file=environments/production.tfvars
-terraform apply -var-file=environments/production.tfvars
+terraform plan  "-var-file=environments/production.tfvars"
+terraform apply "-var-file=environments/production.tfvars"
 ```
 
-```bash
-# Sandbox
-terraform init -reconfigure \
-  -backend-config="bucket=prepaid-ai-terraform-state" \
-  -backend-config="prefix=env/sandbox"
+```powershell
+# Sandbox (has an .auto.tfvars for secrets — include both)
+terraform init -reconfigure `
+  "-backend-config=bucket=prepaid-ai-terraform-state" `
+  "-backend-config=prefix=env/sandbox"
 
-terraform plan  -var-file=environments/sandbox.tfvars
-terraform apply -var-file=environments/sandbox.tfvars
+terraform plan  "-var-file=environments/sandbox.tfvars" "-var-file=environments/sandbox.auto.tfvars"
+terraform apply "-var-file=environments/sandbox.tfvars" "-var-file=environments/sandbox.auto.tfvars"
 ```
 
 ### 5. Set the GEMINI_API_KEY secret value
@@ -117,9 +117,9 @@ Terraform creates the secret _container_. You set the actual value once per envi
 
 Get a key from https://aistudio.google.com/apikey — select the target project when creating it.
 
-```bash
-echo -n "your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY \
-  --project=prepaid-ai-dev \
+```powershell
+"your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY `
+  --project=prepaid-ai-dev `
   --data-file=-
 ```
 
@@ -127,25 +127,25 @@ echo -n "your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY \
 
 After `terraform apply`, create a key for the CI deployer:
 
-```bash
-SA_EMAIL=$(terraform output -raw ci_service_account_email)
+```powershell
+$SA_EMAIL = terraform output -raw ci_service_account_email
 
-gcloud iam service-accounts keys create sa-key.json \
-  --iam-account="$SA_EMAIL" \
+gcloud iam service-accounts keys create sa-key.json `
+  "--iam-account=$SA_EMAIL" `
   --project=prepaid-ai-dev
 ```
 
 Store the contents of `sa-key.json` as a GitHub Actions secret (e.g., `FIREBASE_SERVICE_ACCOUNT_DEV`). Then delete the local file:
 
-```bash
-rm sa-key.json
+```powershell
+Remove-Item sa-key.json
 ```
 
 ### 7. Update GitHub Actions variables
 
 Read the web app config from Terraform output:
 
-```bash
+```powershell
 terraform output web_app_config
 ```
 
@@ -153,14 +153,14 @@ Set the corresponding `VITE_FIREBASE_*` variables in GitHub repo settings for ea
 
 ## Day-to-Day Usage
 
-```bash
+```powershell
 cd terraform
 
 # See what would change
-terraform plan -var-file=environments/dev.tfvars
+terraform plan "-var-file=environments/dev.tfvars"
 
 # Apply changes
-terraform apply -var-file=environments/dev.tfvars
+terraform apply "-var-file=environments/dev.tfvars"
 
 # Read outputs (e.g., for updating CI config)
 terraform output web_app_config
@@ -173,8 +173,8 @@ terraform output ci_service_account_email
 
 To apply CORS manually without a full `terraform apply`:
 
-```bash
-gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app --cors-file=modules/firebase-env/cors.json
+```powershell
+gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app "--cors-file=modules/firebase-env/cors.json"
 ```
 
 ## What Terraform Manages vs. Firebase CLI
@@ -193,12 +193,24 @@ gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app --cors-fil
 
 To wire `GEMINI_API_KEY` from Secret Manager into Cloud Functions, deploy with:
 
-```bash
-firebase deploy --only functions --project prepaid-ai-dev \
-  --force
+```powershell
+firebase deploy --only functions --project prepaid-ai-dev --force
 ```
 
 In your function code, read the secret at runtime using the Secret Manager client library, or configure the function to mount the secret as an environment variable via `firebase.json` or the `defineSecret()` API in Firebase Functions v2.
+
+### Cloud Functions environment variables
+
+Non-secret runtime environment variables (`AI_BACKEND`, `AI_REGION`, `ENVIRONMENT`, `ALLOWED_ORIGINS`) are set via per-project `.env` files in the `functions/` directory:
+
+| File                                   | Picked up when deploying to       |
+| -------------------------------------- | --------------------------------- |
+| `functions/.env.prepaid-ai-sandbox`    | `--project prepaid-ai-sandbox`    |
+| `functions/.env.prepaid-ai-dev`        | `--project prepaid-ai-dev`        |
+| `functions/.env.prepaid-ai-production` | `--project prepaid-ai-production` |
+| `functions/.env.prepaid-ai-emulator`   | Emulator Suite                    |
+
+Firebase Functions v2 loads the matching `.env.<projectId>` file automatically at deploy time. Keep these files in sync with the Terraform `ai_backend` / `ai_region` outputs for each environment.
 
 ## Source Control
 
@@ -210,3 +222,41 @@ In your function code, read the secret at runtime using the Secret Manager clien
 | `terraform/.terraform.lock.hcl`   | Yes     | Provider version lock (like `package-lock.json`) |
 | `terraform.tfstate`               | No      | Stored in GCS backend, never local               |
 | `*.auto.tfvars`                   | No      | Gitignored, for local secret overrides           |
+
+## PowerShell Pitfalls (for AI agents and developers)
+
+This project is developed on Windows with PowerShell as the default shell. Terraform CLI arguments with `=` are frequently misinterpreted by PowerShell.
+
+### Quoting `-var-file` and `-backend-config`
+
+PowerShell treats bare `-var-file=path` as **two separate tokens** (`-var-file` and `=path`), causing `Error: Too many command line arguments`. Always wrap the entire flag in double quotes:
+
+```powershell
+# WRONG — PowerShell splits on the =
+terraform plan -var-file=environments/sandbox.tfvars
+
+# CORRECT
+terraform plan "-var-file=environments/sandbox.tfvars"
+```
+
+The same applies to `-backend-config`:
+
+```powershell
+terraform init -reconfigure `
+  "-backend-config=bucket=prepaid-ai-terraform-state" `
+  "-backend-config=prefix=env/sandbox"
+```
+
+### Line continuation
+
+PowerShell uses the backtick (`` ` ``) for line continuation, not backslash (`\`). A trailing backslash is a valid path character on Windows and will not continue the command.
+
+### State isolation
+
+Each environment has a **separate GCS state prefix**. You must run `terraform init -reconfigure` with the correct `-backend-config="prefix=env/<env>"` **before** running `plan` or `apply`. Forgetting this will target whatever state was last initialized, potentially planning destructive changes against the wrong project.
+
+The `terraform plan` output always shows the project ID in the resource addresses (e.g., `prepaid-ai-dev` vs `prepaid-ai-sandbox`). **Verify the project in the first few "Refreshing state" lines before approving an apply.**
+
+### gcloud auth expiry
+
+Terraform resources that shell out to `gcloud` (e.g., the `null_resource.storage_cors` provisioner) will fail with an opaque `exit status 1` if gcloud tokens have expired. Re-authenticate with `gcloud auth login` before retrying.

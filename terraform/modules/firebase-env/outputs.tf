@@ -33,3 +33,13 @@ output "allowed_origins" {
     var.public_url,
   ])
 }
+
+output "ai_backend" {
+  description = "AI backend for image generation (vertex, google-ai, or dummy)"
+  value       = var.ai_backend
+}
+
+output "ai_region" {
+  description = "GCP region for AI / Vertex AI workloads"
+  value       = var.ai_region
+}
