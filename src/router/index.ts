@@ -57,6 +57,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/renovation/camera",
+    name: "camera-capture",
+    component: () => import("../views/CameraCapturePage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/renovation/crop",
     name: "crop-image",
     component: () => import("../views/CropImagePage.vue"),
