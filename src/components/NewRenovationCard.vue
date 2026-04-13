@@ -4,8 +4,9 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
-const cameraInput = ref<HTMLInputElement | null>(null);
 
+// Used by E2E tests via setInputFiles — reads the file and navigates directly
+// to the mask step, bypassing the live camera page.
 function onCameraSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -25,11 +26,9 @@ function onFileSelected(event: Event) {
   const file = input.files?.[0];
   if (!file || !file.type.startsWith("image/")) return;
 
-  // Read the file and navigate to the crop page with the image data
   const reader = new FileReader();
   reader.onload = (e) => {
     const dataUrl = e.target?.result as string;
-    // Store in sessionStorage so the crop page can access it
     sessionStorage.setItem("cropImage", dataUrl);
     router.push("/renovation/crop");
   };
@@ -42,7 +41,7 @@ function onFileSelected(event: Event) {
     <i class="extra" aria-hidden="true">photo_camera</i>
     <h5>New Renovation</h5>
     <nav class="vertical">
-      <button class="small-round" @click="cameraInput?.click()">
+      <button class="small-round" @click="router.push('/renovation/camera')">
         <i aria-hidden="true">photo_camera</i>
         <span>Take Photo</span>
       </button>
@@ -51,12 +50,11 @@ function onFileSelected(event: Event) {
         <span>Upload Image</span>
       </button>
     </nav>
+    <!-- Hidden input kept for E2E test compatibility (setInputFiles bypass) -->
     <input
-      ref="cameraInput"
       data-testid="camera-input"
       type="file"
       accept="image/*"
-      capture="environment"
       hidden
       @change="onCameraSelected"
     />
