@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { doc, getDoc } from "firebase/firestore";
 import { ref as storageRef, uploadBytes } from "firebase/storage";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StorageImage from "../components/StorageImage.vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
@@ -32,7 +33,6 @@ const stepTitles = [
 const prompt = ref("");
 const submitting = ref(false);
 const errorMessage = ref<string | null>(null);
-const loadedImage = ref<HTMLImageElement | null>(null);
 
 // Created impression tracking
 const createdImpressionId = ref<string | null>(null);
@@ -59,17 +59,9 @@ watch([impressions, createdImpressionId], ([items, impId]) => {
   }
 });
 
-// Mask canvas state
-const canvasWrapperRef = ref<HTMLElement | null>(null);
-const mainCanvasRef = ref<HTMLCanvasElement | null>(null);
-let maskCanvas: HTMLCanvasElement | null = null;
-let maskCtx: CanvasRenderingContext2D | null = null;
-let sourceCanvas: HTMLCanvasElement | null = null;
-let isDrawing = false;
-const brushSize = 30;
-const CANVAS_SIZE = 1024;
-
-let resizeObserver: ResizeObserver | null = null;
+// MaskingCanvas component ref
+const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
+const sourceImageUrl = ref<string | null>(null);
 
 const canGoNext = computed(() => {
   if (step.value === 1) return true;
@@ -135,96 +127,12 @@ async function loadSourceImage() {
 
     sourceImagePath = imagePath;
     const url = await resolveStorageUrl(imagePath);
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load source image"));
-      img.src = url;
-    });
-
-    loadedImage.value = img;
-    initCanvases();
+    sourceImageUrl.value = url;
     step.value = 1;
-    requestAnimationFrame(renderCanvas);
   } catch (err: unknown) {
     errorMessage.value =
       err instanceof Error ? err.message : "Failed to load source image.";
   }
-}
-
-function initCanvases() {
-  const img = loadedImage.value;
-  if (!img) return;
-
-  sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = CANVAS_SIZE;
-  sourceCanvas.height = CANVAS_SIZE;
-  const srcCtx = sourceCanvas.getContext("2d")!;
-  srcCtx.fillStyle = "black";
-  srcCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  srcCtx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-  maskCanvas = document.createElement("canvas");
-  maskCanvas.width = CANVAS_SIZE;
-  maskCanvas.height = CANVAS_SIZE;
-  maskCtx = maskCanvas.getContext("2d");
-}
-
-function renderCanvas() {
-  const canvas = mainCanvasRef.value;
-  if (!canvas || !sourceCanvas || !maskCanvas) return;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  ctx.drawImage(sourceCanvas, 0, 0);
-  ctx.drawImage(maskCanvas, 0, 0);
-}
-
-function clearMask() {
-  if (!maskCtx) return;
-  maskCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  renderCanvas();
-}
-
-function getCanvasCoords(e: PointerEvent): { x: number; y: number } | null {
-  const canvas = mainCanvasRef.value;
-  if (!canvas) return null;
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: ((e.clientX - rect.left) / rect.width) * CANVAS_SIZE,
-    y: ((e.clientY - rect.top) / rect.height) * CANVAS_SIZE,
-  };
-}
-
-function onPointerDown(e: PointerEvent) {
-  isDrawing = true;
-  const canvas = mainCanvasRef.value;
-  if (canvas) canvas.setPointerCapture(e.pointerId);
-  drawAt(e);
-}
-
-function onPointerMove(e: PointerEvent) {
-  if (!isDrawing) return;
-  drawAt(e);
-}
-
-function onPointerUp() {
-  isDrawing = false;
-}
-
-function drawAt(e: PointerEvent) {
-  if (!maskCtx) return;
-  const coords = getCanvasCoords(e);
-  if (!coords) return;
-  maskCtx.fillStyle = "rgba(255, 0, 0, 0.4)";
-  maskCtx.beginPath();
-  maskCtx.arc(coords.x, coords.y, brushSize, 0, Math.PI * 2);
-  maskCtx.fill();
-  renderCanvas();
 }
 
 function goNext() {
@@ -238,28 +146,6 @@ function goNext() {
 function goPrev() {
   if (step.value <= 1 || step.value >= 3) return;
   step.value--;
-  if (step.value === 1) {
-    requestAnimationFrame(renderCanvas);
-  }
-}
-
-function getCompositeBlob(): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
-    const ctx = canvas.getContext("2d");
-    if (!ctx || !sourceCanvas || !maskCanvas) {
-      reject(new Error("Canvas not initialized"));
-      return;
-    }
-    ctx.drawImage(sourceCanvas, 0, 0);
-    ctx.drawImage(maskCanvas, 0, 0);
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/webp",
-    );
-  });
 }
 
 async function handleSubmit() {
@@ -282,7 +168,7 @@ async function handleSubmit() {
     const timestamp = Date.now();
 
     const compositeImagePath = `users/${uid}/composites/${timestamp}.webp`;
-    const compositeBlob = await getCompositeBlob();
+    const compositeBlob = await maskingRef.value!.getCompositeBlob();
     await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
     const impressionId = await createImpression(renovationId.value, {
@@ -313,8 +199,7 @@ async function handleTrash() {
   resultImagePath.value = null;
   prompt.value = "";
   step.value = 1;
-  clearMask();
-  requestAnimationFrame(renderCanvas);
+  maskingRef.value?.clearMask();
 }
 
 function handleTimeline() {
@@ -333,14 +218,10 @@ function resetState() {
   prompt.value = "";
   submitting.value = false;
   errorMessage.value = null;
-  loadedImage.value = null;
+  sourceImageUrl.value = null;
   createdImpressionId.value = null;
   resultImagePath.value = null;
   sourceImagePath = "";
-  maskCanvas = null;
-  maskCtx = null;
-  sourceCanvas = null;
-  isDrawing = false;
 }
 
 // Reload when source query param changes (e.g. "Next Change" button)
@@ -351,15 +232,6 @@ watch(sourceParam, () => {
 
 onMounted(() => {
   loadSourceImage();
-  resizeObserver = new ResizeObserver(() => {
-    if (step.value === 1) renderCanvas();
-  });
-  const wrapper = canvasWrapperRef.value;
-  if (wrapper) resizeObserver.observe(wrapper);
-});
-
-onUnmounted(() => {
-  resizeObserver?.disconnect();
 });
 </script>
 
@@ -399,17 +271,12 @@ onUnmounted(() => {
         <p class="small-text">
           Paint the area you want to change (shown in red)
         </p>
-        <div ref="canvasWrapperRef" class="canvas-wrapper">
-          <canvas
-            ref="mainCanvasRef"
-            :width="CANVAS_SIZE"
-            :height="CANVAS_SIZE"
-            @pointerdown="onPointerDown"
-            @pointermove="onPointerMove"
-            @pointerup="onPointerUp"
-          ></canvas>
-        </div>
-        <button class="transparent small-round" @click="clearMask">
+        <MaskingCanvas
+          v-if="sourceImageUrl"
+          ref="maskingRef"
+          :image-url="sourceImageUrl"
+        />
+        <button class="transparent small-round" @click="maskingRef?.clearMask()">
           <i aria-hidden="true">delete_sweep</i>
           <span>Clear Mask</span>
         </button>
@@ -514,23 +381,5 @@ onUnmounted(() => {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  aspect-ratio: 1 / 1;
-  background: #000;
-  touch-action: none;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  margin: 0 auto;
-}
-
-.canvas-wrapper canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 </style>

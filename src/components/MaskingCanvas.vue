@@ -308,7 +308,65 @@ function onPointerUp(e: PointerEvent) {
   isDrawing = false;
 }
 
-defineExpose({ clearMask });
+function getOriginalBlob(): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (!sourceImage) {
+      reject(new Error("Image not loaded"));
+      return;
+    }
+    const c = document.createElement("canvas");
+    c.width = CANVAS_SIZE;
+    c.height = CANVAS_SIZE;
+    const ctx = c.getContext("2d");
+    if (!ctx) {
+      reject(new Error("Canvas context unavailable"));
+      return;
+    }
+    ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    c.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
+      "image/webp",
+    );
+  });
+}
+
+function getCompositeBlob(): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (!sourceImage || !maskCanvas) {
+      reject(new Error("Canvas not initialized"));
+      return;
+    }
+    const c = document.createElement("canvas");
+    c.width = CANVAS_SIZE;
+    c.height = CANVAS_SIZE;
+    const ctx = c.getContext("2d");
+    if (!ctx) {
+      reject(new Error("Canvas context unavailable"));
+      return;
+    }
+    ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.save();
+    ctx.globalAlpha = MASK_ALPHA;
+    ctx.drawImage(
+      maskCanvas,
+      PADDING,
+      PADDING,
+      CANVAS_SIZE,
+      CANVAS_SIZE,
+      0,
+      0,
+      CANVAS_SIZE,
+      CANVAS_SIZE,
+    );
+    ctx.restore();
+    c.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
+      "image/webp",
+    );
+  });
+}
+
+defineExpose({ clearMask, getOriginalBlob, getCompositeBlob });
 
 onMounted(() => {
   loadImage(props.imageUrl);
