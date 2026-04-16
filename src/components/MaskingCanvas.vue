@@ -10,6 +10,7 @@ const SMALL_RADIUS = 10;
 const LARGE_RADIUS = 15;
 const SAMPLING_DEGREES = 5;
 const PADDING = 16;
+const CANVAS_SIZE = 1024;
 
 // Visual translucency of the mask overlay
 const MASK_ALPHA = 0.4;
@@ -21,8 +22,8 @@ let maskCtx: CanvasRenderingContext2D | null = null;
 let borderCanvas: HTMLCanvasElement | null = null;
 let borderCtx: CanvasRenderingContext2D | null = null;
 let sourceImage: HTMLImageElement | null = null;
-let canvasWidth = 0;
-let canvasHeight = 0;
+let fullWidth = 0;
+let fullHeight = 0;
 let isDrawing = false;
 
 async function loadImage(url: string) {
@@ -35,22 +36,22 @@ async function loadImage(url: string) {
   });
 
   sourceImage = img;
-  canvasWidth = img.naturalWidth + PADDING * 2;
-  canvasHeight = img.naturalHeight + PADDING * 2;
+  fullWidth = CANVAS_SIZE + PADDING * 2;
+  fullHeight = CANVAS_SIZE + PADDING * 2;
 
   const canvas = canvasRef.value;
   if (!canvas) return;
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
+  canvas.width = fullWidth;
+  canvas.height = fullHeight;
 
   maskCanvas = document.createElement("canvas");
-  maskCanvas.width = canvasWidth;
-  maskCanvas.height = canvasHeight;
+  maskCanvas.width = fullWidth;
+  maskCanvas.height = fullHeight;
   maskCtx = maskCanvas.getContext("2d");
 
   borderCanvas = document.createElement("canvas");
-  borderCanvas.width = canvasWidth;
-  borderCanvas.height = canvasHeight;
+  borderCanvas.width = fullWidth;
+  borderCanvas.height = fullHeight;
   borderCtx = borderCanvas.getContext("2d");
 
   render();
@@ -63,14 +64,8 @@ function render() {
   if (!ctx) return;
 
   ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  ctx.drawImage(
-    sourceImage,
-    PADDING,
-    PADDING,
-    sourceImage.naturalWidth,
-    sourceImage.naturalHeight,
-  );
+  ctx.fillRect(0, 0, fullWidth, fullHeight);
+  ctx.drawImage(sourceImage, PADDING, PADDING, CANVAS_SIZE, CANVAS_SIZE);
   ctx.save();
   ctx.globalAlpha = MASK_ALPHA;
   ctx.drawImage(maskCanvas, 0, 0);
@@ -80,8 +75,8 @@ function render() {
 
 function clearMask() {
   if (!maskCtx || !borderCtx) return;
-  maskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-  borderCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+  maskCtx.clearRect(0, 0, fullWidth, fullHeight);
+  borderCtx.clearRect(0, 0, fullWidth, fullHeight);
   render();
 }
 
@@ -91,8 +86,8 @@ function getCanvasCoords(e: PointerEvent): { x: number; y: number } | null {
   const rect = canvas.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return null;
   return {
-    x: ((e.clientX - rect.left) / rect.width) * canvasWidth,
-    y: ((e.clientY - rect.top) / rect.height) * canvasHeight,
+    x: ((e.clientX - rect.left) / rect.width) * fullWidth,
+    y: ((e.clientY - rect.top) / rect.height) * fullHeight,
   };
 }
 
@@ -105,8 +100,8 @@ function paintAt(x: number, y: number) {
   const margin = Math.ceil(LARGE_RADIUS) + 2;
   const sx = Math.max(0, Math.floor(x - margin));
   const sy = Math.max(0, Math.floor(y - margin));
-  const ex = Math.min(canvasWidth, Math.ceil(x + margin));
-  const ey = Math.min(canvasHeight, Math.ceil(y + margin));
+  const ex = Math.min(fullWidth, Math.ceil(x + margin));
+  const ey = Math.min(fullHeight, Math.ceil(y + margin));
   const sw = ex - sx;
   const sh = ey - sy;
 
@@ -123,6 +118,12 @@ function paintAt(x: number, y: number) {
     const alpha = pre.data[(iy * sw + ix) * 4 + 3] ?? 0;
     return alpha > 0;
   }
+
+  // Clip all mask drawing to the image region (no painting in the padding).
+  maskCtx.save();
+  maskCtx.beginPath();
+  maskCtx.rect(PADDING, PADDING, CANVAS_SIZE, CANVAS_SIZE);
+  maskCtx.clip();
 
   maskCtx.fillStyle = "rgb(255, 0, 0)";
 
@@ -155,10 +156,6 @@ function paintAt(x: number, y: number) {
   }
 
   // Third pass: smoothing triangles at large↔small transitions.
-  // When a large triangle neighbours a small triangle, fill the step with a
-  // bevel triangle whose vertices are: the large-radius corner at the shared
-  // angle, the small-radius corner at the shared angle, and the far corner of
-  // the small triangle (one angular step away on the small side).
   for (let i = 0; i < steps; i++) {
     const next = (i + 1) % steps;
     if (radii[i] === radii[next]) continue;
@@ -167,19 +164,15 @@ function paintAt(x: number, y: number) {
     const cosA = Math.cos(sharedAngle);
     const sinA = Math.sin(sharedAngle);
 
-    // Large-radius point and small-radius point at the shared angle.
     const lx = x + LARGE_RADIUS * cosA;
     const ly = y + LARGE_RADIUS * sinA;
     const smx = x + SMALL_RADIUS * cosA;
     const smy = y + SMALL_RADIUS * sinA;
 
-    // Far corner of the small triangle (one step away on the small side).
     let farAngle: number;
     if (radii[i] === LARGE_RADIUS) {
-      // large→small: small triangle is on the "next" side
       farAngle = (next + 1) * stepRad;
     } else {
-      // small→large: small triangle is on the "i" side
       farAngle = i * stepRad;
     }
     const fx = x + SMALL_RADIUS * Math.cos(farAngle);
@@ -193,25 +186,23 @@ function paintAt(x: number, y: number) {
     maskCtx.fill();
   }
 
+  maskCtx.restore();
+
   updateBorder(x, y);
   render();
 }
 
-/**
- * Recompute the border layer inside a large-radius square around (cx, cy).
- * A masked pixel that is adjacent (4-connected) to a non-masked pixel becomes
- * a solid red border pixel.
- */
 function updateBorder(cx: number, cy: number) {
   if (!maskCtx || !borderCtx) return;
 
   const r = LARGE_RADIUS;
 
-  // Update region (the touched area).
-  const ux = Math.max(0, Math.floor(cx - r));
-  const uy = Math.max(0, Math.floor(cy - r));
-  const uex = Math.min(canvasWidth, Math.ceil(cx + r));
-  const uey = Math.min(canvasHeight, Math.ceil(cy + r));
+  // Clamp update region to the image area only.
+  const imgEnd = PADDING + CANVAS_SIZE;
+  const ux = Math.max(PADDING, Math.floor(cx - r));
+  const uy = Math.max(PADDING, Math.floor(cy - r));
+  const uex = Math.min(imgEnd, Math.ceil(cx + r));
+  const uey = Math.min(imgEnd, Math.ceil(cy + r));
   const uw = uex - ux;
   const uh = uey - uy;
   if (uw <= 0 || uh <= 0) return;
@@ -219,8 +210,8 @@ function updateBorder(cx: number, cy: number) {
   // Sample the mask 1px larger so neighbour lookups never go out of bounds.
   const msx = Math.max(0, ux - 1);
   const msy = Math.max(0, uy - 1);
-  const mex = Math.min(canvasWidth, uex + 1);
-  const mey = Math.min(canvasHeight, uey + 1);
+  const mex = Math.min(fullWidth, uex + 1);
+  const mey = Math.min(fullHeight, uey + 1);
   const msw = mex - msx;
   const msh = mey - msy;
   const maskData = maskCtx.getImageData(msx, msy, msw, msh);
