@@ -6,8 +6,8 @@ const props = defineProps<{
 }>();
 
 // Brush algorithm constants
-const SMALL_RADIUS = 10;
-const LARGE_RADIUS = 15;
+const SMALL_RADIUS = 30;
+const LARGE_RADIUS = 60;
 const SAMPLING_DEGREES = 5;
 const PADDING = 16;
 const CANVAS_SIZE = 1024;
@@ -47,12 +47,14 @@ async function loadImage(url: string) {
   maskCanvas = document.createElement("canvas");
   maskCanvas.width = fullWidth;
   maskCanvas.height = fullHeight;
-  maskCtx = maskCanvas.getContext("2d");
+  maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
+  if (maskCtx) maskCtx.imageSmoothingEnabled = false;
 
   borderCanvas = document.createElement("canvas");
   borderCanvas.width = fullWidth;
   borderCanvas.height = fullHeight;
   borderCtx = borderCanvas.getContext("2d");
+  if (borderCtx) borderCtx.imageSmoothingEnabled = false;
 
   render();
 }
@@ -63,7 +65,8 @@ function render() {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  ctx.fillStyle = "#000";
+  const bg = getComputedStyle(canvas).backgroundColor || "#000";
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, fullWidth, fullHeight);
   ctx.drawImage(sourceImage, PADDING, PADDING, CANVAS_SIZE, CANVAS_SIZE);
   ctx.save();
@@ -112,8 +115,17 @@ function paintAt(x: number, y: number) {
 
   function isInsidePreMask(px: number, py: number): boolean {
     if (!pre) return false;
-    const ix = Math.round(px) - sx;
-    const iy = Math.round(py) - sy;
+    const rpx = Math.round(px);
+    const rpy = Math.round(py);
+    if (
+      rpx < PADDING ||
+      rpx >= PADDING + CANVAS_SIZE ||
+      rpy < PADDING ||
+      rpy >= PADDING + CANVAS_SIZE
+    )
+      return true;
+    const ix = rpx - sx;
+    const iy = rpy - sy;
     if (ix < 0 || iy < 0 || ix >= sw || iy >= sh) return false;
     const alpha = pre.data[(iy * sw + ix) * 4 + 3] ?? 0;
     return alpha > 0;
@@ -136,38 +148,38 @@ function paintAt(x: number, y: number) {
     const a1 = i * stepRad;
     const a2 = (i + 1) * stepRad;
     const bothInside =
-      isInsidePreMask(x + LARGE_RADIUS * Math.cos(a1), y + LARGE_RADIUS * Math.sin(a1)) &&
-      isInsidePreMask(x + LARGE_RADIUS * Math.cos(a2), y + LARGE_RADIUS * Math.sin(a2));
+      isInsidePreMask(
+        x + LARGE_RADIUS * Math.cos(a1),
+        y + LARGE_RADIUS * Math.sin(a1),
+      ) &&
+      isInsidePreMask(
+        x + LARGE_RADIUS * Math.cos(a2),
+        y + LARGE_RADIUS * Math.sin(a2),
+      );
     radii[i] = bothInside ? LARGE_RADIUS : SMALL_RADIUS;
   }
 
-  // Second pass: draw triangles.
+  // Second pass: draw triangles as a single path to avoid anti-aliasing gaps.
+  maskCtx.beginPath();
   for (let i = 0; i < steps; i++) {
     const a1 = i * stepRad;
     const a2 = (i + 1) * stepRad;
     const r = radii[i]!;
 
-    maskCtx.beginPath();
     maskCtx.moveTo(x, y);
     maskCtx.lineTo(x + r * Math.cos(a1), y + r * Math.sin(a1));
     maskCtx.lineTo(x + r * Math.cos(a2), y + r * Math.sin(a2));
     maskCtx.closePath();
-    maskCtx.fill();
   }
+  maskCtx.fill();
 
   // Third pass: smoothing triangles at large↔small transitions.
+  maskCtx.beginPath();
   for (let i = 0; i < steps; i++) {
     const next = (i + 1) % steps;
     if (radii[i] === radii[next]) continue;
 
     const sharedAngle = (i + 1) * stepRad;
-    const cosA = Math.cos(sharedAngle);
-    const sinA = Math.sin(sharedAngle);
-
-    const lx = x + LARGE_RADIUS * cosA;
-    const ly = y + LARGE_RADIUS * sinA;
-    const smx = x + SMALL_RADIUS * cosA;
-    const smy = y + SMALL_RADIUS * sinA;
 
     let farAngle: number;
     if (radii[i] === LARGE_RADIUS) {
@@ -175,18 +187,38 @@ function paintAt(x: number, y: number) {
     } else {
       farAngle = i * stepRad;
     }
-    const fx = x + SMALL_RADIUS * Math.cos(farAngle);
-    const fy = y + SMALL_RADIUS * Math.sin(farAngle);
+    const angleOnSmallRadius =
+      sharedAngle + ((farAngle - sharedAngle) / SAMPLING_DEGREES) * 60;
 
-    maskCtx.beginPath();
+    const lx = x + LARGE_RADIUS * Math.cos(sharedAngle);
+    const ly = y + LARGE_RADIUS * Math.sin(sharedAngle);
+    const smx = x + SMALL_RADIUS * Math.cos(angleOnSmallRadius);
+    const smy = y + SMALL_RADIUS * Math.sin(angleOnSmallRadius);
+    const fx = x;
+    const fy = y;
+
     maskCtx.moveTo(lx, ly);
     maskCtx.lineTo(smx, smy);
     maskCtx.lineTo(fx, fy);
     maskCtx.closePath();
-    maskCtx.fill();
   }
+  maskCtx.fill();
 
   maskCtx.restore();
+
+  // Threshold: snap any anti-aliased alpha to fully opaque for a crisp mask.
+  const tx = Math.max(0, Math.floor(x - LARGE_RADIUS - 1));
+  const ty = Math.max(0, Math.floor(y - LARGE_RADIUS - 1));
+  const tw = Math.min(fullWidth, Math.ceil(x + LARGE_RADIUS + 1)) - tx;
+  const th = Math.min(fullHeight, Math.ceil(y + LARGE_RADIUS + 1)) - ty;
+  if (tw > 0 && th > 0) {
+    const imgData = maskCtx.getImageData(tx, ty, tw, th);
+    const d = imgData.data;
+    for (let j = 3, len = d.length; j < len; j += 4) {
+      d[j] = d[j]! > 0 ? 255 : 0;
+    }
+    maskCtx.putImageData(imgData, tx, ty);
+  }
 
   updateBorder(x, y);
   render();
@@ -309,7 +341,7 @@ watch(
   width: 100%;
   max-width: 544px;
   margin: 0 auto;
-  background: #000;
+  background: var(--surface, #000);
   touch-action: none;
   border-radius: 0.5rem;
   overflow: hidden;

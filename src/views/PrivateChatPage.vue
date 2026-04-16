@@ -11,7 +11,7 @@ const { messages, streaming, estimate, lastCost, error, send, stop } =
 const userInput = ref("");
 const maxCredits = ref(15);
 const chatContainer = ref<HTMLElement | null>(null);
-const chatInputEl = ref<HTMLInputElement | null>(null);
+const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
 
 const localEstimate = ref(2);
@@ -93,14 +93,24 @@ async function handleSend() {
   userInput.value = "";
   lastEstimatedLength = 0;
   chatMode.value = "streaming";
+  nextTick(() => {
+    if (chatInputEl.value) chatInputEl.value.style.height = "auto";
+  });
   await send(text, maxCredits.value);
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "Enter" && e.ctrlKey) {
     e.preventDefault();
     handleSend();
   }
+}
+
+function autoGrow() {
+  const el = chatInputEl.value;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
 }
 
 function downloadConversation() {
@@ -195,8 +205,9 @@ function continueChat() {
       v-if="chatMode === 'streaming'"
       class="chat-bottom chat-bottom-streaming"
     >
-      <button class="circle" title="Stop" @click="stop" data-testid="chat-stop">
+      <button @click="stop" data-testid="chat-stop">
         <i>stop</i>
+        <span>Stop</span>
       </button>
     </div>
 
@@ -206,18 +217,14 @@ function continueChat() {
       class="chat-bottom chat-bottom-result"
     >
       <button
-        class="extend border"
+        class="border"
         @click="downloadConversation"
         data-testid="chat-download"
       >
         <i>download</i>
         <span>Download</span>
       </button>
-      <button
-        class="extend"
-        @click="continueChat"
-        data-testid="chat-continue"
-      >
+      <button @click="continueChat" data-testid="chat-continue">
         <i>chat</i>
         <span>Continue Chat</span>
       </button>
@@ -232,20 +239,21 @@ function continueChat() {
             class="field border round"
             style="margin: 0; flex: 1; min-width: 0"
           >
-            <input
+            <textarea
               ref="chatInputEl"
               v-model="userInput"
-              type="text"
-              placeholder="Type a message..."
+              rows="1"
+              placeholder="Paste text from documents and type questions"
               autofocus
               @keydown="handleKeydown"
+              @input="autoGrow"
               data-testid="chat-input"
-            />
+            ></textarea>
           </div>
           <button
             class="circle transparent"
             :disabled="!userInput.trim()"
-            title="Send"
+            title="Send (Ctrl+Enter)"
             @click="handleSend"
             data-testid="chat-send"
           >
@@ -301,9 +309,9 @@ function continueChat() {
 }
 .chat-page {
   width: 100%;
-  max-width: 700px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 4.5rem 1rem 0;
+  padding: 4.5rem 0 0;
   display: flex;
   flex-direction: column;
   height: calc(100dvh - 4.5rem);
@@ -312,14 +320,26 @@ function continueChat() {
 .chat-input-row .field {
   min-height: 3.25rem;
 }
-.chat-input-row .field input {
-  height: 3.25rem;
+.chat-input-row .field textarea {
   font-size: 1.05rem;
+  resize: none;
+  overflow-y: auto;
+  min-height: 2.5rem;
+  max-height: calc(1.5em * 5 + 1rem);
+  line-height: 1.5;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0;
+  padding: 1rem calc(50vw - 350px);
+}
+@media (max-width: 700px) {
+  .chat-messages {
+    padding: 1rem 1rem;
+  }
 }
 .chat-message {
   padding: 0.35rem 0;
@@ -436,7 +456,7 @@ function continueChat() {
 .chat-input-row {
   display: flex;
   gap: 0.5rem;
-  align-items: center;
+  align-items: flex-end;
 }
 .error-bar {
   display: flex;
