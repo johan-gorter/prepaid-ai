@@ -80,6 +80,13 @@ const routes = [
     component: () => import("../views/NewImpressionPage.vue"),
     meta: { requiresAuth: true },
   },
+  // Hidden prototype route — not linked from navigation, accessible by URL only.
+  {
+    path: "/dev/masking-test",
+    name: "masking-test",
+    component: () => import("../views/MaskingTestPage.vue"),
+    meta: { requiresAuth: false },
+  },
 ];
 
 const router = createRouter({
