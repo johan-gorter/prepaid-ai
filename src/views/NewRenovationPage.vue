@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref as storageRef, uploadBytes } from "firebase/storage";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StorageImage from "../components/StorageImage.vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
@@ -52,19 +53,12 @@ watch([impressions, createdImpressionId], ([items, impId]) => {
   }
 });
 
-// Mask canvas state
-const canvasWrapperRef = ref<HTMLElement | null>(null);
-const mainCanvasRef = ref<HTMLCanvasElement | null>(null);
+// MaskingCanvas component ref
+const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
+const processedImageUrl = ref<string | null>(null);
 const retakeInputRef = ref<HTMLInputElement | null>(null);
-let maskCanvas: HTMLCanvasElement | null = null;
-let maskCtx: CanvasRenderingContext2D | null = null;
-let sourceCanvas: HTMLCanvasElement | null = null;
-let isDrawing = false;
-const brushSize = 30;
 const CANVAS_SIZE = 1024;
 const SQUARE_CROP_RATIO = 0.5;
-
-let resizeObserver: ResizeObserver | null = null;
 
 const canGoNext = computed(() => {
   if (step.value === 0) return !!loadedImage.value;
@@ -164,22 +158,21 @@ function computeSquareFit(imgW: number, imgH: number, size: number) {
   }
 }
 
-function initCanvases() {
+function processImage() {
   const img = loadedImage.value;
   if (!img) return;
-
-  sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = CANVAS_SIZE;
-  sourceCanvas.height = CANVAS_SIZE;
-  const srcCtx = sourceCanvas.getContext("2d")!;
-  srcCtx.fillStyle = "black";
-  srcCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  const canvas = document.createElement("canvas");
+  canvas.width = CANVAS_SIZE;
+  canvas.height = CANVAS_SIZE;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   const fit = computeSquareFit(
     img.naturalWidth,
     img.naturalHeight,
     CANVAS_SIZE,
   );
-  srcCtx.drawImage(
+  ctx.drawImage(
     img,
     fit.sx,
     fit.sy,
@@ -190,75 +183,15 @@ function initCanvases() {
     fit.dw,
     fit.dh,
   );
-
-  maskCanvas = document.createElement("canvas");
-  maskCanvas.width = CANVAS_SIZE;
-  maskCanvas.height = CANVAS_SIZE;
-  maskCtx = maskCanvas.getContext("2d");
-}
-
-function renderCanvas() {
-  const canvas = mainCanvasRef.value;
-  if (!canvas || !sourceCanvas || !maskCanvas) return;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  ctx.drawImage(sourceCanvas, 0, 0);
-  ctx.drawImage(maskCanvas, 0, 0);
-}
-
-function clearMask() {
-  if (!maskCtx) return;
-  maskCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  renderCanvas();
-}
-
-function getCanvasCoords(e: PointerEvent): { x: number; y: number } | null {
-  const canvas = mainCanvasRef.value;
-  if (!canvas) return null;
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: ((e.clientX - rect.left) / rect.width) * CANVAS_SIZE,
-    y: ((e.clientY - rect.top) / rect.height) * CANVAS_SIZE,
-  };
-}
-
-function onPointerDown(e: PointerEvent) {
-  isDrawing = true;
-  const canvas = mainCanvasRef.value;
-  if (canvas) canvas.setPointerCapture(e.pointerId);
-  drawAt(e);
-}
-
-function onPointerMove(e: PointerEvent) {
-  if (!isDrawing) return;
-  drawAt(e);
-}
-
-function onPointerUp() {
-  isDrawing = false;
-}
-
-function drawAt(e: PointerEvent) {
-  if (!maskCtx) return;
-  const coords = getCanvasCoords(e);
-  if (!coords) return;
-  maskCtx.fillStyle = "rgba(255, 0, 0, 0.4)";
-  maskCtx.beginPath();
-  maskCtx.arc(coords.x, coords.y, brushSize, 0, Math.PI * 2);
-  maskCtx.fill();
-  renderCanvas();
+  processedImageUrl.value = canvas.toDataURL("image/webp");
 }
 
 function goNext() {
   if (!canGoNext.value) return;
-  if (step.value === 1 && !maskCanvas) return;
+  if (step.value === 1 && !maskingRef.value) return;
   step.value++;
   if (step.value === 1) {
-    initCanvases();
-    requestAnimationFrame(renderCanvas);
+    processImage();
   }
   if (step.value === 3) {
     handleSubmit();
@@ -268,41 +201,6 @@ function goNext() {
 function goPrev() {
   if (step.value <= 0 || step.value >= 3) return;
   step.value--;
-  if (step.value === 1) {
-    requestAnimationFrame(renderCanvas);
-  }
-}
-
-function getCompositeBlob(): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
-    const ctx = canvas.getContext("2d");
-    if (!ctx || !sourceCanvas || !maskCanvas) {
-      reject(new Error("Canvas not initialized"));
-      return;
-    }
-    ctx.drawImage(sourceCanvas, 0, 0);
-    ctx.drawImage(maskCanvas, 0, 0);
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/webp",
-    );
-  });
-}
-
-function getOriginalBlob(): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    if (!sourceCanvas) {
-      reject(new Error("Source canvas not initialized"));
-      return;
-    }
-    sourceCanvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/webp",
-    );
-  });
 }
 
 async function handleSubmit() {
@@ -325,11 +223,11 @@ async function handleSubmit() {
     const timestamp = Date.now();
 
     const originalImagePath = `users/${uid}/originals/${timestamp}.webp`;
-    const originalBlob = await getOriginalBlob();
+    const originalBlob = await maskingRef.value!.getOriginalBlob();
     await uploadBytes(storageRef(storage, originalImagePath), originalBlob);
 
     const compositeImagePath = `users/${uid}/composites/${timestamp}.webp`;
-    const compositeBlob = await getCompositeBlob();
+    const compositeBlob = await maskingRef.value!.getCompositeBlob();
     await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
     const renovationId = await createRenovation({
@@ -370,8 +268,7 @@ async function handleTrash() {
   resultImagePath.value = null;
   prompt.value = "";
   step.value = 1;
-  clearMask();
-  requestAnimationFrame(renderCanvas);
+  maskingRef.value?.clearMask();
 }
 
 function onRetakeSelected(event: Event) {
@@ -387,9 +284,7 @@ function onRetakeSelected(event: Event) {
     const img = new Image();
     img.onload = () => {
       loadedImage.value = img;
-      initCanvases();
-      clearMask();
-      requestAnimationFrame(renderCanvas);
+      processImage();
     };
     img.src = dataUrl;
   };
@@ -413,12 +308,6 @@ function handleNextChange() {
 }
 
 onMounted(() => {
-  resizeObserver = new ResizeObserver(() => {
-    if (step.value === 1) renderCanvas();
-  });
-  const wrapper = canvasWrapperRef.value;
-  if (wrapper) resizeObserver.observe(wrapper);
-
   // Load cropped image from crop page if available
   if (route.query.source === "cropped") {
     const dataUrl = sessionStorage.getItem("croppedImage");
@@ -428,9 +317,8 @@ onMounted(() => {
       const img = new Image();
       img.onload = () => {
         loadedImage.value = img;
-        initCanvases();
+        processImage();
         step.value = 1;
-        requestAnimationFrame(renderCanvas);
         // The image is already cropped to 1024x1024, so create a fake file
         fetch(dataUrl)
           .then((res) => res.blob())
@@ -443,10 +331,6 @@ onMounted(() => {
       img.src = dataUrl;
     }
   }
-});
-
-onUnmounted(() => {
-  resizeObserver?.disconnect();
 });
 </script>
 
@@ -507,17 +391,15 @@ onUnmounted(() => {
         <p class="small-text">
           Paint the area you want to change (shown in red)
         </p>
-        <div ref="canvasWrapperRef" class="canvas-wrapper">
-          <canvas
-            ref="mainCanvasRef"
-            :width="CANVAS_SIZE"
-            :height="CANVAS_SIZE"
-            @pointerdown="onPointerDown"
-            @pointermove="onPointerMove"
-            @pointerup="onPointerUp"
-          ></canvas>
-        </div>
-        <button class="transparent small-round" @click="clearMask">
+        <MaskingCanvas
+          v-if="processedImageUrl"
+          ref="maskingRef"
+          :image-url="processedImageUrl"
+        />
+        <button
+          class="transparent small-round"
+          @click="maskingRef?.clearMask()"
+        >
           <i aria-hidden="true">delete_sweep</i>
           <span>Clear Mask</span>
         </button>
@@ -651,23 +533,5 @@ onUnmounted(() => {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  aspect-ratio: 1 / 1;
-  background: #000;
-  touch-action: none;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  margin: 0 auto;
-}
-
-.canvas-wrapper canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 </style>
