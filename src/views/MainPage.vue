@@ -38,7 +38,6 @@ async function submitFeedback() {
 <template>
   <header class="fixed">
     <nav>
-      <i>forum</i>
       <h6 class="max">Prepaid AI</h6>
       <UserMenu />
     </nav>
@@ -138,7 +137,10 @@ async function submitFeedback() {
             placeholder="Tell us what you'd like to see..."
             rows="3"
             data-testid="feedback-input"
-            style="border-radius: 12px; background-color: var(--surface-container-lowest)"
+            style="
+              border-radius: 12px;
+              background-color: var(--surface-container-lowest);
+            "
           ></textarea>
         </div>
         <button

@@ -1,14 +1,13 @@
 import { ref } from "vue";
 
+declare function ui(cmd: string, val?: string): string | undefined;
+
 export type ColorScheme = "light" | "dark" | "system";
 
 const STORAGE_KEY = "colorScheme";
 
 function applyScheme(scheme: ColorScheme) {
-  document.body.classList.remove("light", "dark");
-  if (scheme !== "system") {
-    document.body.classList.add(scheme);
-  }
+  ui("mode", scheme === "system" ? "auto" : scheme);
 }
 
 const stored = localStorage.getItem(STORAGE_KEY) as ColorScheme | null;

@@ -72,7 +72,27 @@ let userRecord;
 try {
   userRecord = await auth.getUserByEmail(email);
 } catch (err) {
-  console.error(`No user found with email ${email} in project ${projectId}`);
+  if (err?.code === "auth/user-not-found") {
+    console.error(`No user found with email ${email} in project ${projectId}`);
+    process.exit(1);
+  }
+  console.error(`Failed to look up user ${email} in project ${projectId}:`);
+  console.error(`  code:    ${err?.code ?? "(none)"}`);
+  console.error(`  message: ${err?.message ?? err}`);
+  if (
+    /credential|reauth|token|UNAUTHENTICATED|PERMISSION_DENIED/i.test(
+      String(err?.message ?? ""),
+    )
+  ) {
+    console.error("");
+    console.error(
+      "Hint: your Application Default Credentials may be missing or expired.",
+    );
+    console.error("  Run: gcloud auth application-default login");
+    console.error(
+      `  And ensure your account has access to project ${projectId}.`,
+    );
+  }
   process.exit(1);
 }
 

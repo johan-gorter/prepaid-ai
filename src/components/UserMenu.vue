@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { useBalance } from "../composables/useBalance";
@@ -11,6 +11,21 @@ const { colorScheme, setColorScheme } = useColorScheme();
 const router = useRouter();
 
 const showMenu = ref(false);
+const systemPrefersDark = ref(
+  typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches === true,
+);
+
+let mediaQuery: MediaQueryList | null = null;
+function onSystemChange(e: MediaQueryListEvent) {
+  systemPrefersDark.value = e.matches;
+}
+
+const isDark = computed(() =>
+  colorScheme.value === "system"
+    ? systemPrefersDark.value
+    : colorScheme.value === "dark",
+);
 
 function onDocumentClick(e: MouseEvent) {
   if (showMenu.value) {
@@ -21,16 +36,25 @@ function onDocumentClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener("click", onDocumentClick, true));
-onUnmounted(() => document.removeEventListener("click", onDocumentClick, true));
+onMounted(() => {
+  document.addEventListener("click", onDocumentClick, true);
+  if (typeof window !== "undefined" && window.matchMedia) {
+    mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", onSystemChange);
+  }
+});
+onUnmounted(() => {
+  document.removeEventListener("click", onDocumentClick, true);
+  mediaQuery?.removeEventListener("change", onSystemChange);
+});
 
 async function handleSignOut() {
   await signOut();
   router.push("/login");
 }
 
-function chooseScheme(scheme: "light" | "dark") {
-  setColorScheme(scheme);
+function toggleScheme() {
+  setColorScheme(isDark.value ? "light" : "dark");
   showMenu.value = false;
 }
 </script>
@@ -75,15 +99,9 @@ function chooseScheme(scheme: "light" | "dark") {
         </li>
         <li class="divider"></li>
         <li>
-          <a @click="chooseScheme('light')">
-            <i>{{ colorScheme === "light" ? "check" : "light_mode" }}</i>
-            <span>Light</span>
-          </a>
-        </li>
-        <li>
-          <a @click="chooseScheme('dark')">
-            <i>{{ colorScheme === "dark" ? "check" : "dark_mode" }}</i>
-            <span>Dark</span>
+          <a @click="toggleScheme">
+            <i>{{ isDark ? "light_mode" : "dark_mode" }}</i>
+            <span>Switch to {{ isDark ? "light" : "dark" }}</span>
           </a>
         </li>
         <li class="divider"></li>
