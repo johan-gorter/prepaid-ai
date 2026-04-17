@@ -20,7 +20,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         await expect(
           page.getByText("Paint the area you want to change"),
@@ -43,7 +43,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         await expect(
           page.getByRole("button", { name: "Retake" }),
@@ -63,7 +63,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
@@ -81,7 +81,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         // Advance to prompt
         await page.getByRole("button", { name: "Next" }).click();
@@ -115,7 +115,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         await expect(page.locator("canvas")).toBeVisible();
         await expect(
@@ -150,7 +150,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=cropped");
+        await page.waitForURL("/renovation/new?source=camera");
 
         await page.getByRole("button", { name: "← Back" }).click();
         await page.waitForURL("/renovations");

@@ -18,14 +18,14 @@ test.describe("Home Page", () => {
   }) => {
     // Take Photo opens a camera file input; selecting a photo reads it as a
     // data URL, stores it in sessionStorage, and navigates directly to the
-    // mask step at /renovation/new?source=cropped (skipping the old image-
+    // mask step at /renovation/new?source=camera (skipping the old image-
     // capture step).
     const grayPngPath = await createGrayPng();
     try {
       await page
         .locator('[data-testid="camera-input"]')
         .setInputFiles(grayPngPath);
-      await page.waitForURL("/renovation/new?source=cropped");
+      await page.waitForURL("/renovation/new?source=camera");
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();

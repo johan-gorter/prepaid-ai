@@ -16,7 +16,7 @@ function onCameraSelected(event: Event) {
   reader.onload = (e) => {
     const dataUrl = e.target?.result as string;
     sessionStorage.setItem("croppedImage", dataUrl);
-    router.push("/renovation/new?source=cropped");
+    router.push("/renovation/new?source=camera");
   };
   reader.readAsDataURL(file);
 }

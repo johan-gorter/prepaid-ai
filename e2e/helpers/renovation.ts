@@ -27,7 +27,7 @@ export async function createGrayPng(): Promise<string> {
  *
  * Sets a file on the camera input, which reads it as a data URL, stores it
  * in sessionStorage, and navigates directly to the mask step
- * (/renovation/new?source=cropped). Then draws a mask stroke and advances
+ * (/renovation/new?source=camera). Then draws a mask stroke and advances
  * to the prompt step with the given text filled in.
  *
  * Assumes the page is on the home page ("/") with the NewRenovationCard visible.
@@ -42,7 +42,7 @@ export async function fillNewRenovationForm(
 
   // Select photo via camera input → auto-navigates to mask step
   await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
-  await page.waitForURL("/renovation/new?source=cropped");
+  await page.waitForURL("/renovation/new?source=camera");
   await expect(page.getByText("Paint the area you want to change")).toBeVisible();
 
   // Draw a mask stroke

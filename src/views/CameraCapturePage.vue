@@ -66,7 +66,7 @@ function handleCapture() {
   const dataUrl = canvas.toDataURL("image/webp");
   stopStream();
   sessionStorage.setItem("croppedImage", dataUrl);
-  router.push("/renovation/new?source=cropped");
+  router.push("/renovation/new?source=camera");
 }
 
 function handleCancel() {

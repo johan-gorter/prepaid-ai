@@ -34,6 +34,9 @@ const submitting = ref(false);
 const errorMessage = ref<string | null>(null);
 const loadedImage = ref<HTMLImageElement | null>(null);
 
+// Track whether the image was uploaded (not captured via camera)
+const imageFromUpload = ref(false);
+
 // Created renovation/impression tracking
 const createdRenovationId = ref<string | null>(null);
 const createdImpressionId = ref<string | null>(null);
@@ -57,7 +60,6 @@ watch([impressions, createdImpressionId], ([items, impId]) => {
 // MaskingCanvas component ref
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 const processedImageUrl = ref<string | null>(null);
-const retakeInputRef = ref<HTMLInputElement | null>(null);
 const CANVAS_SIZE = 1024;
 const SQUARE_CROP_RATIO = 0.5;
 
@@ -278,26 +280,6 @@ async function handleTrash() {
   maskingRef.value?.clearMask();
 }
 
-function onRetakeSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file || !file.type.startsWith("image/")) return;
-  selectedFile.value = file;
-  errorMessage.value = null;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target?.result as string;
-    imagePreview.value = dataUrl;
-    const img = new Image();
-    img.onload = () => {
-      loadedImage.value = img;
-      processImage();
-    };
-    img.src = dataUrl;
-  };
-  reader.readAsDataURL(file);
-}
-
 function handleTrashAtMask() {
   router.push("/renovations");
 }
@@ -315,11 +297,13 @@ function handleNextChange() {
 }
 
 onMounted(() => {
-  // Load cropped image from crop page if available
-  if (route.query.source === "cropped") {
+  // Load image from camera capture or crop page if available
+  const source = route.query.source;
+  if (source === "cropped" || source === "camera") {
     const dataUrl = sessionStorage.getItem("croppedImage");
     if (dataUrl) {
       sessionStorage.removeItem("croppedImage");
+      imageFromUpload.value = source === "cropped";
       imagePreview.value = dataUrl;
       const img = new Image();
       img.onload = () => {
@@ -488,7 +472,7 @@ onMounted(() => {
 
     <!-- Step 1: Mask controls -->
     <StickyFooter v-if="step === 1">
-      <button class="max border small-round" @click="retakeInputRef?.click()">
+      <button v-if="!imageFromUpload" class="max border small-round" @click="router.push('/renovation/camera')">
         <i aria-hidden="true">photo_camera</i>
         <span>Retake</span>
       </button>
@@ -501,15 +485,6 @@ onMounted(() => {
         <span>Next</span>
       </button>
     </StickyFooter>
-    <input
-      ref="retakeInputRef"
-      data-testid="retake-input"
-      type="file"
-      accept="image/*"
-      capture="environment"
-      hidden
-      @change="onRetakeSelected"
-    />
 
     <!-- Step 4: Three-button bar -->
     <StickyFooter v-if="step === 4">
