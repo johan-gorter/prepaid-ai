@@ -15,7 +15,7 @@ function handleClear() {
 </script>
 
 <template>
-  <header class="fixed primary">
+  <header class="fixed">
     <nav>
       <button
         class="transparent circle"

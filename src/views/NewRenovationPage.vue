@@ -3,6 +3,7 @@ import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
+import StickyFooter from "../components/StickyFooter.vue";
 import StorageImage from "../components/StorageImage.vue";
 import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
@@ -336,7 +337,7 @@ onMounted(() => {
 
 <template>
   <div class="page-layout">
-    <header class="fixed primary">
+    <header class="fixed">
       <nav>
         <button
           class="transparent circle"
@@ -451,43 +452,39 @@ onMounted(() => {
     </main>
 
     <!-- Step 0 and step 2 controls -->
-    <footer v-if="step === 0 || step === 2" class="fixed">
-      <nav>
-        <button
-          class="max border small-round"
-          :disabled="step === 0"
-          @click="goPrev"
-        >
-          <i aria-hidden="true">arrow_back</i>
-          <span>Back</span>
-        </button>
-        <div class="small-space"></div>
-        <button class="max small-round" :disabled="!canGoNext" @click="goNext">
-          <i aria-hidden="true">{{
-            step === 2 ? "auto_awesome" : "arrow_forward"
-          }}</i>
-          <span>{{ nextLabel }}</span>
-        </button>
-      </nav>
-    </footer>
+    <StickyFooter v-if="step === 0 || step === 2">
+      <button
+        class="max border small-round"
+        :disabled="step === 0"
+        @click="goPrev"
+      >
+        <i aria-hidden="true">arrow_back</i>
+        <span>Back</span>
+      </button>
+      <div class="small-space"></div>
+      <button class="max small-round" :disabled="!canGoNext" @click="goNext">
+        <i aria-hidden="true">{{
+          step === 2 ? "auto_awesome" : "arrow_forward"
+        }}</i>
+        <span>{{ nextLabel }}</span>
+      </button>
+    </StickyFooter>
 
     <!-- Step 1: Mask controls -->
-    <footer v-if="step === 1" class="fixed">
-      <nav>
-        <button class="max border small-round" @click="retakeInputRef?.click()">
-          <i aria-hidden="true">photo_camera</i>
-          <span>Retake</span>
-        </button>
-        <button class="max small-round error" @click="handleTrashAtMask">
-          <i aria-hidden="true">delete</i>
-          <span>Trash</span>
-        </button>
-        <button class="max small-round" @click="goNext">
-          <i aria-hidden="true">arrow_forward</i>
-          <span>Next</span>
-        </button>
-      </nav>
-    </footer>
+    <StickyFooter v-if="step === 1">
+      <button class="max border small-round" @click="retakeInputRef?.click()">
+        <i aria-hidden="true">photo_camera</i>
+        <span>Retake</span>
+      </button>
+      <button class="max small-round error" @click="handleTrashAtMask">
+        <i aria-hidden="true">delete</i>
+        <span>Trash</span>
+      </button>
+      <button class="max small-round" @click="goNext">
+        <i aria-hidden="true">arrow_forward</i>
+        <span>Next</span>
+      </button>
+    </StickyFooter>
     <input
       ref="retakeInputRef"
       data-testid="retake-input"
@@ -499,31 +496,29 @@ onMounted(() => {
     />
 
     <!-- Step 4: Three-button bar -->
-    <footer v-if="step === 4" class="fixed">
-      <nav>
-        <button
-          class="max small-round"
-          @click="handleTimeline"
-          aria-label="Renovation Details"
-        >
-          <i aria-hidden="true">timeline</i>
-          <span>Details</span>
-        </button>
-        <button class="max small-round error" @click="handleTrash">
-          <i aria-hidden="true">delete</i>
-          <span>Trash</span>
-        </button>
-        <button
-          class="max small-round"
-          :disabled="!impressionCompleted"
-          @click="handleNextChange"
-          aria-label="Next Change"
-        >
-          <i aria-hidden="true">edit</i>
-          <span>Next</span>
-        </button>
-      </nav>
-    </footer>
+    <StickyFooter v-if="step === 4">
+      <button
+        class="max small-round"
+        @click="handleTimeline"
+        aria-label="Renovation Details"
+      >
+        <i aria-hidden="true">timeline</i>
+        <span>Details</span>
+      </button>
+      <button class="max small-round error" @click="handleTrash">
+        <i aria-hidden="true">delete</i>
+        <span>Trash</span>
+      </button>
+      <button
+        class="max small-round"
+        :disabled="!impressionCompleted"
+        @click="handleNextChange"
+        aria-label="Next Change"
+      >
+        <i aria-hidden="true">edit</i>
+        <span>Next</span>
+      </button>
+    </StickyFooter>
   </div>
 </template>
 

@@ -1,5 +1,9 @@
 import "beercss";
 import "material-dynamic-colors";
+
+// Apply purple/pink Material Design 3 theme from seed color
+declare function ui(cmd: string, val: string): void;
+ui("theme", "#9C27B0");
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import { registerSW } from "virtual:pwa-register";
