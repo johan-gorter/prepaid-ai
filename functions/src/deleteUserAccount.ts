@@ -9,14 +9,29 @@ export const deleteUserAccount = onCall(
       throw new HttpsError("unauthenticated", "Authentication required");
     }
 
-    // Delete all renovations and their impressions subcollections
+    // Collect storage paths from documents before deleting them
+    const storagePaths: string[] = [];
+
     const renovationsRef = db.collection(`users/${uid}/renovations`);
     const renovations = await renovationsRef.listDocuments();
     for (const renoDoc of renovations) {
+      const renoSnap = await renoDoc.get();
+      if (renoSnap.exists) {
+        const reno = renoSnap.data()!;
+        if (reno.originalImagePath) storagePaths.push(reno.originalImagePath);
+      }
+
       const impressions = await renoDoc
         .collection("impressions")
         .listDocuments();
       for (const impDoc of impressions) {
+        const impSnap = await impDoc.get();
+        if (impSnap.exists) {
+          const imp = impSnap.data()!;
+          if (imp.sourceImagePath) storagePaths.push(imp.sourceImagePath);
+          if (imp.resultImagePath) storagePaths.push(imp.resultImagePath);
+          if (imp.compositeImagePath) storagePaths.push(imp.compositeImagePath);
+        }
         await impDoc.delete();
       }
       await renoDoc.delete();
@@ -30,11 +45,22 @@ export const deleteUserAccount = onCall(
       await txnDoc.delete();
     }
 
-    // Delete all user files from Storage
+    // Delete collected storage files individually
+    const uniquePaths = [...new Set(storagePaths)];
+    await Promise.allSettled(
+      uniquePaths.map((p) =>
+        bucket
+          .file(p)
+          .delete()
+          .catch(() => {}),
+      ),
+    );
+
+    // Bulk-delete as safety net for any files not tracked in documents
     try {
       await bucket.deleteFiles({ prefix: `users/${uid}/` });
-    } catch {
-      // Ignore if no files exist
+    } catch (err) {
+      console.warn(`Bulk storage cleanup for user ${uid} failed:`, err);
     }
 
     // Delete feedback documents authored by this user

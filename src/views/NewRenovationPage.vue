@@ -86,6 +86,12 @@ const impressionStatus = computed(() => {
   return imp?.status ?? "pending";
 });
 
+const impressionError = computed(() => {
+  if (!createdImpressionId.value) return null;
+  const imp = impressions.value.find((i) => i.id === createdImpressionId.value);
+  return imp?.error ?? null;
+});
+
 function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -438,9 +444,19 @@ onMounted(() => {
           />
         </div>
         <div v-else class="center-align large-padding">
-          <progress class="circle"></progress>
+          <progress
+            v-if="impressionStatus !== 'failed'"
+            class="circle"
+          ></progress>
+          <i
+            v-else
+            aria-hidden="true"
+            class="error-text"
+            style="font-size: 3rem"
+            >error</i
+          >
           <p v-if="impressionStatus === 'failed'" class="error-text">
-            Processing failed.
+            Processing failed.{{ impressionError ? ` ${impressionError}` : "" }}
           </p>
           <p v-else>Processing your image...</p>
         </div>

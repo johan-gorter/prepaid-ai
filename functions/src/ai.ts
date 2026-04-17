@@ -3,7 +3,7 @@
 // Set via environment variable AI_BACKEND. Defaults to "google-ai".
 // - "vertex"    — Vertex AI (uses service account auth, no API key needed)
 // - "google-ai" — Google AI Studio (uses GEMINI_API_KEY secret)
-// - "dummy"     — Jimp text overlay (no AI, for testing)
+// - "dummy"     — Sharp text overlay (no AI, for testing)
 // ---------------------------------------------------------------------------
 
 export type AiBackend = "vertex" | "google-ai" | "dummy";
@@ -18,39 +18,57 @@ export function getAiBackend(): AiBackend {
   return "dummy";
 }
 
-// Jimp is a devDependency (emulator-only).
-// It is lazy-imported inside dummyProcess() to avoid crashing in production.
-
-async function loadDummyDeps() {
-  const { Jimp, loadFont } = await import("jimp");
-  const { SANS_32_WHITE } = await import("jimp/fonts");
-  return { Jimp, loadFont, SANS_32_WHITE };
-}
-
 /**
- * Dummy image processing: overlay prompt as white text on the image.
+ * Dummy image processing: overlay all prompts as white text on the source image.
+ * Uses the actual uploaded image as background. Text is rendered with a dark
+ * semi-transparent banner so it's readable on any background.
  * Used when no AI backend is configured (emulator only).
  */
 export async function dummyProcess(
-  _imageBuffer: Buffer,
+  imageBuffer: Buffer,
   prompt: string,
+  priorPrompts: string[] = [],
 ): Promise<Buffer> {
-  const { Jimp, loadFont, SANS_32_WHITE } = await loadDummyDeps();
+  const sharp = (await import("sharp")).default;
 
-  // Jimp does not support WebP decoding, so create a fresh image instead
-  // of reading the uploaded (WebP) buffer. This is fine for testing.
-  const image = new Jimp({ width: 800, height: 600, color: 0x808080ff });
-  const font = await loadFont(SANS_32_WHITE);
+  // Get dimensions from source image
+  const meta = await sharp(imageBuffer).metadata();
+  const width = meta.width ?? 800;
+  const height = meta.height ?? 600;
+  const lineHeight = 36;
+  const fontSize = 28;
 
-  image.print({
-    font,
-    x: 20,
-    y: 20,
-    text: prompt,
-    maxWidth: image.width - 40,
-  });
+  const escape = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-  return Buffer.from(await image.getBuffer("image/png"));
+  const allPrompts = [...priorPrompts, prompt];
+  const bannerHeight = allPrompts.length * lineHeight + 20;
+
+  // Build SVG: dark banner + wrapped text lines
+  const lines: string[] = [];
+  // Semi-transparent dark banner for readability
+  lines.push(
+    `<rect x="0" y="0" width="${width}" height="${bannerHeight}" fill="rgba(0,0,0,0.6)"/>`,
+  );
+  let y = lineHeight + 4;
+  for (const p of priorPrompts) {
+    lines.push(
+      `<text x="20" y="${y}" fill="#ccc" font-size="${fontSize}" font-family="sans-serif">${escape(p)}</text>`,
+    );
+    y += lineHeight;
+  }
+  lines.push(
+    `<text x="20" y="${y}" fill="white" font-size="${fontSize}" font-family="sans-serif" font-weight="bold">${escape(prompt)}</text>`,
+  );
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${lines.join("")}</svg>`;
+
+  return Buffer.from(
+    await sharp(imageBuffer)
+      .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
+      .png()
+      .toBuffer(),
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -13,11 +13,11 @@
   "dependencies": {
     "@google/genai": "^1.46.0",
     "firebase-admin": "^13.6.1",
-    "firebase-functions": "^7.0.5"
+    "firebase-functions": "^7.0.5",
+    "sharp": "^0.34.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.11",
-    "jimp": "^1.6.0",
-"typescript": "~5.7.0"
+    "typescript": "~5.7.0"
   }
 }

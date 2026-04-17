@@ -1,4 +1,5 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import sharp from "sharp";
 import { bucket, db } from "./admin.js";
 import { dummyProcess, geminiProcess, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
@@ -61,32 +62,47 @@ export const processImpression = onDocumentCreated(
       const backend = getAiBackend();
       console.log(`Processing with backend: ${backend}`);
 
-      // Dummy backend outputs PNG (Jimp has no WebP support).
-      // Production backends output WebP.
-      let resultContentType: string;
-      let resultExt: string;
-
       if (backend === "dummy") {
-        resultBuffer = await dummyProcess(fileBuffer, prompt);
-        resultContentType = "image/png";
-        resultExt = "png";
+        // Fetch prior prompts for this renovation to render a complete log
+        const priorSnap = await db
+          .collection(`users/${userId}/renovations/${renovationId}/impressions`)
+          .orderBy("createdAt", "asc")
+          .get();
+        const priorPrompts = priorSnap.docs
+          .filter((d) => d.id !== impressionId)
+          .map((d) => d.data().prompt as string)
+          .filter(Boolean);
+
+        resultBuffer = await dummyProcess(fileBuffer, prompt, priorPrompts);
       } else {
         resultBuffer = await geminiProcess(backend, fileBuffer, prompt);
-        resultContentType = "image/webp";
-        resultExt = "webp";
       }
 
+      // Re-encode as lossy WebP to reduce file size
+      resultBuffer = Buffer.from(
+        await sharp(resultBuffer).webp({ quality: 80 }).toBuffer(),
+      );
+
       // Upload result to Storage
-      const resultPath = `users/${userId}/results/${renovationId}/${impressionId}.${resultExt}`;
+      const resultPath = `users/${userId}/results/${renovationId}/${impressionId}.webp`;
       const resultFile = bucket.file(resultPath);
       await resultFile.save(resultBuffer, {
-        metadata: { contentType: resultContentType },
+        metadata: { contentType: "image/webp" },
       });
 
       await impressionRef.update({
         status: "completed",
         resultImagePath: resultPath,
       });
+
+      // Clean up composite image — it was only needed as AI input
+      if (compositeImagePath) {
+        try {
+          await bucket.file(compositeImagePath).delete();
+        } catch {
+          // Ignore — file may already be gone
+        }
+      }
 
       // Deduct credits for image generation
       try {
