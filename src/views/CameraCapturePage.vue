@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import StickyFooter from "../components/StickyFooter.vue";
 import UserMenu from "../components/UserMenu.vue";
 
 const router = useRouter();
@@ -76,7 +77,7 @@ function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <header class="fixed primary">
+    <header class="fixed">
       <nav>
         <button
           class="transparent circle"
@@ -121,24 +122,22 @@ function handleCancel() {
       <canvas ref="canvasRef" style="display: none"></canvas>
     </main>
 
-    <footer class="fixed">
-      <nav>
-        <button class="max border small-round" @click="handleCancel">
-          <i aria-hidden="true">close</i>
-          <span>Cancel</span>
-        </button>
-        <div class="small-space"></div>
-        <button
-          class="max small-round"
-          :disabled="!cameraReady"
-          @click="handleCapture"
-          aria-label="Capture photo"
-        >
-          <i aria-hidden="true">camera</i>
-          <span>Capture</span>
-        </button>
-      </nav>
-    </footer>
+    <StickyFooter>
+      <button class="max border small-round" @click="handleCancel">
+        <i aria-hidden="true">close</i>
+        <span>Cancel</span>
+      </button>
+      <div class="small-space"></div>
+      <button
+        class="max small-round"
+        :disabled="!cameraReady"
+        @click="handleCapture"
+        aria-label="Capture photo"
+      >
+        <i aria-hidden="true">camera</i>
+        <span>Capture</span>
+      </button>
+    </StickyFooter>
   </div>
 </template>
 

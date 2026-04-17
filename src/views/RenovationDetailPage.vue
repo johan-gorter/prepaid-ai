@@ -114,7 +114,7 @@ onMounted(() => {
 
 <template>
   <div class="page-layout">
-    <header class="fixed primary">
+    <header class="fixed">
       <nav>
         <button
           class="transparent circle"

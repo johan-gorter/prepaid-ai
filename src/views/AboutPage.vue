@@ -6,7 +6,7 @@ const { currentUser } = useAuth();
 </script>
 
 <template>
-  <header class="fixed primary">
+  <header class="fixed">
     <nav>
       <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
       <span class="breadcrumb-sep">&gt;</span>
