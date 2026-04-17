@@ -89,8 +89,8 @@ export async function geminiProcess(
   const ai = createGenAI(GoogleGenAI, backend);
 
   const editPrompt =
-    `Edit the area highlighted in red: ${prompt}. ` +
-    `Keep everything else unchanged. Remove the red overlay in the output.`;
+    `Apply the prompt below to the magenta checkered area. ` +
+    `Do not include the checkered area in the output.\n\n${prompt}`;
 
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,

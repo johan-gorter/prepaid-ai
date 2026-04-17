@@ -330,12 +330,19 @@ function getOriginalBlob(): Promise<Blob> {
   });
 }
 
+// Size of each checkerboard cell (px) used for the AI-facing composite.
+const CHECKER_CELL = 10;
+// Opaque magenta, a color that almost never appears in natural scenes.
+const CHECKER_COLOR = "rgb(255, 0, 255)";
+
 function getCompositeBlob(): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (!sourceImage || !maskCanvas) {
       reject(new Error("Canvas not initialized"));
       return;
     }
+
+    // 1) Result canvas starts with the source image.
     const c = document.createElement("canvas");
     c.width = CANVAS_SIZE;
     c.height = CANVAS_SIZE;
@@ -345,9 +352,32 @@ function getCompositeBlob(): Promise<Blob> {
       return;
     }
     ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    ctx.save();
-    ctx.globalAlpha = MASK_ALPHA;
-    ctx.drawImage(
+
+    // 2) Build a magenta-checkerboard layer, sized to the image region.
+    const checker = document.createElement("canvas");
+    checker.width = CANVAS_SIZE;
+    checker.height = CANVAS_SIZE;
+    const checkerCtx = checker.getContext("2d");
+    if (!checkerCtx) {
+      reject(new Error("Checker context unavailable"));
+      return;
+    }
+    checkerCtx.fillStyle = CHECKER_COLOR;
+    for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
+      for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
+        const cellX = Math.floor(x / CHECKER_CELL);
+        const cellY = Math.floor(y / CHECKER_CELL);
+        if ((cellX + cellY) % 2 === 0) {
+          checkerCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
+        }
+      }
+    }
+
+    // 3) Clip the checkerboard to the mask shape: keep pattern pixels only
+    // where the user painted. destination-in keeps existing pixels only
+    // where the incoming drawing is opaque.
+    checkerCtx.globalCompositeOperation = "destination-in";
+    checkerCtx.drawImage(
       maskCanvas,
       PADDING,
       PADDING,
@@ -358,7 +388,10 @@ function getCompositeBlob(): Promise<Blob> {
       CANVAS_SIZE,
       CANVAS_SIZE,
     );
-    ctx.restore();
+
+    // 4) Overlay the masked checkerboard onto the source image.
+    ctx.drawImage(checker, 0, 0);
+
     c.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
       "image/webp",
