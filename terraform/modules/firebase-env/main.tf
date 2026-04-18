@@ -43,7 +43,7 @@ resource "google_firebase_project" "default" {
 resource "google_firebase_web_app" "default" {
   provider     = google-beta
   project      = var.project_id
-  display_name = "Prepaid AI (${var.environment})"
+  display_name = "payasyougo.app (${var.environment})"
 
   depends_on = [google_firebase_project.default]
 }

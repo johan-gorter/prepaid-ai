@@ -17,7 +17,7 @@ const router = useRouter();
 const cardDataUrls = ref<Record<string, string>>({});
 
 onMounted(() => {
-  localStorage.setItem("prepaid-ai-last-page", "renovations");
+  localStorage.setItem("payasyougo-last-page", "renovations");
   updateLastActivity();
 });
 
@@ -161,7 +161,7 @@ watch(
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
+      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <h1 class="max">Renovations</h1>
       <UserMenu />

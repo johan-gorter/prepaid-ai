@@ -1,4 +1,4 @@
-# Prepaid AI — Project Setup Plan
+# payasyougo.app — Project Setup Plan
 
 ## Architecture Decisions
 
@@ -116,7 +116,7 @@ See [docs/environments.md](docs/environments.md) for the current local, sandbox,
 
 ```bash
 # ============================================
-# Prepaid AI — Local Environment Variables
+# payasyougo.app — Local Environment Variables
 # ============================================
 # DO NOT commit this file to version control.
 # Add .env to .gitignore

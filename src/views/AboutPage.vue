@@ -8,7 +8,7 @@ const { currentUser } = useAuth();
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
+      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <h1 class="max">About</h1>
       <UserMenu />
@@ -19,9 +19,9 @@ const { currentUser } = useAuth();
     class="responsive"
     style="max-width: 700px; margin: 0 auto; padding-top: 4.5rem"
   >
-    <h4>About Prepaid AI</h4>
+    <h4>About payasyougo.app</h4>
     <p>
-      Prepaid AI helps you visualize renovation ideas by combining your photos
+      payasyougo.app helps you visualize renovation ideas by combining your photos
       with AI-powered image editing. Upload a photo of your space, highlight the
       area you want to change, describe your vision, and receive an AI-generated
       preview of the result.
@@ -64,7 +64,7 @@ const { currentUser } = useAuth();
 
     <h5>Terms of Service</h5>
     <p>
-      By using Prepaid AI, you agree to these terms. The service is provided "as
+      By using payasyougo.app, you agree to these terms. The service is provided "as
       is" without warranty of any kind. We may modify or discontinue the service
       at any time. Continued use after changes constitutes acceptance of the
       updated terms.

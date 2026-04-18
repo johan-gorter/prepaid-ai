@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: "Comprehensive security audit for the Prepaid AI codebase and infrastructure. Use when: reviewing security posture, checking data isolation, verifying auth guards, auditing Firestore/Storage rules, validating Cloud Function triggers, checking domain restrictions on non-production environments, or preparing for billing integration."
+description: "Comprehensive security audit for the payasyougo.app codebase and infrastructure. Use when: reviewing security posture, checking data isolation, verifying auth guards, auditing Firestore/Storage rules, validating Cloud Function triggers, checking domain restrictions on non-production environments, or preparing for billing integration."
 argument-hint: "Optional: focus area (rules, functions, terraform, client, all)"
 ---
 

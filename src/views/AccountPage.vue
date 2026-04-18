@@ -48,7 +48,7 @@ async function handleDeleteAccount() {
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
+      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <h1 class="max">Account</h1>
       <UserMenu />

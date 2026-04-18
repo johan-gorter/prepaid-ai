@@ -49,7 +49,7 @@ gcloud auth application-default login
 Create a dedicated project to host shared infrastructure (state bucket, etc.):
 
 ```bash
-gcloud projects create prepaid-ai-infra --name="Prepaid AI Infra"
+gcloud projects create prepaid-ai-infra --name="payasyougo.app Infra"
 gcloud billing projects link prepaid-ai-infra --billing-account=YOUR_BILLING_ACCOUNT_ID
 
 gcloud storage buckets create gs://prepaid-ai-terraform-state \
@@ -69,7 +69,7 @@ gcloud storage buckets update gs://prepaid-ai-terraform-state --versioning
 If `prepaid-ai-dev` doesn't exist yet:
 
 ```bash
-gcloud projects create prepaid-ai-dev --name="Prepaid AI Dev"
+gcloud projects create prepaid-ai-dev --name="payasyougo.app Dev"
 gcloud billing projects link prepaid-ai-dev --billing-account=YOUR_BILLING_ACCOUNT_ID
 ```
 

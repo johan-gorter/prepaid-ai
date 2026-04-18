@@ -55,7 +55,7 @@ async function handleDevLogin() {
   >
     <article class="round large-elevate">
       <div class="center-align">
-        <h4>Prepaid AI</h4>
+        <h4>payasyougo.app</h4>
         <p class="small-text">Reimagine your space with AI</p>
       </div>
 

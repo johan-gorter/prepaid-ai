@@ -1,5 +1,5 @@
 {
-  "name": "prepaid-ai-functions",
+  "name": "payasyougo-functions",
   "private": true,
   "main": "lib/index.js",
   "engines": {

@@ -9,7 +9,7 @@ const { balance, transactions, loading } = useBalance();
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
+      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <h1 class="max">Balance</h1>
       <UserMenu />

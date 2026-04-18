@@ -5,7 +5,7 @@ test.describe("About Page", () => {
     await page.goto("/about");
 
     await expect(
-      page.getByRole("heading", { name: "About Prepaid AI" }),
+      page.getByRole("heading", { name: "About payasyougo.app" }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Acceptable Use" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Data Retention" })).toBeVisible();
@@ -21,7 +21,7 @@ test.describe("About Page", () => {
     // Should not redirect to login — URL stays at /about
     await expect(page).toHaveURL("/about");
     await expect(
-      page.getByRole("heading", { name: "About Prepaid AI" }),
+      page.getByRole("heading", { name: "About payasyougo.app" }),
     ).toBeVisible();
   });
 
@@ -39,7 +39,7 @@ test.describe("About Page", () => {
   test("shows breadcrumb and back link", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByRole("link", { name: "Prepaid AI" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "payasyougo" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Back/ })).toBeVisible();
   });
 

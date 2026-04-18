@@ -1,6 +1,6 @@
 # AGENTS.md — AI Agent Instructions
 
-This file contains instructions for AI coding agents working on the Prepaid AI codebase.
+This file contains instructions for AI coding agents working on the payasyougo.app codebase.
 
 ## Tech Stack
 
