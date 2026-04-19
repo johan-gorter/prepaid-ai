@@ -11,7 +11,7 @@ export const processImpression = onDocumentCreated(
     document:
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
     region: "europe-west1",
-    secrets: ["GEMINI_API_KEY"],
+    secrets: ["GEMINI_API_KEY", "AI_BACKEND"],
     timeoutSeconds: 120,
     memory: "512MiB",
   },
