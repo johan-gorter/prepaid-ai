@@ -1,10 +1,10 @@
 ---
 name: beer-css
-description: "Beer CSS (Material Design 3) component reference for Prepaid AI. Use when: creating or modifying Vue components, adding UI elements, styling pages, or working with Material Icons."
+description: "Beer CSS (Material Design 3) component reference for payasyougo.app. Use when: creating or modifying Vue components, adding UI elements, styling pages, or working with Material Icons."
 argument-hint: "Optional: component type (button, card, dialog, form, nav, grid)"
 ---
 
-# Beer CSS — Component Reference for Prepaid AI
+# Beer CSS — Component Reference for payasyougo.app
 
 This skill documents beer-css (Material Design 3) patterns used in this project.
 Use these patterns when creating or modifying Vue components.

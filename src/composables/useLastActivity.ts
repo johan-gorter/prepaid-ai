@@ -2,7 +2,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "./useAuth";
 
-const THROTTLE_KEY = "prepaid-ai-last-activity-sync";
+const THROTTLE_KEY = "payasyougo-last-activity-sync";
 const THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
 
 export function updateLastActivity() {
