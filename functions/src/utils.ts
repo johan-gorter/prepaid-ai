@@ -8,10 +8,15 @@ export function storagePathFromUrl(url: string): string {
 }
 
 /**
- * CORS — built from ALLOWED_ORIGINS env var (comma-separated URLs).
- * Falls back to localhost-only for emulator mode.
+ * CORS — derived from GCLOUD_PROJECT (the Firebase project ID, set
+ * automatically by Cloud Functions). Falls back to ALLOWED_ORIGINS env var
+ * if set, or localhost-only for emulator mode.
  */
 export function getAllowedOrigins(): (string | RegExp)[] {
+  const project = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
+  if (project) {
+    return [`https://${project}.web.app`, `https://${project}.firebaseapp.com`];
+  }
   const raw = process.env.ALLOWED_ORIGINS;
   if (raw) {
     return raw
@@ -31,4 +36,18 @@ export function getAdminUids(): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/**
+ * Derive the environment label from GCLOUD_PROJECT.
+ * Project IDs follow the convention "prepaid-ai-<env>".
+ * Falls back to ENVIRONMENT env var, then "emulator".
+ */
+export function getEnvironment(): string {
+  const project = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
+  if (project) {
+    const env = project.replace("prepaid-ai-", "");
+    if (env) return env;
+  }
+  return process.env.ENVIRONMENT ?? "emulator";
 }

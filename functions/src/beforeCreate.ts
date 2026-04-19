@@ -1,5 +1,6 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { beforeUserCreated } from "firebase-functions/v2/identity";
+import { getEnvironment } from "./utils.js";
 
 // ---------------------------------------------------------------------------
 // Blocking function — restrict non-production sign-ups to @johangorter.com
@@ -10,7 +11,7 @@ export const beforeCreate = beforeUserCreated(
   { region: "europe-west1" },
   (event) => {
     // Skip domain check in production and when running in the Firebase emulator
-    const env = process.env.ENVIRONMENT;
+    const env = getEnvironment();
     if (env === "production") return;
     if (process.env.FUNCTIONS_EMULATOR === "true") return;
 
