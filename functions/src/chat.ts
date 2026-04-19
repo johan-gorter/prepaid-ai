@@ -136,7 +136,7 @@ export const chat = onRequest(
 
     // ----- Real Gemini backend -----
     try {
-      const ai = await createGenAIClient(backend);
+      const ai = await createGenAIClient(backend, "global");
 
       // Count input tokens
       const tokenResponse = await ai.models.countTokens({

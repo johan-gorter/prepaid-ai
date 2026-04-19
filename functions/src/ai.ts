@@ -85,12 +85,13 @@ async function loadGenAI() {
 function createGenAI(
   GoogleGenAI: Awaited<ReturnType<typeof loadGenAI>>,
   backend: "google-ai" | "vertex",
+  location?: string,
 ) {
   if (backend === "vertex") {
     return new GoogleGenAI({
       vertexai: true,
       project: process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT,
-      location: process.env.AI_REGION ?? "europe-west1",
+      location: location ?? process.env.AI_REGION ?? "europe-west1",
     });
   }
   const apiKey = process.env.GEMINI_API_KEY;
@@ -152,7 +153,10 @@ export async function geminiProcess(
  * Create a GenAI client for the given backend. Exposed for use by the chat
  * function which needs lower-level access (streaming, token counting).
  */
-export async function createGenAIClient(backend: "google-ai" | "vertex") {
+export async function createGenAIClient(
+  backend: "google-ai" | "vertex",
+  location?: string,
+) {
   const GoogleGenAI = await loadGenAI();
-  return createGenAI(GoogleGenAI, backend);
+  return createGenAI(GoogleGenAI, backend, location);
 }
