@@ -50,8 +50,8 @@ export default defineConfig(({ mode }) => ({
       injectRegister: false,
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "Prepaid AI",
-        short_name: "Prepaid AI",
+        name: "payasyougo.app",
+        short_name: "payasyougo.app",
         description: "AI-powered visualizations",
         theme_color: "#1a1a2e",
         background_color: "#1a1a2e",

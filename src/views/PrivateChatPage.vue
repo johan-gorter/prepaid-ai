@@ -63,7 +63,7 @@ const userInitials = computed(() => {
 });
 
 onMounted(() => {
-  localStorage.setItem("prepaid-ai-last-page", "chat");
+  localStorage.setItem("payasyougo-last-page", "chat");
   if (messages.value.length > 0) {
     localEstimate.value = estimateLocalCredits(messages.value, userInput.value);
     lastEstimatedLength = userInput.value.length;
@@ -139,7 +139,7 @@ function continueChat() {
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">Prepaid AI</router-link>
+      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <h6 class="max">Chat</h6>
       <UserMenu />

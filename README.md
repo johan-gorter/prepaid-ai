@@ -1,4 +1,4 @@
-# Prepaid AI
+# payasyougo.app
 
 A Vue 3 PWA that lets users take or upload a photo of a space, mark an area to change, and get an AI-generated impression of their renovation idea.
 

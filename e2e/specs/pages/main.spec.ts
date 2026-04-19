@@ -7,7 +7,7 @@ test.describe("Main Page", () => {
 
   test("shows main page content", async ({ authenticatedPage: page }) => {
     await page.goto("/main");
-    await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
     await expect(
       page.getByRole("heading", { name: "AI Impressions for renovations" }),
@@ -21,7 +21,7 @@ test.describe("Main Page", () => {
     authenticatedPage: page,
   }) => {
     await page.goto("/main");
-    await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
     const renovationsLink = page.getByRole("link", { name: "VISUALIZE NOW" });
     await expect(renovationsLink).toBeVisible();
@@ -34,7 +34,7 @@ test.describe("Main Page", () => {
 
   test("shows feedback form", async ({ authenticatedPage: page }) => {
     await page.goto("/main");
-    await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
     await expect(page.getByTestId("feedback-input")).toBeVisible();
     await expect(page.getByTestId("feedback-submit")).toBeVisible();
@@ -42,7 +42,7 @@ test.describe("Main Page", () => {
 
   test("can submit feedback", async ({ authenticatedPage: page }) => {
     await page.goto("/main");
-    await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
     await page.getByTestId("feedback-input").fill("This is a great app!");
     await page.getByTestId("feedback-submit").click();
@@ -52,7 +52,7 @@ test.describe("Main Page", () => {
 
   test("navigates to balance page", async ({ authenticatedPage: page }) => {
     await page.goto("/main");
-    await expect(page.getByRole("heading", { name: "Prepaid AI", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "Check Credits" }).click();
     await page.waitForURL("/balance");

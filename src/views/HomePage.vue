@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-const lastPage = localStorage.getItem("prepaid-ai-last-page") ?? "main";
+const lastPage = localStorage.getItem("payasyougo-last-page") ?? "main";
 const redirectMap: Record<string, string> = {
   renovations: "/renovations",
   chat: "/chat",

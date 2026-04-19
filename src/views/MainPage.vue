@@ -12,7 +12,7 @@ const feedbackSending = ref(false);
 const feedbackSent = ref(false);
 
 onMounted(() => {
-  localStorage.setItem("prepaid-ai-last-page", "main");
+  localStorage.setItem("payasyougo-last-page", "main");
   updateLastActivity();
 });
 
@@ -38,7 +38,7 @@ async function submitFeedback() {
 <template>
   <header class="fixed">
     <nav>
-      <h6 class="max">Prepaid AI</h6>
+      <h6 class="max">payasyougo.app</h6>
       <UserMenu />
     </nav>
   </header>
@@ -53,7 +53,7 @@ async function submitFeedback() {
     "
   >
     <p>
-      Prepaid AI gives you access to premium AI applications
+      payasyougo.app gives you access to premium AI applications
       <strong>without any ongoing subscription</strong>. We are a friendly and
       fair platform allowing everyone to benefit from AI.
     </p>

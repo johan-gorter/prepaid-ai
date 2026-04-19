@@ -12,7 +12,7 @@ import { services } from "./registry.mjs";
 
 function printUsage() {
   console.log(`
-Prepaid AI Dev Service Manager
+payasyougo.app Dev Service Manager
 
 Commands:
   start <name...>   Start one or more services
