@@ -13,7 +13,7 @@ export const chat = onRequest(
   {
     region: "europe-west1",
     cors: getAllowedOrigins(),
-    secrets: ["GEMINI_API_KEY"],
+    secrets: ["GEMINI_API_KEY", "AI_BACKEND"],
     timeoutSeconds: 300,
     memory: "512MiB",
   },

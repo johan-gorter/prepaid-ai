@@ -86,6 +86,57 @@ resource "null_resource" "storage_cors" {
 }
 
 # ---------------------------------------------------------------------------
+# Secret Manager — AI_BACKEND
+# Stores the active AI backend ("vertex" | "google-ai" | "dummy").
+# Change var.ai_backend in the environment tfvars and re-apply to switch.
+# ---------------------------------------------------------------------------
+resource "google_secret_manager_secret" "ai_backend" {
+  project   = var.project_id
+  secret_id = "AI_BACKEND"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "ai_backend" {
+  secret      = google_secret_manager_secret.ai_backend.id
+  secret_data = var.ai_backend
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "functions_ai_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ai_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_ai_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ai_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_ai_backend_viewer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ai_backend.secret_id
+  role      = "roles/secretmanager.viewer"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+# ---------------------------------------------------------------------------
 # Secret Manager — GEMINI_API_KEY
 # ---------------------------------------------------------------------------
 resource "google_secret_manager_secret" "gemini_api_key" {
