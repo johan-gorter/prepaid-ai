@@ -86,6 +86,13 @@ resource "null_resource" "storage_cors" {
 }
 
 # ---------------------------------------------------------------------------
+# Project metadata — needed for the Compute Engine default SA email
+# ---------------------------------------------------------------------------
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+# ---------------------------------------------------------------------------
 # Secret Manager — AI_BACKEND
 # Stores the active AI backend ("vertex" | "google-ai" | "dummy").
 # Change var.ai_backend in the environment tfvars and re-apply to switch.
@@ -134,6 +141,14 @@ resource "google_secret_manager_secret_iam_member" "ci_deployer_ai_backend_viewe
   secret_id = google_secret_manager_secret.ai_backend.secret_id
   role      = "roles/secretmanager.viewer"
   member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+# Cloud Functions v2 runtime SA (Compute Engine default)
+resource "google_secret_manager_secret_iam_member" "compute_ai_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ai_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
 
 # ---------------------------------------------------------------------------
@@ -186,6 +201,14 @@ resource "google_secret_manager_secret_iam_member" "ci_deployer_ai_region_viewer
   member    = "serviceAccount:${google_service_account.ci_deployer.email}"
 }
 
+# Cloud Functions v2 runtime SA (Compute Engine default)
+resource "google_secret_manager_secret_iam_member" "compute_ai_region_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ai_region.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
 # ---------------------------------------------------------------------------
 # Secret Manager — GEMINI_API_KEY
 # ---------------------------------------------------------------------------
@@ -227,6 +250,14 @@ resource "google_secret_manager_secret_iam_member" "ci_deployer_secret_viewer" {
   secret_id = google_secret_manager_secret.gemini_api_key.secret_id
   role      = "roles/secretmanager.viewer"
   member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+# Cloud Functions v2 runtime SA (Compute Engine default)
+resource "google_secret_manager_secret_iam_member" "compute_gemini_api_key_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.gemini_api_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
 
 # ---------------------------------------------------------------------------

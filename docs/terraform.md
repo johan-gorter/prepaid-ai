@@ -80,13 +80,13 @@ Find your billing account ID with `gcloud billing accounts list`.
 Each environment gets its own state prefix. From the `terraform/` directory:
 
 ```powershell
-# Dev
+# Dev (has an .auto.tfvars for OAuth secrets — include both)
 terraform init `
   "-backend-config=bucket=prepaid-ai-terraform-state" `
   "-backend-config=prefix=env/dev"
 
-terraform plan  "-var-file=environments/dev.tfvars"
-terraform apply "-var-file=environments/dev.tfvars"
+terraform plan  "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
+terraform apply "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
 ```
 
 To switch environments, re-run `terraform init` with a different prefix (Terraform will ask to migrate — say no, it's a separate state):
@@ -102,7 +102,7 @@ terraform apply "-var-file=environments/production.tfvars"
 ```
 
 ```powershell
-# Sandbox (has an .auto.tfvars for secrets — include both)
+# Sandbox (has an .auto.tfvars for OAuth secrets — include both)
 terraform init -reconfigure `
   "-backend-config=bucket=prepaid-ai-terraform-state" `
   "-backend-config=prefix=env/sandbox"
@@ -157,10 +157,10 @@ Set the corresponding `VITE_FIREBASE_*` variables in GitHub repo settings for ea
 cd terraform
 
 # See what would change
-terraform plan "-var-file=environments/dev.tfvars"
+terraform plan "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
 
 # Apply changes
-terraform apply "-var-file=environments/dev.tfvars"
+terraform apply "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
 
 # Read outputs (e.g., for updating CI config)
 terraform output web_app_config
@@ -191,26 +191,43 @@ gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app "--cors-fi
 
 ## Cloud Functions + Secret Manager
 
-To wire `GEMINI_API_KEY` from Secret Manager into Cloud Functions, deploy with:
+Terraform creates three Secret Manager secrets and manages their IAM bindings. The function code declares them in the `secrets` option and reads them as `process.env.<SECRET_NAME>` at runtime.
+
+| Secret           | Terraform variable | Description                                                           |
+| ---------------- | ------------------ | --------------------------------------------------------------------- |
+| `GEMINI_API_KEY` | (manual)           | API key for Google AI Studio; only needed when `AI_BACKEND=google-ai` |
+| `AI_BACKEND`     | `ai_backend`       | Which AI backend to use: `vertex`, `google-ai`, or `dummy`            |
+| `AI_REGION`      | `ai_region`        | GCP region for Vertex AI workloads (e.g. `us-central1`)               |
+
+`AI_BACKEND` and `AI_REGION` values are set automatically by Terraform from the `.tfvars` file. `GEMINI_API_KEY` must be set manually once per environment:
+
+```powershell
+"your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY `
+  --project=prepaid-ai-dev `
+  --data-file=-
+```
+
+To deploy functions after changing secrets:
 
 ```powershell
 firebase deploy --only functions --project prepaid-ai-dev --force
 ```
 
-In your function code, read the secret at runtime using the Secret Manager client library, or configure the function to mount the secret as an environment variable via `firebase.json` or the `defineSecret()` API in Firebase Functions v2.
-
 ### Cloud Functions environment variables
 
-Non-secret runtime environment variables (`AI_BACKEND`, `AI_REGION`, `ENVIRONMENT`, `ALLOWED_ORIGINS`) are set via per-project `.env` files in the `functions/` directory:
+Most runtime config is either derived from the project ID at runtime or injected via Secret Manager. The only remaining `.env` file variable is:
 
-| File                                   | Picked up when deploying to       |
-| -------------------------------------- | --------------------------------- |
-| `functions/.env.prepaid-ai-sandbox`    | `--project prepaid-ai-sandbox`    |
-| `functions/.env.prepaid-ai-dev`        | `--project prepaid-ai-dev`        |
-| `functions/.env.prepaid-ai-production` | `--project prepaid-ai-production` |
-| `functions/.env.prepaid-ai-emulator`   | Emulator Suite                    |
+| Variable     | Description                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ADMIN_UIDS` | Comma-separated Firebase Auth UIDs allowed to call `addCredits`. Set in `functions/.env.<project>` only for environments that need admin access. |
 
-Firebase Functions v2 loads the matching `.env.<projectId>` file automatically at deploy time. Keep these files in sync with the Terraform `ai_backend` / `ai_region` outputs for each environment.
+| File                                 | Picked up when deploying to    |
+| ------------------------------------ | ------------------------------ |
+| `functions/.env.prepaid-ai-sandbox`  | `--project prepaid-ai-sandbox` |
+| `functions/.env.prepaid-ai-dev`      | `--project prepaid-ai-dev`     |
+| `functions/.env.prepaid-ai-emulator` | Emulator Suite                 |
+
+Firebase Functions v2 loads the matching `.env.<projectId>` file automatically at deploy time.
 
 ## Source Control
 
