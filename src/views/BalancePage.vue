@@ -18,7 +18,7 @@ const { balance, transactions, loading } = useBalance();
 
   <main
     class="responsive"
-    style="max-width: 700px; margin: 0 auto; padding-top: 4.5rem"
+    style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
   >
     <div v-if="loading" class="center-align" style="padding-top: 4rem">
       <progress class="circle"></progress>

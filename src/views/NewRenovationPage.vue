@@ -344,7 +344,7 @@ onMounted(() => {
     <main
       class="responsive"
       style="
-        max-width: 600px;
+        max-width: 800px;
         margin: 0 auto;
         padding-top: 4.5rem;
         padding-bottom: 5rem;
@@ -472,7 +472,11 @@ onMounted(() => {
 
     <!-- Step 1: Mask controls -->
     <StickyFooter v-if="step === 1">
-      <button v-if="!imageFromUpload" class="max border small-round" @click="router.push('/renovation/camera')">
+      <button
+        v-if="!imageFromUpload"
+        class="max border small-round"
+        @click="router.push('/renovation/camera')"
+      >
         <i aria-hidden="true">photo_camera</i>
         <span>Retake</span>
       </button>

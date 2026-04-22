@@ -52,7 +52,7 @@ onBeforeUnmount(() => {
   <main
     class="responsive"
     style="
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
       padding-top: 4.5rem;
       padding-bottom: 5rem;
@@ -66,7 +66,12 @@ onBeforeUnmount(() => {
 
     <div
       class="center-align"
-      style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center"
+      style="
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      "
     >
       <button class="transparent small-round" @click="handleClear">
         <i aria-hidden="true">delete_sweep</i>

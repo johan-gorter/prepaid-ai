@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
+const pasteError = ref<string | null>(null);
 
 // Used by E2E tests via setInputFiles — reads the file and navigates directly
 // to the mask step, bypassing the live camera page.
@@ -34,6 +35,35 @@ function onFileSelected(event: Event) {
   };
   reader.readAsDataURL(file);
 }
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = () => reject(new Error("Failed to read image"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function onPasteImage() {
+  pasteError.value = null;
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const imageType = item.types.find((t) => t.startsWith("image/"));
+      if (imageType) {
+        const blob = await item.getType(imageType);
+        const dataUrl = await blobToDataUrl(blob);
+        sessionStorage.setItem("cropImage", dataUrl);
+        router.push("/renovation/crop");
+        return;
+      }
+    }
+    pasteError.value = "No image found on clipboard";
+  } catch {
+    pasteError.value = "Could not access clipboard";
+  }
+}
 </script>
 
 <template>
@@ -49,7 +79,12 @@ function onFileSelected(event: Event) {
         <i aria-hidden="true">upload</i>
         <span>Upload Image</span>
       </button>
+      <button class="small-round" data-testid="paste-image-btn" @click="onPasteImage">
+        <i aria-hidden="true">content_paste</i>
+        <span>Paste Image</span>
+      </button>
     </nav>
+    <p v-if="pasteError" class="error-text small-text">{{ pasteError }}</p>
     <!-- Hidden input kept for E2E test compatibility (setInputFiles bypass) -->
     <input
       data-testid="camera-input"

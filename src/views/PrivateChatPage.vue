@@ -115,7 +115,7 @@ function autoGrow() {
 
 function downloadConversation() {
   const lines = messages.value.map((m) => {
-    const role = m.role === "user" ? "You" : "Gemini";
+    const role = m.role === "user" ? "You" : "AI";
     return `${role}:\n${m.text}`;
   });
   const content = lines.join("\n\n");
@@ -155,7 +155,7 @@ function continueChat() {
         style="padding-top: 3rem; opacity: 0.5"
       >
         <i class="extra" style="font-size: 3rem">chat</i>
-        <p>Start a private conversation with Gemini Pro.</p>
+        <p>Start a private conversation with AI.</p>
         <p class="small">No conversation data is stored.</p>
       </div>
 
@@ -177,7 +177,7 @@ function continueChat() {
             }}</span>
             <i v-else class="chat-avatar model-avatar">smart_toy</i>
             <span class="bold">{{
-              msg.role === "user" ? currentUser?.displayName || "You" : "Gemini"
+              msg.role === "user" ? currentUser?.displayName || "You" : "AI"
             }}</span>
           </div>
           <div class="chat-text" style="white-space: pre-wrap">
@@ -334,9 +334,9 @@ function continueChat() {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem calc(50vw - 350px);
+  padding: 1rem calc(50vw - 400px);
 }
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   .chat-messages {
     padding: 1rem 1rem;
   }
@@ -423,7 +423,7 @@ function continueChat() {
 }
 .chat-bottom-inner {
   width: 100%;
-  max-width: 700px;
+  max-width: 800px;
   padding: 0 1rem;
 }
 .chat-cost-bar {

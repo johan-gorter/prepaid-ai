@@ -46,14 +46,14 @@ async function submitFeedback() {
   <main
     class="responsive"
     style="
-      max-width: 700px;
+      max-width: 800px;
       margin: 0 auto;
       padding-top: 1.25rem;
       padding-bottom: 2rem;
     "
   >
     <p>
-      payasyougo.app gives you access to premium AI applications
+      Hello, here you can benefit from premium AI applications
       <strong>without any ongoing subscription</strong>. We are a friendly and
       fair platform allowing everyone to benefit from AI.
     </p>
@@ -70,7 +70,7 @@ async function submitFeedback() {
         <div class="max">
           <h5>AI Impressions for renovations</h5>
           <p>
-            Reimagine your living spaces with AI-generated visualizations.
+            Reimagine your living spaces with AI-generated artist impressions.
             Upload a photo, mark the area you want to change, describe your
             vision, and see it come to life.
           </p>
@@ -95,7 +95,7 @@ async function submitFeedback() {
           <p>
             Have a private conversation with a powerful AI model (Gemini Pro).
             For example, you can use this to explain technical, legal or medical
-            documents. Your chat stays on your device only.
+            documents.
           </p>
         </div>
       </nav>

@@ -17,14 +17,14 @@ const { currentUser } = useAuth();
 
   <main
     class="responsive"
-    style="max-width: 700px; margin: 0 auto; padding-top: 4.5rem"
+    style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
   >
     <h4>About payasyougo.app</h4>
     <p>
-      payasyougo.app helps you visualize renovation ideas by combining your photos
-      with AI-powered image editing. Upload a photo of your space, highlight the
-      area you want to change, describe your vision, and receive an AI-generated
-      preview of the result.
+      payasyougo.app helps you visualize renovation ideas by combining your
+      photos with AI-powered image editing. Upload a photo of your space,
+      highlight the area you want to change, describe your vision, and receive
+      an AI-generated preview of the result.
     </p>
 
     <h5>Acceptable Use</h5>
@@ -64,10 +64,10 @@ const { currentUser } = useAuth();
 
     <h5>Terms of Service</h5>
     <p>
-      By using payasyougo.app, you agree to these terms. The service is provided "as
-      is" without warranty of any kind. We may modify or discontinue the service
-      at any time. Continued use after changes constitutes acceptance of the
-      updated terms.
+      By using payasyougo.app, you agree to these terms. The service is provided
+      "as is" without warranty of any kind. We may modify or discontinue the
+      service at any time. Continued use after changes constitutes acceptance of
+      the updated terms.
     </p>
 
     <div style="padding-top: 1rem">
