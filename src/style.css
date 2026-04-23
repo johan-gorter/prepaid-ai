@@ -24,6 +24,15 @@ header nav h1 {
   font-size: 1.25rem;
 }
 
+/* Allow flexible page titles in the header to shrink/truncate on small screens
+   so the trailing UserMenu stays visible. */
+header nav :is(h1, h2, h3, h4, h5, h6).max {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Constrain fixed header/footer nav content to match main content width */
 header.fixed > nav {
   width: 100%;

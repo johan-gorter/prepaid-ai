@@ -9,9 +9,7 @@ test.describe("PrivateChatPage", () => {
     authenticatedPage: page,
   }) => {
     await page.goto("/chat");
-    await expect(
-      page.getByText("Start a private conversation with Gemini Pro."),
-    ).toBeVisible();
+    await expect(page.getByTestId("chat-empty-state")).toBeVisible();
   });
 
   test("shows chat input and send button", async ({
