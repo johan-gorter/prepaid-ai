@@ -62,7 +62,8 @@ function toggleScheme() {
 <template>
   <div
     v-if="currentUser"
-    style="display: flex; align-items: center; gap: 0.25rem"
+    class="user-menu-root"
+    style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0"
   >
     <router-link
       to="/balance"

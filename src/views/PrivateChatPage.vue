@@ -153,6 +153,7 @@ function continueChat() {
         v-if="messages.length === 0"
         class="center-align"
         style="padding-top: 3rem; opacity: 0.5"
+        data-testid="chat-empty-state"
       >
         <i class="extra" style="font-size: 3rem">chat</i>
         <p>Start a private conversation with AI.</p>
