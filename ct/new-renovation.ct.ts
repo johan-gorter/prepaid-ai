@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/experimental-ct-vue";
-import NewRenovationPage from "../src/views/NewRenovationPage.vue";
+import NewRenovationPage from "../src/views/renovation/old/NewRenovationPage.vue";
 
 test.describe("NewRenovationPage component", () => {
   test("shows step 1 with photo input", async ({ mount }) => {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
-import MaskingCanvas from "../components/MaskingCanvas.vue";
-import UserMenu from "../components/UserMenu.vue";
+import MaskingCanvas from "../../../components/MaskingCanvas.vue";
+import UserMenu from "../../../components/UserMenu.vue";
 
 const router = useRouter();
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
