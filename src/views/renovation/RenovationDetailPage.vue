@@ -2,13 +2,13 @@
 import { doc, getDoc } from "firebase/firestore";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import StorageImage from "../components/StorageImage.vue";
-import UserMenu from "../components/UserMenu.vue";
-import { useAuth } from "../composables/useAuth";
-import { useImpressions } from "../composables/useImpressions";
-import { useRenovations } from "../composables/useRenovations";
-import { db } from "../firebase";
-import type { Renovation } from "../types";
+import StorageImage from "../../components/StorageImage.vue";
+import UserMenu from "../../components/UserMenu.vue";
+import { useAuth } from "../../composables/useAuth";
+import { useImpressions } from "../../composables/useImpressions";
+import { useRenovations } from "../../composables/useRenovations";
+import { db } from "../../firebase";
+import type { Renovation } from "../../types";
 
 const route = useRoute();
 const router = useRouter();

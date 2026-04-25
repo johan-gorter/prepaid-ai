@@ -2,14 +2,14 @@
 import { doc, getDoc } from "firebase/firestore";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import NewRenovationCard from "../components/NewRenovationCard.vue";
-import StorageImage from "../components/StorageImage.vue";
-import UserMenu from "../components/UserMenu.vue";
-import { useAuth } from "../composables/useAuth";
-import { updateLastActivity } from "../composables/useLastActivity";
-import { useRenovations } from "../composables/useRenovations";
-import { resolveStorageUrl } from "../composables/useStorageUrl";
-import { db } from "../firebase";
+import NewRenovationCard from "../../components/NewRenovationCard.vue";
+import StorageImage from "../../components/StorageImage.vue";
+import UserMenu from "../../components/UserMenu.vue";
+import { useAuth } from "../../composables/useAuth";
+import { updateLastActivity } from "../../composables/useLastActivity";
+import { useRenovations } from "../../composables/useRenovations";
+import { resolveStorageUrl } from "../../composables/useStorageUrl";
+import { db } from "../../firebase";
 
 const { renovations, loading: renovationsLoading, error } = useRenovations();
 const { currentUser } = useAuth();

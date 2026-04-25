@@ -17,7 +17,7 @@ const routes = [
   {
     path: "/renovations",
     name: "renovations",
-    component: () => import("../views/RenovationsPage.vue"),
+    component: () => import("../views/renovation/RenovationsPage.vue"),
     meta: { requiresAuth: true },
   },
   {
@@ -53,38 +53,38 @@ const routes = [
   {
     path: "/renovation/new",
     name: "new-renovation",
-    component: () => import("../views/NewRenovationPage.vue"),
+    component: () => import("../views/renovation/old/NewRenovationPage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/renovation/camera",
     name: "camera-capture",
-    component: () => import("../views/CameraCapturePage.vue"),
+    component: () => import("../views/renovation/old/CameraCapturePage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/renovation/crop",
     name: "crop-image",
-    component: () => import("../views/CropImagePage.vue"),
+    component: () => import("../views/renovation/old/CropImagePage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/renovation/:id",
     name: "renovation-detail",
-    component: () => import("../views/RenovationDetailPage.vue"),
+    component: () => import("../views/renovation/RenovationDetailPage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/renovation/:id/new",
     name: "new-impression",
-    component: () => import("../views/NewImpressionPage.vue"),
+    component: () => import("../views/renovation/old/NewImpressionPage.vue"),
     meta: { requiresAuth: true },
   },
   // Hidden prototype route — not linked from navigation, accessible by URL only.
   {
     path: "/dev/masking-test",
     name: "masking-test",
-    component: () => import("../views/MaskingTestPage.vue"),
+    component: () => import("../views/renovation/old/MaskingTestPage.vue"),
     meta: { requiresAuth: false },
   },
 ];

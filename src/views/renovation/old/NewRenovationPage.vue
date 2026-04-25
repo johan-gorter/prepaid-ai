@@ -2,14 +2,14 @@
 import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import MaskingCanvas from "../components/MaskingCanvas.vue";
-import StickyFooter from "../components/StickyFooter.vue";
-import StorageImage from "../components/StorageImage.vue";
-import UserMenu from "../components/UserMenu.vue";
-import { useAuth } from "../composables/useAuth";
-import { useImpressions } from "../composables/useImpressions";
-import { useRenovations } from "../composables/useRenovations";
-import { storage } from "../firebase";
+import MaskingCanvas from "../../../components/MaskingCanvas.vue";
+import StickyFooter from "../../../components/StickyFooter.vue";
+import StorageImage from "../../../components/StorageImage.vue";
+import UserMenu from "../../../components/UserMenu.vue";
+import { useAuth } from "../../../composables/useAuth";
+import { useImpressions } from "../../../composables/useImpressions";
+import { useRenovations } from "../../../composables/useRenovations";
+import { storage } from "../../../firebase";
 
 const router = useRouter();
 const route = useRoute();

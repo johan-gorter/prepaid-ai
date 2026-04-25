@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import StickyFooter from "../components/StickyFooter.vue";
-import UserMenu from "../components/UserMenu.vue";
+import StickyFooter from "../../../components/StickyFooter.vue";
+import UserMenu from "../../../components/UserMenu.vue";
 
 const router = useRouter();
 
