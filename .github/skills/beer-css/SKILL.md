@@ -205,6 +205,55 @@ Material Icons are loaded via CDN in `index.html`:
 </nav>
 ```
 
+## Responsive Footer: Buttons → Bottom Nav at Mobile
+
+`StickyFooter.vue` uses a single slot for all viewport sizes. Below Beer CSS's
+600 px small→medium breakpoint, it automatically switches from a horizontal
+button row to a stacked icon-above-label bottom-navigation layout — no
+JavaScript, no extra props, no duplicate slots.
+
+**Technique:** a scoped `@media (max-width: 599px)` block uses Vue's `:deep()`
+to reach slot children and applies:
+
+- `flex: 1 1 0` — children share width equally
+- `flex-direction: column` — icon stacks above label
+- `background / box-shadow / border: transparent / none !important` — strips
+  filled-button chrome so all items look uniform (Beer CSS specificity requires
+  `!important`)
+- `.small-space` / `.medium-space` / `.large-space` → `display: none` — spacer
+  elements are desktop-only
+
+**Required slot content structure** (works for both `<button>` and `<a>`):
+
+```html
+<button class="max small-round" @click="handler">
+  <i aria-hidden="true">icon_name</i>
+  <span>Label</span>
+</button>
+```
+
+**Full example:**
+
+```vue
+<StickyFooter>
+  <button class="max small-round border" @click="onBack">
+    <i aria-hidden="true">arrow_back</i>
+    <span>Back</span>
+  </button>
+  <button class="max small-round" @click="onNext">
+    <i aria-hidden="true">arrow_forward</i>
+    <span>Next</span>
+  </button>
+</StickyFooter>
+```
+
+At ≥ 600 px the buttons render normally (horizontal, filled/outlined).
+At < 600 px they collapse to compact stacked nav items across the full footer
+width, matching the Material Design 3 `nav.bottom` pattern.
+
+Note: the `error` class still applies its color to icon and text at mobile
+because only background/border/shadow are overridden.
+
 ## Progress / Loading
 
 ```html
