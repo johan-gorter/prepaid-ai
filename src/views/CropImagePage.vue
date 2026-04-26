@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import StickyFooter from "../../../components/StickyFooter.vue";
-import UserMenu from "../../../components/UserMenu.vue";
+import StickyFooter from "../components/StickyFooter.vue";
+import UserMenu from "../components/UserMenu.vue";
+import {
+  clearUncroppedSource,
+  getUncroppedSource,
+  setImpressionSource,
+} from "../composables/useImpressionStore";
 
 const router = useRouter();
 
@@ -11,8 +16,8 @@ const CANVAS_SIZE = 1024;
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLElement | null>(null);
 const loadedImage = ref<HTMLImageElement | null>(null);
+const errorMessage = ref<string | null>(null);
 
-// Crop/scale state
 const scale = ref(1);
 const offsetX = ref(0);
 const offsetY = ref(0);
@@ -24,40 +29,39 @@ let dragStartOffsetX = 0;
 let dragStartOffsetY = 0;
 let resizeObserver: ResizeObserver | null = null;
 
-// Pinch-to-zoom touch state
 let lastTouchDist = 0;
 let lastTouchCenterX = 0;
 let lastTouchCenterY = 0;
 let isPinching = false;
 
-onMounted(() => {
-  const dataUrl = sessionStorage.getItem("cropImage");
-  if (!dataUrl) {
-    router.replace("/renovation/new");
+let objectUrl: string | null = null;
+
+onMounted(async () => {
+  const blob = await getUncroppedSource();
+  if (!blob) {
+    errorMessage.value = "No image to crop. Please go back and try again.";
     return;
   }
 
+  objectUrl = URL.createObjectURL(blob);
   const img = new Image();
   img.onload = () => {
     loadedImage.value = img;
-    // Initial scale: fit the image so it covers the square
     const coverScale = Math.max(
       CANVAS_SIZE / img.naturalWidth,
       CANVAS_SIZE / img.naturalHeight,
     );
     scale.value = coverScale;
-    // Center the image
     offsetX.value = (CANVAS_SIZE - img.naturalWidth * coverScale) / 2;
     offsetY.value = (CANVAS_SIZE - img.naturalHeight * coverScale) / 2;
     renderCanvas();
   };
-  img.src = dataUrl;
+  img.src = objectUrl;
 
   resizeObserver = new ResizeObserver(() => renderCanvas());
   const wrapper = wrapperRef.value;
   if (wrapper) {
     resizeObserver.observe(wrapper);
-    // Register touch events with { passive: false } so preventDefault works
     wrapper.addEventListener("touchstart", onTouchStart, { passive: false });
     wrapper.addEventListener("touchmove", onTouchMove, { passive: false });
     wrapper.addEventListener("touchend", onTouchEnd);
@@ -71,6 +75,10 @@ onUnmounted(() => {
     wrapper.removeEventListener("touchstart", onTouchStart);
     wrapper.removeEventListener("touchmove", onTouchMove);
     wrapper.removeEventListener("touchend", onTouchEnd);
+  }
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
   }
 });
 
@@ -133,7 +141,6 @@ function onWheel(e: WheelEvent) {
   if (!canvas) return;
   const rect = canvas.getBoundingClientRect();
 
-  // Zoom centered on pointer position
   const px = ((e.clientX - rect.left) / rect.width) * CANVAS_SIZE;
   const py = ((e.clientY - rect.top) / rect.height) * CANVAS_SIZE;
 
@@ -145,7 +152,6 @@ function onWheel(e: WheelEvent) {
   const maxScale = minScale * 10;
   scale.value = Math.min(maxScale, Math.max(minScale, oldScale * factor));
 
-  // Adjust offset so the point under the cursor stays fixed
   const ratio = scale.value / oldScale;
   offsetX.value = px - (px - offsetX.value) * ratio;
   offsetY.value = py - (py - offsetY.value) * ratio;
@@ -172,7 +178,6 @@ function adjustZoom(factor: number) {
   const maxScale = minScale * 10;
   scale.value = Math.min(maxScale, Math.max(minScale, oldScale * factor));
 
-  // Zoom centered on canvas center
   const cx = CANVAS_SIZE / 2;
   const cy = CANVAS_SIZE / 2;
   const ratio = scale.value / oldScale;
@@ -229,7 +234,6 @@ function onTouchMove(e: TouchEvent) {
     (t0.clientY + t1.clientY) / 2,
   );
 
-  // Pinch zoom
   const factor = dist / lastTouchDist;
   const oldScale = scale.value;
   const minScale =
@@ -242,7 +246,6 @@ function onTouchMove(e: TouchEvent) {
   offsetX.value = center.x - (center.x - offsetX.value) * ratio;
   offsetY.value = center.y - (center.y - offsetY.value) * ratio;
 
-  // Pan with two-finger drag
   offsetX.value += center.x - lastTouchCenterX;
   offsetY.value += center.y - lastTouchCenterY;
 
@@ -259,19 +262,23 @@ function onTouchEnd(e: TouchEvent) {
   }
 }
 
-function handleConfirm() {
+async function handleConfirm() {
   const canvas = canvasRef.value;
   if (!canvas) return;
 
-  // Export the cropped canvas as a data URL
-  const dataUrl = canvas.toDataURL("image/webp");
-  sessionStorage.setItem("croppedImage", dataUrl);
-  sessionStorage.removeItem("cropImage");
-  router.push("/renovation/new?source=cropped");
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+      "image/webp",
+    ),
+  );
+  await setImpressionSource(blob);
+  await clearUncroppedSource();
+  router.push("/new-impression?source=crop");
 }
 
-function handleCancel() {
-  sessionStorage.removeItem("cropImage");
+async function handleCancel() {
+  await clearUncroppedSource();
   router.push("/renovations");
 }
 </script>
@@ -301,34 +308,48 @@ function handleCancel() {
         padding-bottom: 5rem;
       "
     >
-      <p class="center-align small-text">
-        Drag to reposition. Use zoom controls or scroll to resize.
-      </p>
-      <div ref="wrapperRef" class="canvas-wrapper" @wheel.prevent="onWheel">
-        <canvas
-          ref="canvasRef"
-          :width="CANVAS_SIZE"
-          :height="CANVAS_SIZE"
-          @pointerdown="onPointerDown"
-          @pointermove="onPointerMove"
-          @pointerup="onPointerUp"
-        ></canvas>
+      <div v-if="errorMessage" class="error-panel center-align">
+        <i aria-hidden="true" style="font-size: 3rem">image_not_supported</i>
+        <p>{{ errorMessage }}</p>
+        <button class="small-round" @click="handleCancel">
+          <i aria-hidden="true">arrow_back</i>
+          <span>Back</span>
+        </button>
       </div>
-      <nav class="center-align" style="margin-top: 0.5rem">
-        <button
-          class="transparent circle"
-          @click="zoomOut"
-          aria-label="Zoom out"
-        >
-          <i aria-hidden="true">remove</i>
-        </button>
-        <button class="transparent circle" @click="zoomIn" aria-label="Zoom in">
-          <i aria-hidden="true">add</i>
-        </button>
-      </nav>
+      <template v-else>
+        <p class="center-align small-text">
+          Drag to reposition. Use zoom controls or scroll to resize.
+        </p>
+        <div ref="wrapperRef" class="canvas-wrapper" @wheel.prevent="onWheel">
+          <canvas
+            ref="canvasRef"
+            :width="CANVAS_SIZE"
+            :height="CANVAS_SIZE"
+            @pointerdown="onPointerDown"
+            @pointermove="onPointerMove"
+            @pointerup="onPointerUp"
+          ></canvas>
+        </div>
+        <nav class="center-align" style="margin-top: 0.5rem">
+          <button
+            class="transparent circle"
+            @click="zoomOut"
+            aria-label="Zoom out"
+          >
+            <i aria-hidden="true">remove</i>
+          </button>
+          <button
+            class="transparent circle"
+            @click="zoomIn"
+            aria-label="Zoom in"
+          >
+            <i aria-hidden="true">add</i>
+          </button>
+        </nav>
+      </template>
     </main>
 
-    <StickyFooter>
+    <StickyFooter v-if="!errorMessage">
       <button class="max border small-round" @click="handleCancel">
         <i aria-hidden="true">close</i>
         <span>Cancel</span>
@@ -375,5 +396,13 @@ function handleCancel() {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.error-panel {
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 </style>

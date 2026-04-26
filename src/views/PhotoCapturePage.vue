@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import StickyFooter from "../../../components/StickyFooter.vue";
-import UserMenu from "../../../components/UserMenu.vue";
+import StickyFooter from "../components/StickyFooter.vue";
+import UserMenu from "../components/UserMenu.vue";
+import { setImpressionSource } from "../composables/useImpressionStore";
 
 const router = useRouter();
 
@@ -44,7 +45,7 @@ function stopStream() {
   }
 }
 
-function handleCapture() {
+async function handleCapture() {
   const video = videoRef.value;
   const canvas = canvasRef.value;
   if (!video || !canvas) return;
@@ -52,7 +53,6 @@ function handleCapture() {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  // Center-square crop from the live video frame
   const vw = video.videoWidth;
   const vh = video.videoHeight;
   const size = Math.min(vw, vh);
@@ -63,10 +63,15 @@ function handleCapture() {
   canvas.height = CAPTURE_SIZE;
   ctx.drawImage(video, sx, sy, size, size, 0, 0, CAPTURE_SIZE, CAPTURE_SIZE);
 
-  const dataUrl = canvas.toDataURL("image/webp");
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+      "image/webp",
+    ),
+  );
   stopStream();
-  sessionStorage.setItem("croppedImage", dataUrl);
-  router.push("/renovation/new?source=camera");
+  await setImpressionSource(blob);
+  router.push("/new-impression?source=photo");
 }
 
 function handleCancel() {
@@ -118,7 +123,6 @@ function handleCancel() {
           ></video>
         </div>
       </template>
-      <!-- Off-screen canvas used only for snapshot rendering -->
       <canvas ref="canvasRef" style="display: none"></canvas>
     </main>
 

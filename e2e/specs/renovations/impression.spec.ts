@@ -14,12 +14,12 @@ test.describe("Impression processing", () => {
    *
    *   Home (camera input) → Mask → Prompt → Generate → Result → Timeline
    *
-   * Take Photo opens a camera file input on the home page. Selecting an
-   * image reads it as a data URL and navigates directly to the mask step
-   * (/renovation/new?source=camera), skipping the old image-capture step.
-   * From the mask step, the user draws a mask, enters a prompt, and clicks
-   * Generate. The Cloud Function processes the impression and produces a
-   * result image visible on both the result step and the timeline page.
+   * The hidden camera-input on the renovations card stashes the selected
+   * file in IndexedDB and navigates directly to the mask stage of the
+   * unified wizard (/new-impression?source=photo). The user draws a
+   * mask, enters a prompt, and clicks Generate. After the Cloud Function
+   * completes, the wizard redirects to its preview stage with
+   * source=impression, where the result image is visible.
    */
   test("uploads image, triggers Cloud Function, and produces a result image", async ({
     authenticatedPage: page,
@@ -30,7 +30,7 @@ test.describe("Impression processing", () => {
     try {
       // 1. Select photo via camera input → auto-navigates to mask step
       await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
-      await page.waitForURL("/renovation/new?source=camera");
+      await page.waitForURL("/new-impression?source=photo");
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
