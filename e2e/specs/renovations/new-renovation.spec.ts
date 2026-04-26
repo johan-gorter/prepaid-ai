@@ -20,7 +20,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         await expect(
           page.getByText("Paint the area you want to change"),
@@ -43,7 +43,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         await expect(
           page.getByRole("button", { name: "Retake" }),
@@ -63,7 +63,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
@@ -81,7 +81,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         // Advance to prompt
         await page.getByRole("button", { name: "Next" }).click();
@@ -115,7 +115,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         await expect(page.locator("canvas")).toBeVisible();
         await expect(
@@ -150,7 +150,7 @@ test.describe("New Renovation Page", () => {
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);
-        await page.waitForURL("/renovation/new?source=camera");
+        await page.waitForURL("/new-impression?source=photo");
 
         await page.getByRole("button", { name: "← Back" }).click();
         await page.waitForURL("/renovations");
@@ -206,7 +206,7 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("Trash button deletes impression and resets to mask step", async ({
+    test("Trash button deletes impression and navigates to timeline", async ({
       authenticatedPage: page,
     }) => {
       const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -215,24 +215,20 @@ test.describe("New Renovation Page", () => {
       );
 
       try {
+        // After Generate, on preview stage with source=impression
+        await page.waitForURL(/\/new-impression\?source=impression&/);
         await page.getByRole("button", { name: "Trash" }).click();
 
-        // Should reset to mask step (step 1)
-        await expect(
-          page.getByText("Paint the area you want to change"),
-        ).toBeVisible();
-        await expect(page.locator("canvas")).toBeVisible();
-
-        // Three-button bar should be gone
-        await expect(
-          page.getByRole("button", { name: "Renovation Details" }),
-        ).not.toBeVisible();
+        // Trash navigates to the renovation timeline; impression is gone
+        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+        await expect(page.getByAltText("Original")).toBeVisible();
+        await expect(page.getByAltText("Result")).not.toBeVisible();
       } finally {
         rmSync(grayPngPath, { force: true });
       }
     });
 
-    test("Next Change button navigates to new impression page", async ({
+    test("Next Change transitions in-place to mask stage", async ({
       authenticatedPage: page,
     }) => {
       const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -242,9 +238,9 @@ test.describe("New Renovation Page", () => {
 
       try {
         await page.getByRole("button", { name: "Next Change" }).click();
-        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=/);
 
-        // Should show mark area step (source image loaded)
+        // Same URL — stage transition only
+        await expect(page).toHaveURL(/\/new-impression\?source=impression&/);
         await expect(
           page.getByText("Paint the area you want to change"),
         ).toBeVisible();
@@ -253,14 +249,14 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("after Trash, can redo the flow with same image", async ({
+    test("can chain a second impression via Next Change", async ({
       authenticatedPage: page,
     }) => {
       test.setTimeout(90000);
       const grayPngPath = await fillNewRenovationForm(page, "first attempt");
 
       try {
-        // Generate
+        // First Generate
         await page.getByRole("button", { name: "Generate" }).click();
         await expect(
           page.getByRole("button", { name: "Renovation Details" }),
@@ -269,13 +265,27 @@ test.describe("New Renovation Page", () => {
           timeout: 30000,
         });
 
-        // Trash it (from result step → resets to mask step)
-        await page.getByRole("button", { name: "Trash" }).click();
+        // Chain via Next Change → mask stage in-place, draw mask, generate
+        await page.getByRole("button", { name: "Next Change" }).click();
         await expect(
           page.getByText("Paint the area you want to change"),
         ).toBeVisible();
 
-        // Re-do: advance to prompt, enter new text, generate again
+        const canvas = page.locator("canvas");
+        const box = await canvas.boundingBox();
+        if (box) {
+          await page.mouse.move(
+            box.x + box.width / 2,
+            box.y + box.height / 2,
+          );
+          await page.mouse.down();
+          await page.mouse.move(
+            box.x + box.width / 2 + 30,
+            box.y + box.height / 2 + 30,
+          );
+          await page.mouse.up();
+        }
+
         await page.getByRole("button", { name: "Next" }).click();
         const promptInput = page.getByTestId("prompt");
         await expect(promptInput).toBeVisible();

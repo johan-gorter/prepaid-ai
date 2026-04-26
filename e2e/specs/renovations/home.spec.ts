@@ -16,16 +16,15 @@ test.describe("Home Page", () => {
   test("Take Photo navigates to mask step with captured image", async ({
     authenticatedPage: page,
   }) => {
-    // Take Photo opens a camera file input; selecting a photo reads it as a
-    // data URL, stores it in sessionStorage, and navigates directly to the
-    // mask step at /renovation/new?source=camera (skipping the old image-
-    // capture step).
+    // The hidden camera-input on the renovations card stashes the file in
+    // IndexedDB and navigates directly to the mask stage of the unified
+    // wizard at /new-impression?source=photo.
     const grayPngPath = await createGrayPng();
     try {
       await page
         .locator('[data-testid="camera-input"]')
         .setInputFiles(grayPngPath);
-      await page.waitForURL("/renovation/new?source=camera");
+      await page.waitForURL("/new-impression?source=photo");
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();

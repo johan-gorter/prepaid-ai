@@ -7,6 +7,7 @@ import UserMenu from "../../components/UserMenu.vue";
 import { useAuth } from "../../composables/useAuth";
 import { useImpressions } from "../../composables/useImpressions";
 import { useRenovations } from "../../composables/useRenovations";
+import { clearImpressionSource } from "../../composables/useImpressionStore";
 import { db } from "../../firebase";
 import type { Renovation } from "../../types";
 
@@ -103,8 +104,22 @@ async function handleDeleteRenovation() {
   router.push("/renovations");
 }
 
-function navigateToNewImpression(source: string) {
-  router.push(`/renovation/${renovationId.value}/new?source=${source}`);
+async function navigateToNewImpression(target: "original" | string) {
+  const reno = renovationId.value;
+  // Clear any stale source from a previous session so the wizard re-fetches
+  // the correct image from Storage on this device.
+  await clearImpressionSource();
+  if (target === "original") {
+    router.push({
+      path: "/new-impression",
+      query: { source: "original", renovation: reno },
+    });
+  } else {
+    router.push({
+      path: "/new-impression",
+      query: { source: "impression", renovation: reno, impression: target },
+    });
+  }
 }
 
 onMounted(() => {
@@ -175,7 +190,7 @@ onMounted(() => {
           v-if="renovation?.originalImagePath"
           class="round no-padding small-elevate"
           style="cursor: pointer; margin-bottom: 1rem"
-          @click="navigateToNewImpression('before')"
+          @click="navigateToNewImpression('original')"
         >
           <div style="position: relative">
             <StorageImage

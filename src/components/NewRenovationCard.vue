@@ -1,48 +1,32 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import {
+  setImpressionSource,
+  setUncroppedSource,
+} from "../composables/useImpressionStore";
 
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
 const pasteError = ref<string | null>(null);
 
-// Used by E2E tests via setInputFiles — reads the file and navigates directly
-// to the mask step, bypassing the live camera page.
-function onCameraSelected(event: Event) {
+// Used by E2E tests via setInputFiles — bypasses the live camera page by
+// stashing the file as the impression source and going straight to the mask
+// stage of the unified wizard.
+async function onCameraSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file || !file.type.startsWith("image/")) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target?.result as string;
-    sessionStorage.setItem("croppedImage", dataUrl);
-    router.push("/renovation/new?source=camera");
-  };
-  reader.readAsDataURL(file);
+  await setImpressionSource(file);
+  router.push("/new-impression?source=photo");
 }
 
-function onFileSelected(event: Event) {
+async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file || !file.type.startsWith("image/")) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target?.result as string;
-    sessionStorage.setItem("cropImage", dataUrl);
-    router.push("/renovation/crop");
-  };
-  reader.readAsDataURL(file);
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = () => reject(new Error("Failed to read image"));
-    reader.readAsDataURL(blob);
-  });
+  await setUncroppedSource(file);
+  router.push("/crop");
 }
 
 async function onPasteImage() {
@@ -53,9 +37,8 @@ async function onPasteImage() {
       const imageType = item.types.find((t) => t.startsWith("image/"));
       if (imageType) {
         const blob = await item.getType(imageType);
-        const dataUrl = await blobToDataUrl(blob);
-        sessionStorage.setItem("cropImage", dataUrl);
-        router.push("/renovation/crop");
+        await setUncroppedSource(blob);
+        router.push("/crop");
         return;
       }
     }
@@ -71,7 +54,7 @@ async function onPasteImage() {
     <i class="extra" aria-hidden="true">photo_camera</i>
     <h5>New Renovation</h5>
     <nav class="vertical">
-      <button class="small-round" @click="router.push('/renovation/camera')">
+      <button class="small-round" @click="router.push('/photo')">
         <i aria-hidden="true">photo_camera</i>
         <span>Take Photo</span>
       </button>

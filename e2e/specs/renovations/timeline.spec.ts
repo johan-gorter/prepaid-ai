@@ -84,7 +84,7 @@ test.describe("Renovation Details Page", () => {
     }
   });
 
-  test("clicking original image navigates to new impression with source=before", async ({
+  test("clicking original image navigates to wizard with source=original", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -99,18 +99,18 @@ test.describe("Renovation Details Page", () => {
       await expect(page.getByAltText("Original")).toBeVisible();
       await page.getByAltText("Original").click();
 
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+\/new\?source=before/);
+      await page.waitForURL(
+        /\/new-impression\?source=original&renovation=[a-zA-Z0-9]+/,
+      );
 
-      // Should load source and show mask step
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
+      // Preview stage — canvas visible, mask helper hidden
+      await expect(page.locator("canvas")).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }
   });
 
-  test("clicking result image navigates to new impression with source=impressionId", async ({
+  test("clicking result image navigates to wizard with source=impression", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -125,14 +125,12 @@ test.describe("Renovation Details Page", () => {
       await expect(page.getByAltText("Result")).toBeVisible();
       await page.getByAltText("Result").click();
 
-      // Should navigate to new impression with source= an impression ID (not "before")
       await page.waitForURL(
-        /\/renovation\/[a-zA-Z0-9]+\/new\?source=(?!before)[a-zA-Z0-9]+/,
+        /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
       );
 
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
+      // Preview stage — canvas visible, mask helper hidden
+      await expect(page.locator("canvas")).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -189,9 +187,14 @@ test.describe("Renovation Details Page", () => {
       // Create a second impression by clicking the result image from the timeline
       await expect(page.getByAltText("Result")).toBeVisible();
       await page.getByAltText("Result").click();
-      await page.waitForURL(/\/new\?source=(?!before)[a-zA-Z0-9]+/);
+      await page.waitForURL(
+        /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
+      );
 
-      // Wait for source image to load
+      // Preview stage — canvas visible, mask helper hidden. Click Next
+      // Change to transition to the mask stage.
+      await expect(page.locator("canvas")).toBeVisible();
+      await page.getByRole("button", { name: "Next Change" }).click();
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
@@ -258,17 +261,18 @@ test.describe("Renovation Details Page", () => {
       // Wait for result image to appear
       await expect(page.getByAltText("Result")).toBeVisible();
 
-      // Click result image — should navigate to new impression with source=impressionId
+      // Click result image — should navigate to wizard with source=impression
       await page.getByAltText("Result").click();
       await page.waitForURL(
-        /\/renovation\/[a-zA-Z0-9]+\/new\?source=(?!before)[a-zA-Z0-9]+/,
+        /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
       );
 
-      // Source image must load — mask step visible with canvas ready
+      // Preview stage — canvas visible. Click Next Change to reach mask.
+      await expect(page.locator("canvas")).toBeVisible();
+      await page.getByRole("button", { name: "Next Change" }).click();
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
-      await expect(page.locator("canvas")).toBeVisible();
 
       // Draw mask stroke
       await drawMaskStroke(page);
