@@ -216,18 +216,15 @@ test.describe("PWA Requirements", () => {
 
     try {
       await signInOnPage(page, user);
-      await page.goto("/");
-      await page.waitForURL("/");
-      await page.getByRole("link", { name: "+ New Renovation" }).click();
-      await page.waitForURL("/renovation/new");
+      await page.goto("/renovations");
+      await page.waitForURL("/renovations");
 
-      // Step 1: Capture — upload image via file input
-      const fileInput = page.locator('input[type="file"]');
+      // Upload via hidden camera-input — stashes blob and navigates to mask stage
+      const fileInput = page.getByTestId("camera-input");
       await fileInput.setInputFiles(uploadPath);
-      await expect(page.getByAltText("Preview")).toBeVisible();
+      await page.waitForURL(/\/new-impression\?source=photo/);
 
-      // Advance to Step 2: Mask
-      await page.getByRole("button", { name: "Next" }).click();
+      // Stage starts at mask — canvas is immediately visible
       await expect(page.locator("canvas")).toBeVisible();
 
       // Draw a small mask stroke
@@ -243,7 +240,7 @@ test.describe("PWA Requirements", () => {
         await page.mouse.up();
       }
 
-      // Advance to Step 3: Prompt
+      // Advance to prompt stage
       await page.getByRole("button", { name: "Next" }).click();
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
@@ -258,11 +255,11 @@ test.describe("PWA Requirements", () => {
       ).toBeVisible();
       await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
 
-      // Navigate to home via Renovation Details → Back
+      // Navigate to renovations list via Renovation Details → back
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/);
-      await page.goto("/");
-      await page.waitForURL("/");
+      await page.goto("/renovations");
+      await page.waitForURL("/renovations");
 
       const thumbnail = page.getByTestId("renovation-card").first().locator("img");
       await expect(thumbnail).toBeVisible({ timeout: 30000 });
@@ -284,7 +281,7 @@ test.describe("PWA Requirements", () => {
 
       await context.setOffline(true);
       await page.reload();
-      await page.waitForURL("/");
+      await page.waitForURL("/renovations");
 
       const offlineThumbnail = page.getByTestId("renovation-card").first().locator("img");
       await expect(offlineThumbnail).toBeVisible();
