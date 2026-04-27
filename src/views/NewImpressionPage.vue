@@ -346,12 +346,9 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
         padding-bottom: 5rem;
       "
     >
-      <p
-        class="small-text center-align"
-        :class="{ 'visually-hidden': stage !== 'mask' }"
-      >
-        Paint the area you want to change (shown in red)
-      </p>
+      <div class="step-hint">
+        <span v-if="stage === 'mask'">Paint the area you want to change (shown in red)</span>
+      </div>
 
       <div
         class="canvas-area"
@@ -486,8 +483,13 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
   pointer-events: none;
 }
 
-.visually-hidden {
-  visibility: hidden;
+.step-hint {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .center-block {
