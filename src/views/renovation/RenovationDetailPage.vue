@@ -2,8 +2,8 @@
 import { doc, getDoc } from "firebase/firestore";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AppBar from "../../components/AppBar.vue";
 import StorageImage from "../../components/StorageImage.vue";
-import UserMenu from "../../components/UserMenu.vue";
 import { useAuth } from "../../composables/useAuth";
 import { useImpressions } from "../../composables/useImpressions";
 import { useRenovations } from "../../composables/useRenovations";
@@ -129,40 +129,30 @@ onMounted(() => {
 
 <template>
   <div class="page-layout">
-    <header class="fixed">
-      <nav>
+    <AppBar title="Renovation Details">
+      <div style="position: relative; flex-shrink: 0">
         <button
           class="transparent circle"
-          @click="router.push('/renovations')"
-          aria-label="← Back"
+          @click="showRenovationMenu = !showRenovationMenu"
+          aria-label="Renovation menu"
         >
-          <i aria-hidden="true">arrow_back</i>
+          <i aria-hidden="true">more_vert</i>
         </button>
-        <h1 class="max">Renovation Details</h1>
-        <div style="position: relative">
-          <button
-            class="transparent circle"
-            @click="showRenovationMenu = !showRenovationMenu"
-          >
-            <i aria-hidden="true">more_vert</i>
-          </button>
-          <menu v-if="showRenovationMenu" class="active right no-wrap">
-            <li>
-              <a
-                @click="
-                  showRenovationMenu = false;
-                  showDeleteDialog = true;
-                "
-              >
-                <i aria-hidden="true">delete</i>
-                <span>Delete renovation</span>
-              </a>
-            </li>
-          </menu>
-        </div>
-        <UserMenu />
-      </nav>
-    </header>
+        <menu v-if="showRenovationMenu" class="active right no-wrap">
+          <li>
+            <a
+              @click="
+                showRenovationMenu = false;
+                showDeleteDialog = true;
+              "
+            >
+              <i aria-hidden="true">delete</i>
+              <span>Delete renovation</span>
+            </a>
+          </li>
+        </menu>
+      </div>
+    </AppBar>
 
     <!-- Delete confirmation dialog -->
     <dialog :class="{ active: showDeleteDialog }">

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import AppBar from "../components/AppBar.vue";
 import StickyFooter from "../components/StickyFooter.vue";
-import UserMenu from "../components/UserMenu.vue";
 import {
   clearUncroppedSource,
   getUncroppedSource,
@@ -285,19 +285,7 @@ async function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <header class="fixed">
-      <nav>
-        <button
-          class="transparent circle"
-          @click="handleCancel"
-          aria-label="← Back"
-        >
-          <i aria-hidden="true">arrow_back</i>
-        </button>
-        <h1 class="max">Crop &amp; Scale</h1>
-        <UserMenu />
-      </nav>
-    </header>
+    <AppBar title="Crop &amp; Scale" />
 
     <main
       class="responsive"

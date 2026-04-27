@@ -3,20 +3,33 @@
     <template v-if="resolvedVariant === 'wide'">
       pay<span class="logo__pp">as</span>you<span class="logo__pp">go</span>
     </template>
-    <template v-else>
-      <span>pay</span><span class="logo__pp">as</span>
-      <span>you</span><span class="logo__pp">go</span>
+    <template v-else-if="resolvedVariant === 'wide-app'">
+      pay<span class="logo__pp">as</span>you<span class="logo__pp">go</span><span
+        class="logo__pp"
+        >.</span
+      >app
     </template>
+    <template v-else
+      ><span>pay</span><span class="logo__pp">as</span><span>you</span><span
+        class="logo__pp"
+        >go</span
+      ></template
+    >
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
-const props = defineProps<{
-  variant?: "wide" | "square" | "auto";
-  size?: number;
-}>();
+type Variant = "wide" | "wide-app" | "square" | "auto";
+
+const props = withDefaults(
+  defineProps<{
+    variant?: Variant;
+    size?: number;
+  }>(),
+  { variant: "auto", size: 28 },
+);
 
 const isMobile = ref(false);
 let mq: MediaQueryList | null = null;
@@ -29,17 +42,19 @@ onMounted(() => {
   update();
   mq.addEventListener("change", update);
 });
-
 onBeforeUnmount(() => {
   mq?.removeEventListener("change", update);
 });
 
-const resolvedVariant = computed(() => {
-  const v = props.variant ?? "auto";
-  return v === "auto" ? (isMobile.value ? "square" : "wide") : v;
-});
+const resolvedVariant = computed<Exclude<Variant, "auto">>(() =>
+  props.variant === "auto"
+    ? isMobile.value
+      ? "square"
+      : "wide"
+    : props.variant,
+);
 
-const sizeStyle = computed(() => ({ fontSize: `${props.size ?? 32}px` }));
+const sizeStyle = computed(() => ({ fontSize: `${props.size}px` }));
 </script>
 
 <style scoped>
@@ -57,7 +72,8 @@ const sizeStyle = computed(() => ({ fontSize: `${props.size ?? 32}px` }));
   color: var(--logo-purple, #7b1fa2);
 }
 
-.logo--wide {
+.logo--wide,
+.logo--wide-app {
   line-height: 1;
   white-space: nowrap;
 }

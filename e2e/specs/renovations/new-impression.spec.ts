@@ -137,7 +137,7 @@ test.describe("New Impression Page", () => {
     }
   });
 
-  test("back button navigates to timeline", async ({
+  test("Renovation Details footer button navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -146,9 +146,9 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      // Already on preview stage with renovation in query — Back goes to
-      // the renovation timeline.
-      await page.getByRole("button", { name: "← Back" }).click();
+      // Already on preview stage with renovation in query — the Renovation
+      // Details footer button goes to the renovation timeline.
+      await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await expect(
         page.getByRole("heading", { name: "Renovation Details" }),

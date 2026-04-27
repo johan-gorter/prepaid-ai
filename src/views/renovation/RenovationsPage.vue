@@ -2,9 +2,9 @@
 import { doc, getDoc } from "firebase/firestore";
 import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import AppBar from "../../components/AppBar.vue";
 import NewRenovationCard from "../../components/NewRenovationCard.vue";
 import StorageImage from "../../components/StorageImage.vue";
-import UserMenu from "../../components/UserMenu.vue";
 import { useAuth } from "../../composables/useAuth";
 import { updateLastActivity } from "../../composables/useLastActivity";
 import { useRenovations } from "../../composables/useRenovations";
@@ -159,14 +159,7 @@ watch(
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">Renovations</h1>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar title="Renovations" />
 
   <main
     class="responsive"
@@ -208,28 +201,6 @@ watch(
 </template>
 
 <style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
-
-@media (max-width: 360px) {
-  .breadcrumb-root {
-    max-width: 5rem;
-  }
-}
-
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

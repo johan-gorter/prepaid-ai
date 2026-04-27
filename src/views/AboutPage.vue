@@ -1,19 +1,12 @@
 <script setup lang="ts">
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 
 const { currentUser } = useAuth();
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">About</h1>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar title="About" />
 
   <main
     class="responsive"
@@ -79,26 +72,3 @@ const { currentUser } = useAuth();
   </main>
 </template>
 
-<style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
-
-@media (max-width: 360px) {
-  .breadcrumb-root {
-    max-width: 5rem;
-  }
-}
-</style>

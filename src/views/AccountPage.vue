@@ -3,7 +3,7 @@ import { deleteUser } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 import { getLastActivity } from "../composables/useLastActivity";
 import { functions } from "../firebase";
@@ -46,14 +46,7 @@ async function handleDeleteAccount() {
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">Account</h1>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar title="Account" />
 
   <main
     class="responsive"
@@ -124,26 +117,3 @@ async function handleDeleteAccount() {
   </main>
 </template>
 
-<style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
-
-@media (max-width: 360px) {
-  .breadcrumb-root {
-    max-width: 5rem;
-  }
-}
-</style>

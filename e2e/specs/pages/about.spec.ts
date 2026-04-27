@@ -39,7 +39,7 @@ test.describe("About Page", () => {
   test("shows breadcrumb and back link", async ({ page }) => {
     await page.goto("/about");
 
-    await expect(page.getByRole("link", { name: "payasyougo" })).toBeVisible();
+    await expect(page.getByTestId("app-logo")).toBeVisible();
     await expect(page.getByRole("link", { name: /Back/ })).toBeVisible();
   });
 

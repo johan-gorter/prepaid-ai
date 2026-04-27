@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { onMounted, ref } from "vue";
-import Logo from "../components/Logo.vue";
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 import { updateLastActivity } from "../composables/useLastActivity";
 import { db } from "../firebase";
@@ -37,15 +36,7 @@ async function submitFeedback() {
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/" aria-label="payasyougo home" class="no-padding" data-testid="app-logo">
-        <Logo />
-      </router-link>
-      <div class="max"></div>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar />
 
   <main
     class="responsive"

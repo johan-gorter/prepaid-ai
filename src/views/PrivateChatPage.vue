@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 import { estimateLocalCredits, useChat } from "../composables/useChat";
 
@@ -137,14 +137,7 @@ function continueChat() {
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h6 class="max">Chat</h6>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar title="Chat" />
 
   <main class="chat-page">
     <!-- Chat messages -->
@@ -294,20 +287,6 @@ function continueChat() {
 </template>
 
 <style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
 .chat-page {
   width: 100%;
   max-width: 100%;

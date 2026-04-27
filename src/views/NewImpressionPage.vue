@@ -7,9 +7,9 @@ import {
 import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StickyFooter from "../components/StickyFooter.vue";
-import UserMenu from "../components/UserMenu.vue";
 import { useAuth } from "../composables/useAuth";
 import {
   clearImpressionSource,
@@ -335,19 +335,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 
 <template>
   <div class="page-layout">
-    <header class="fixed">
-      <nav>
-        <button
-          class="transparent circle"
-          @click="onBack"
-          aria-label="← Back"
-        >
-          <i aria-hidden="true">arrow_back</i>
-        </button>
-        <h1 class="max">{{ headerTitle }}</h1>
-        <UserMenu />
-      </nav>
-    </header>
+    <AppBar :title="headerTitle" />
 
     <main
       class="responsive wizard-main"
