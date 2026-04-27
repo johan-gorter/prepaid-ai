@@ -16,8 +16,11 @@
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
+  /* Never allow the page itself to scroll horizontally, regardless of what
+     a child element's intrinsic width tries to do. Pages must stay readable
+     down to 320px viewports. */
+  overflow-x: clip;
 }
 
 #app {
@@ -34,18 +37,73 @@ header nav h1 {
   font-size: 1.25rem;
 }
 
-/* Allow flexible page titles in the header to shrink/truncate on small screens
-   so the trailing UserMenu stays visible. */
-header nav :is(h1, h2, h3, h4, h5, h6).max {
+/* Any page title heading inside the header must shrink and truncate so the
+   trailing UserMenu stays visible at 320px. */
+header nav :is(h1, h2, h3, h4, h5, h6) {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Constrain fixed header/footer nav content to match main content width */
+/* Constrain fixed header/footer nav content to match main content width.
+   Beer CSS uses `display: grid` on <header>, and a single grid cell sized
+   `auto` will expand to its content's intrinsic width — which lets the nav
+   push past the viewport when its flex children refuse to shrink. Forcing
+   the column to `minmax(0, 1fr)` clamps the grid cell to the available
+   header width regardless of content. */
+header.fixed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 header.fixed > nav {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  min-width: 0;
+}
+
+/* Headings in body content must wrap rather than push the layout wider than
+   the viewport. Beer CSS sets h1 to 3.5625rem, so a single long word like
+   "Renovations" already exceeds a 320px line. */
+:is(main, article, section) :is(h1, h2, h3, h4, h5, h6) {
+  overflow-wrap: anywhere;
+}
+
+/* Tighten the AppBar at narrow widths so the logo, title, balance and
+   user-menu all fit within a 320px viewport. */
+@media (max-width: 599px) {
+  header.fixed {
+    padding-inline: 0.5rem;
+  }
+
+  header.fixed > nav {
+    gap: 0.5rem;
+  }
+
+  /* The full wordmark "payasyougo.app" is too wide at 28px on a 320px
+     viewport. Scale it down so the home AppBar still fits. The Logo
+     component sets font-size inline, so !important is required to win. */
+  header nav .logo--wide-app {
+    font-size: 1.125rem !important;
+  }
+
+  /* Down-scale Beer CSS's heading scale on narrow screens so single long
+     words don't overflow the viewport. */
+  :is(main, article, section) h1,
+  :is(main, article, section) .h1 {
+    font-size: 2rem;
+  }
+  :is(main, article, section) h2,
+  :is(main, article, section) .h2 {
+    font-size: 1.75rem;
+  }
+  :is(main, article, section) h3,
+  :is(main, article, section) .h3 {
+    font-size: 1.5rem;
+  }
+  :is(main, article, section) h4,
+  :is(main, article, section) .h4 {
+    font-size: 1.375rem;
+  }
 }
