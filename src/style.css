@@ -1,13 +1,3 @@
-:root {
-  --logo-black:        #000000;
-  --logo-purple:       #7b1fa2;
-  --logo-font-family:  "Roboto Flex", "Roboto", sans-serif;
-  --logo-font-weight:  800;
-  --logo-font-stretch: 75%;
-  --logo-tracking:    -0.02em;
-  --logo-stack-leading: 0.85;
-}
-
 *,
 *::before,
 *::after {
