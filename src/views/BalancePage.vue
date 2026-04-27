@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 import { useBalance } from "../composables/useBalance";
 import { TRANSACTION_REASONS } from "../types";
 
@@ -7,14 +7,7 @@ const { balance, transactions, loading } = useBalance();
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">Balance</h1>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar title="Balance" />
 
   <main
     class="responsive"
@@ -78,26 +71,3 @@ const { balance, transactions, loading } = useBalance();
   </main>
 </template>
 
-<style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
-
-@media (max-width: 360px) {
-  .breadcrumb-root {
-    max-width: 5rem;
-  }
-}
-</style>

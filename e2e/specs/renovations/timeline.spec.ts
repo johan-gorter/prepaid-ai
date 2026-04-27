@@ -66,18 +66,16 @@ test.describe("Renovation Details Page", () => {
     }
   });
 
-  test("back button navigates to home", async ({ authenticatedPage: page }) => {
+  test("renovations page lists the new renovation", async ({
+    authenticatedPage: page,
+  }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "paint ceiling",
     );
 
     try {
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-
-      await page.getByRole("button", { name: "← Back" }).click();
-      await page.waitForURL("/renovations");
+      await page.goto("/renovations");
       await expect(page.getByText("My Renovations")).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });

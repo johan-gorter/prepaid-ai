@@ -83,10 +83,8 @@ test.describe("Home Page with renovations", () => {
     );
 
     try {
-      // Navigate back to home via Renovation Details → Back
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await page.getByRole("button", { name: "← Back" }).click();
+      // Navigate to /renovations to verify the renovation appears in the list
+      await page.goto("/renovations");
       await page.waitForURL("/renovations");
 
       // Should show a renovation card alongside the new-renovation card
@@ -109,10 +107,8 @@ test.describe("Home Page with renovations", () => {
     );
 
     try {
-      // Go home
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
-      await page.getByRole("button", { name: "← Back" }).click();
+      // Go to /renovations
+      await page.goto("/renovations");
       await page.waitForURL("/renovations");
 
       // Click the card

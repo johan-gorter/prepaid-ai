@@ -142,7 +142,7 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("back header button navigates to home", async ({
+    test("Trash on photo flow navigates back to renovations", async ({
       authenticatedPage: page,
     }) => {
       const grayPngPath = await createGrayPng();
@@ -152,7 +152,7 @@ test.describe("New Renovation Page", () => {
           .setInputFiles(grayPngPath);
         await page.waitForURL("/new-impression?source=photo");
 
-        await page.getByRole("button", { name: "← Back" }).click();
+        await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
         await expect(page.getByText("My Renovations")).toBeVisible();
       } finally {
