@@ -39,7 +39,7 @@ async function submitFeedback() {
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/" aria-label="payasyougo home" class="no-padding">
+      <router-link to="/" aria-label="payasyougo home" class="no-padding" data-testid="app-logo">
         <Logo />
       </router-link>
       <div class="max"></div>
