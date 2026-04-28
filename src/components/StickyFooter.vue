@@ -1,5 +1,5 @@
 <template>
-  <footer class="fixed">
+  <footer class="fixed sticky-footer">
     <nav class="footer-nav">
       <slot />
     </nav>
@@ -7,6 +7,13 @@
 </template>
 
 <style scoped>
+footer.sticky-footer {
+  position: fixed;
+  inset: auto 0 0 0;
+  bottom: var(--kb-inset, 0px);
+  z-index: 12;
+}
+
 .footer-nav {
   width: 100%;
   max-width: 800px;

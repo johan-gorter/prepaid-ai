@@ -5,7 +5,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytes } from "firebase/storage";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
@@ -35,6 +35,7 @@ const prompt = ref("");
 const errorMessage = ref<string | null>(null);
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
+const promptInputRef = ref<HTMLTextAreaElement | null>(null);
 
 const sourceParam = computed(() => route.query.source as Source | undefined);
 const renovationParam = computed(
@@ -133,6 +134,19 @@ watch(
     if (newPath !== oldPath) initFromRoute();
   },
 );
+
+watch(stage, async (next) => {
+  if (next !== "prompt") return;
+  await nextTick();
+  const el = promptInputRef.value;
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  // iOS Safari fallback: VisualViewport resize can be slow, so explicitly
+  // scroll the textarea into view once focus has settled.
+  setTimeout(() => {
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, 250);
+});
 
 function onCanvasArea() {
   if (stage.value === "preview") stage.value = "mask";
@@ -339,12 +353,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 
     <main
       class="responsive wizard-main"
-      style="
-        max-width: 800px;
-        margin: 0 auto;
-        padding-top: 4.5rem;
-        padding-bottom: 5rem;
-      "
+      :class="{ 'wizard-main--prompt': stage === 'prompt' }"
     >
       <div class="step-hint">
         <span v-if="stage === 'mask'">Paint the area you want to change (shown in red)</span>
@@ -352,7 +361,10 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 
       <div
         class="canvas-area"
-        :class="{ 'inert-canvas': stage === 'processing' }"
+        :class="{
+          'inert-canvas': stage === 'processing',
+          'canvas-area--collapsed': stage === 'prompt',
+        }"
         @pointerdown="onCanvasArea"
       >
         <MaskingCanvas
@@ -371,24 +383,23 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
           alt="Result"
         />
 
-        <!-- Prompt overlay sits on the top half of the image during prompt -->
-        <div v-show="stage === 'prompt'" class="prompt-overlay">
-          <div class="field textarea label border round prompt-field">
-            <textarea
-              id="prompt-input"
-              data-testid="prompt"
-              v-model="prompt"
-              rows="4"
-              placeholder=" "
-            ></textarea>
-            <label for="prompt-input">What should change in the red area?</label>
-          </div>
-        </div>
-
         <!-- Processing overlay -->
         <div v-show="stage === 'processing'" class="processing-overlay">
           <progress class="circle"></progress>
           <p>Creating your impression...</p>
+        </div>
+      </div>
+
+      <div v-if="stage === 'prompt'" class="prompt-flex">
+        <div class="field textarea label border round prompt-field">
+          <textarea
+            id="prompt-input"
+            ref="promptInputRef"
+            data-testid="prompt"
+            v-model="prompt"
+            placeholder=" "
+          ></textarea>
+          <label for="prompt-input">What should change in the red area?</label>
         </div>
       </div>
 
@@ -469,14 +480,39 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 .page-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100dvh;
+}
+
+.wizard-main {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  padding-top: 4.5rem;
+  padding-bottom: calc(5rem + var(--kb-inset, 0px));
+}
+
+.wizard-main--prompt {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .canvas-area {
   position: relative;
   max-width: 544px;
   margin: 0 auto;
+}
+
+.canvas-area--collapsed {
+  height: 0;
+  overflow: visible;
+}
+
+.canvas-area--collapsed :deep(.masking-wrapper) {
+  position: absolute;
+  inset: 0 0 auto 50%;
+  transform: translateX(-50%);
 }
 
 .inert-canvas :deep(.masking-wrapper) {
@@ -506,24 +542,29 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
   pointer-events: none;
 }
 
-.prompt-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
+.prompt-flex {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.35);
-  pointer-events: auto;
+  width: 100%;
+  max-width: 544px;
+  margin: 0 auto;
 }
 
 .prompt-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 460px;
   background: var(--surface, #fff);
+}
+
+.prompt-field textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
 }
 
 .processing-overlay {
