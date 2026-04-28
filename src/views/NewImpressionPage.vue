@@ -480,7 +480,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 .page-layout {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: calc(100dvh - var(--kb-inset, 0px));
 }
 
 .wizard-main {
@@ -488,7 +488,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
   margin: 0 auto;
   width: 100%;
   padding-top: 4.5rem;
-  padding-bottom: calc(5rem + var(--kb-inset, 0px));
+  padding-bottom: 5rem;
 }
 
 .wizard-main--prompt {

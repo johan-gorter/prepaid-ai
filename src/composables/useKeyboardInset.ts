@@ -1,13 +1,5 @@
 import { onMounted, onUnmounted } from "vue";
 
-interface VirtualKeyboardLike {
-  overlaysContent: boolean;
-}
-
-interface NavigatorWithVirtualKeyboard extends Navigator {
-  virtualKeyboard?: VirtualKeyboardLike;
-}
-
 let activeListeners = 0;
 let onResize: (() => void) | null = null;
 let onScroll: (() => void) | null = null;
@@ -23,15 +15,6 @@ export function useKeyboardInset() {
   onMounted(() => {
     activeListeners++;
     if (activeListeners > 1) return;
-
-    const nav = navigator as NavigatorWithVirtualKeyboard;
-    if (nav.virtualKeyboard) {
-      try {
-        nav.virtualKeyboard.overlaysContent = true;
-      } catch {
-        // Ignore if the API rejects assignment
-      }
-    }
 
     document.documentElement.style.setProperty("--kb-inset", "0px");
 
