@@ -62,6 +62,13 @@ Material Icons are loaded via CDN in `index.html`:
 - Add `padding-top: 4.5rem` to main when using fixed header
 - Add `padding-bottom: 5rem` to main when using fixed footer
 
+For the full page-height contract — keyboard-aware fixed footers, body /
+`#app` height, and the two correct layout patterns (scrolling main vs.
+viewport-locked flex column) — see [docs/layout-and-scrolling.md](../../../docs/layout-and-scrolling.md).
+Read that document before changing `src/style.css`, `useKeyboardInset.ts`,
+`StickyFooter.vue`, or any page that anchors an input above the on-screen
+keyboard.
+
 ## Buttons
 
 ```html
@@ -253,6 +260,12 @@ width, matching the Material Design 3 `nav.bottom` pattern.
 
 Note: the `error` class still applies its color to icon and text at mobile
 because only background/border/shadow are overridden.
+
+`StickyFooter` is `position: fixed` with `bottom: var(--kb-inset, 0px)`, so
+it tracks the on-screen keyboard automatically. Do **not** wrap a chat
+composer or any in-flow bottom-anchored input in `StickyFooter` — use the
+viewport-locked flex column pattern instead
+(see [docs/layout-and-scrolling.md](../../../docs/layout-and-scrolling.md)).
 
 ## Progress / Loading
 

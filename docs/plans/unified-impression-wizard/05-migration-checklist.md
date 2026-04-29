@@ -56,8 +56,11 @@ already-modified subset of tests, so progress is visible incrementally.
 - [ ] Verify the four-stage layout invariant in a real browser at mobile
       sizes (the wizard image must not shift between preview / mask /
       prompt / processing).
-- [ ] Verify `prompt` overlay leaves room for the on-screen keyboard +
-      sticky footer on iPhone SE-class viewports (`100dvh`).
+- [ ] Verify the `prompt` stage on iPhone SE-class viewports: textarea,
+      `Back`, and `Generate` all stay visible above the on-screen keyboard.
+      The keyboard-inset system (`--kb-inset`) handles this — see
+      [`docs/layout-and-scrolling.md`](../../layout-and-scrolling.md) for the
+      full contract.
 - [ ] Manually test all four `?source` values plus a hard refresh on each
       stage of each.
 - [ ] Manually test offline refresh for `source=original`/`impression`
