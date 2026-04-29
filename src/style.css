@@ -16,7 +16,12 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  /* Cap body to the visible viewport so the document never extends past the
+     on-screen keyboard. Fixed footers and bottom-anchored inputs can then sit
+     above the keyboard via flex layout, and pages with content that fits
+     don't scroll. Pages whose content overflows still scroll because content
+     is allowed to grow past this min-height. */
+  min-height: calc(100dvh - var(--kb-inset, 0px));
   /* Never allow the page itself to scroll horizontally, regardless of what
      a child element's intrinsic width tries to do. Pages must stay readable
      down to 320px viewports. */
@@ -24,7 +29,7 @@ body {
 }
 
 #app {
-  min-height: 100vh;
+  min-height: calc(100dvh - var(--kb-inset, 0px));
 }
 
 /* Beer-css canvas override: prevent beer-css from styling canvases */

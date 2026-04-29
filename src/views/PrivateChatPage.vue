@@ -291,10 +291,13 @@ function continueChat() {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
+  /* padding-top clears the fixed AppBar overlay; height fills the visible
+     viewport so the chat-bottom anchors at the bottom (above the on-screen
+     keyboard when present) without leaving dead space below it. */
   padding: 4.5rem 0 0;
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 4.5rem);
+  height: calc(100dvh - var(--kb-inset, 0px));
   overflow: visible;
 }
 .chat-input-row .field {
