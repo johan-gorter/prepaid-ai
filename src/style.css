@@ -1,13 +1,3 @@
-:root {
-  --logo-black: #000000;
-  --logo-purple: #7b1fa2;
-  --logo-font-family: "Roboto Flex", "Roboto", sans-serif;
-  --logo-font-stretch: 75%;
-  --logo-font-weight: 800;
-  --logo-tracking: -0.02em;
-  --logo-stack-leading: 0.85;
-}
-
 *,
 *::before,
 *::after {
@@ -89,7 +79,7 @@ header.fixed > nav {
   /* The full wordmark "payasyougo.app" is too wide at 28px on a 320px
      viewport. Scale it down so the home AppBar still fits. The Logo
      component sets font-size inline, so !important is required to win. */
-  header nav .logo--wide-app {
+  header nav .logo--wide {
     font-size: 1.125rem !important;
   }
 

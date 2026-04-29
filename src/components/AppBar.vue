@@ -5,13 +5,13 @@
       <template v-if="!title">
         <h6 class="app-bar-home-title" data-testid="app-logo">
           <router-link :to="homeRoute" class="app-bar-logo-link">
-            <Logo variant="wide-app" :size="28" />
+            <Logo variant="wide" :size="28" />
           </router-link>
         </h6>
         <div class="max"></div>
       </template>
 
-      <!-- Subpage: logo + chevron + title (logo replaces back button on mobile) -->
+      <!-- Subpage: stacked logo + chevron + title -->
       <template v-else>
         <router-link
           :to="homeRoute"
@@ -19,7 +19,7 @@
           aria-label="payasyougo home"
           data-testid="app-logo"
         >
-          <Logo variant="auto" :size="28" />
+          <Logo variant="square" :size="28" />
         </router-link>
         <span class="app-bar-sep" aria-hidden="true">&gt;</span>
         <h1 class="max app-bar-title">{{ title }}</h1>
