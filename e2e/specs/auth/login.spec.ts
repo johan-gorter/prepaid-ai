@@ -21,8 +21,17 @@ test.describe("Login Page", () => {
   test("redirects to login when accessing protected route unauthenticated", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/account");
     await page.waitForURL(/\/login/);
     await expect(page.getByText("payasyougo.app")).toBeVisible();
+  });
+
+  test("guest can browse renovations and sees sign-in CTA", async ({
+    page,
+  }) => {
+    await page.goto("/renovations");
+    await expect(page).toHaveURL("/renovations");
+    await expect(page.getByTestId("renovations-sign-in")).toBeVisible();
+    await expect(page.getByTestId("header-sign-in")).toBeVisible();
   });
 });

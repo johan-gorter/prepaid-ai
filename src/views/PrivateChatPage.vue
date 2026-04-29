@@ -1,15 +1,46 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
-import { estimateLocalCredits, useChat } from "../composables/useChat";
+import {
+  estimateLocalCredits,
+  useChat,
+  type ChatMessage,
+} from "../composables/useChat";
 
+const router = useRouter();
 const { currentUser } = useAuth();
 const { messages, streaming, estimate, lastCost, error, send, stop } =
   useChat();
 
-const userInput = ref("");
-const maxCredits = ref(15);
+const CHAT_DRAFT_KEY = "payasyougo-chat-draft";
+
+interface ChatDraft {
+  messages: ChatMessage[];
+  input: string;
+  maxCredits: number;
+}
+
+function loadChatDraft(): ChatDraft | null {
+  try {
+    const raw = localStorage.getItem(CHAT_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ChatDraft;
+    if (!Array.isArray(parsed.messages)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+const initialDraft = loadChatDraft();
+if (initialDraft) {
+  messages.value = initialDraft.messages;
+}
+
+const userInput = ref(initialDraft?.input ?? "");
+const maxCredits = ref(initialDraft?.maxCredits ?? 15);
 const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
@@ -90,6 +121,12 @@ watch(
 async function handleSend() {
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
+  if (!currentUser.value) {
+    // Persist the draft so the conversation + typed input survive sign-in.
+    persistChatDraft();
+    router.push({ path: "/login", query: { redirect: "/chat" } });
+    return;
+  }
   userInput.value = "";
   lastEstimatedLength = 0;
   chatMode.value = "streaming";
@@ -98,6 +135,27 @@ async function handleSend() {
   });
   await send(text, maxCredits.value);
 }
+
+function persistChatDraft() {
+  const draft: ChatDraft = {
+    messages: messages.value,
+    input: userInput.value,
+    maxCredits: maxCredits.value,
+  };
+  try {
+    localStorage.setItem(CHAT_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // localStorage may be full or disabled — ignore
+  }
+}
+
+watch(
+  [messages, userInput, maxCredits],
+  () => {
+    persistChatDraft();
+  },
+  { deep: true },
+);
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && e.ctrlKey) {

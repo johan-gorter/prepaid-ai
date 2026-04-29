@@ -5,6 +5,8 @@
  * Keys:
  *  - "uncroppedImpressionSource": raw user image waiting to be cropped
  *  - "impressionSource":          1024² webp blob the wizard paints on
+ *  - "impressionMask":            mask layer the wizard has painted so far
+ *  - "impressionPrompt":          stringified { prompt, query } draft
  */
 
 const DB_NAME = "payasyougo-impressions";
@@ -13,6 +15,8 @@ const STORE = "images";
 
 const KEY_SOURCE = "impressionSource";
 const KEY_UNCROPPED = "uncroppedImpressionSource";
+const KEY_MASK = "impressionMask";
+const KEY_DRAFT = "impressionPromptDraft";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -32,17 +36,17 @@ function open(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-async function get(key: string): Promise<Blob | null> {
+async function get<T = Blob>(key: string): Promise<T | null> {
   const db = await open();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).get(key);
-    req.onsuccess = () => resolve((req.result as Blob | undefined) ?? null);
+    req.onsuccess = () => resolve((req.result as T | undefined) ?? null);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function put(key: string, value: Blob): Promise<void> {
+async function put(key: string, value: unknown): Promise<void> {
   const db = await open();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
@@ -65,9 +69,24 @@ async function del(key: string): Promise<void> {
 }
 
 export const setImpressionSource = (b: Blob) => put(KEY_SOURCE, b);
-export const getImpressionSource = () => get(KEY_SOURCE);
+export const getImpressionSource = () => get<Blob>(KEY_SOURCE);
 export const clearImpressionSource = () => del(KEY_SOURCE);
 
 export const setUncroppedSource = (b: Blob) => put(KEY_UNCROPPED, b);
-export const getUncroppedSource = () => get(KEY_UNCROPPED);
+export const getUncroppedSource = () => get<Blob>(KEY_UNCROPPED);
 export const clearUncroppedSource = () => del(KEY_UNCROPPED);
+
+export const setImpressionMask = (b: Blob) => put(KEY_MASK, b);
+export const getImpressionMask = () => get<Blob>(KEY_MASK);
+export const clearImpressionMask = () => del(KEY_MASK);
+
+export interface ImpressionDraft {
+  prompt: string;
+  source?: string;
+  renovation?: string | null;
+  impression?: string | null;
+}
+
+export const setImpressionDraft = (d: ImpressionDraft) => put(KEY_DRAFT, d);
+export const getImpressionDraft = () => get<ImpressionDraft>(KEY_DRAFT);
+export const clearImpressionDraft = () => del(KEY_DRAFT);

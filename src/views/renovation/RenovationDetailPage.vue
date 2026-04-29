@@ -7,7 +7,11 @@ import StorageImage from "../../components/StorageImage.vue";
 import { useAuth } from "../../composables/useAuth";
 import { useImpressions } from "../../composables/useImpressions";
 import { useRenovations } from "../../composables/useRenovations";
-import { clearImpressionSource } from "../../composables/useImpressionStore";
+import {
+  clearImpressionDraft,
+  clearImpressionMask,
+  clearImpressionSource,
+} from "../../composables/useImpressionStore";
 import { db } from "../../firebase";
 import type { Renovation } from "../../types";
 
@@ -108,7 +112,11 @@ async function navigateToNewImpression(target: "original" | string) {
   const reno = renovationId.value;
   // Clear any stale source from a previous session so the wizard re-fetches
   // the correct image from Storage on this device.
-  await clearImpressionSource();
+  await Promise.all([
+    clearImpressionSource(),
+    clearImpressionMask(),
+    clearImpressionDraft(),
+  ]);
   if (target === "original") {
     router.push({
       path: "/new-impression",

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { useBalance } from "../composables/useBalance";
 import { useColorScheme } from "../composables/useColorScheme";
@@ -9,6 +9,9 @@ const { currentUser, signOut } = useAuth();
 const { balance } = useBalance();
 const { colorScheme, setColorScheme } = useColorScheme();
 const router = useRouter();
+const route = useRoute();
+
+const signInRedirect = computed(() => route.fullPath);
 
 const showMenu = ref(false);
 const systemPrefersDark = ref(
@@ -60,8 +63,18 @@ function toggleScheme() {
 </script>
 
 <template>
+  <router-link
+    v-if="!currentUser"
+    :to="{ path: '/login', query: { redirect: signInRedirect } }"
+    class="button border small-round"
+    data-testid="header-sign-in"
+    style="flex-shrink: 0"
+  >
+    <i aria-hidden="true">login</i>
+    <span>Sign in</span>
+  </router-link>
   <div
-    v-if="currentUser"
+    v-else
     class="user-menu-root"
     style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0"
   >

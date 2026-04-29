@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   imageUrl: string;
+  initialMask?: Blob | null;
 }>();
 
 // Brush algorithm constants
@@ -57,6 +58,10 @@ async function loadImage(url: string) {
   if (borderCtx) borderCtx.imageSmoothingEnabled = false;
 
   render();
+
+  if (props.initialMask) {
+    await loadMaskFromBlob(props.initialMask);
+  }
 }
 
 function render() {
@@ -399,7 +404,81 @@ function getCompositeBlob(): Promise<Blob> {
   });
 }
 
-defineExpose({ clearMask, getOriginalBlob, getCompositeBlob });
+function getMaskBlob(): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    if (!maskCanvas) {
+      resolve(null);
+      return;
+    }
+    maskCanvas.toBlob((blob) => resolve(blob), "image/webp");
+  });
+}
+
+function rebuildBorder() {
+  if (!borderCtx || !maskCtx) return;
+  borderCtx.clearRect(0, 0, fullWidth, fullHeight);
+  const maskData = maskCtx.getImageData(0, 0, fullWidth, fullHeight);
+  const borderData = borderCtx.getImageData(
+    PADDING,
+    PADDING,
+    CANVAS_SIZE,
+    CANVAS_SIZE,
+  );
+  function alphaAt(gx: number, gy: number): number {
+    if (gx < 0 || gy < 0 || gx >= fullWidth || gy >= fullHeight) return 0;
+    return maskData.data[(gy * fullWidth + gx) * 4 + 3] ?? 0;
+  }
+  for (let j = 0; j < CANVAS_SIZE; j++) {
+    for (let i = 0; i < CANVAS_SIZE; i++) {
+      const gx = PADDING + i;
+      const gy = PADDING + j;
+      const idx = (j * CANVAS_SIZE + i) * 4;
+      let isBorder = false;
+      if (alphaAt(gx, gy) > 0) {
+        if (
+          alphaAt(gx - 1, gy) === 0 ||
+          alphaAt(gx + 1, gy) === 0 ||
+          alphaAt(gx, gy - 1) === 0 ||
+          alphaAt(gx, gy + 1) === 0
+        ) {
+          isBorder = true;
+        }
+      }
+      borderData.data[idx] = isBorder ? 255 : 0;
+      borderData.data[idx + 1] = 0;
+      borderData.data[idx + 2] = 0;
+      borderData.data[idx + 3] = isBorder ? 255 : 0;
+    }
+  }
+  borderCtx.putImageData(borderData, PADDING, PADDING);
+}
+
+async function loadMaskFromBlob(blob: Blob): Promise<void> {
+  if (!maskCtx || !borderCtx) return;
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load mask"));
+      img.src = url;
+    });
+    maskCtx.clearRect(0, 0, fullWidth, fullHeight);
+    maskCtx.drawImage(img, 0, 0, fullWidth, fullHeight);
+    rebuildBorder();
+    render();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+defineExpose({
+  clearMask,
+  getOriginalBlob,
+  getCompositeBlob,
+  getMaskBlob,
+  loadMaskFromBlob,
+});
 
 onMounted(() => {
   loadImage(props.imageUrl);
