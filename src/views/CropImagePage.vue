@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import {
+  clearImpressionDraft,
+  clearImpressionMask,
   clearUncroppedSource,
   getUncroppedSource,
   setImpressionSource,
@@ -273,7 +275,11 @@ async function handleConfirm() {
     ),
   );
   await setImpressionSource(blob);
-  await clearUncroppedSource();
+  await Promise.all([
+    clearUncroppedSource(),
+    clearImpressionMask(),
+    clearImpressionDraft(),
+  ]);
   router.push("/new-impression?source=crop");
 }
 

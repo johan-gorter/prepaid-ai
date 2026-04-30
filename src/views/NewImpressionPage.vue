@@ -12,9 +12,16 @@ import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import { useAuth } from "../composables/useAuth";
 import {
+  clearImpressionDraft,
+  clearImpressionMask,
   clearImpressionSource,
+  getImpressionDraft,
+  getImpressionMask,
   getImpressionSource,
+  setImpressionDraft,
+  setImpressionMask,
   setImpressionSource,
+  type ImpressionDraft,
 } from "../composables/useImpressionStore";
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
@@ -33,6 +40,8 @@ const stage = ref<Stage>("preview");
 const sourceObjectUrl = ref<string | null>(null);
 const prompt = ref("");
 const errorMessage = ref<string | null>(null);
+const initialMask = ref<Blob | null>(null);
+let restoredDraftKey: string | null = null;
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 const promptInputRef = ref<HTMLTextAreaElement | null>(null);
@@ -100,9 +109,17 @@ async function fetchAndCacheSource(source: Source): Promise<Blob | null> {
   return blob;
 }
 
+function draftKey(): string {
+  return `${sourceParam.value ?? ""}|${renovationParam.value ?? ""}|${
+    impressionParam.value ?? ""
+  }`;
+}
+
 async function initFromRoute(): Promise<void> {
   errorMessage.value = null;
   prompt.value = "";
+  initialMask.value = null;
+  restoredDraftKey = null;
   revokeSourceUrl();
 
   const source = sourceParam.value;
@@ -111,7 +128,15 @@ async function initFromRoute(): Promise<void> {
     return;
   }
 
-  let blob = await getImpressionSource();
+  // Read source + draft + mask in parallel, then assign sourceObjectUrl last
+  // so MaskingCanvas mounts with the saved mask already in props. Setting the
+  // object URL first would race the canvas's image decode against the draft
+  // IDB reads, dropping the saved mask if the decode finishes first.
+  const [savedSource, draft] = await Promise.all([
+    getImpressionSource(),
+    getImpressionDraft(),
+  ]);
+  let blob = savedSource;
   if (!blob && (source === "original" || source === "impression")) {
     blob = await fetchAndCacheSource(source);
   }
@@ -120,10 +145,63 @@ async function initFromRoute(): Promise<void> {
     return;
   }
 
+  // Restore prompt + mask drafts only when they match the current wizard
+  // context — otherwise stale drafts from a different renovation could leak
+  // across flows. Drafts are written when a guest hits Generate so that
+  // signing in and returning preserves their work.
+  const matches =
+    draft &&
+    (draft.source ?? "") === source &&
+    (draft.renovation ?? null) === renovationParam.value &&
+    (draft.impression ?? null) === impressionParam.value;
+  if (matches && draft) {
+    prompt.value = draft.prompt;
+    initialMask.value = await getImpressionMask();
+    restoredDraftKey = draftKey();
+  }
+
   sourceObjectUrl.value = URL.createObjectURL(blob);
-  stage.value =
-    source === "original" || source === "impression" ? "preview" : "mask";
+
+  if (matches && draft) {
+    stage.value = prompt.value || initialMask.value ? "prompt" : "mask";
+  } else {
+    stage.value =
+      source === "original" || source === "impression" ? "preview" : "mask";
+  }
 }
+
+async function persistDraft(): Promise<void> {
+  const draft: ImpressionDraft = {
+    prompt: prompt.value,
+    source: sourceParam.value,
+    renovation: renovationParam.value,
+    impression: impressionParam.value,
+  };
+  await setImpressionDraft(draft);
+  restoredDraftKey = draftKey();
+  if (maskingRef.value) {
+    const maskBlob = await maskingRef.value.getMaskBlob();
+    if (maskBlob) await setImpressionMask(maskBlob);
+  }
+}
+
+async function clearPersistedDraft(): Promise<void> {
+  await Promise.all([clearImpressionDraft(), clearImpressionMask()]);
+  restoredDraftKey = null;
+}
+
+watch(prompt, async (val) => {
+  // Persist prompt edits whenever a draft has been established for this
+  // wizard context, so a sign-in detour preserves what the user typed.
+  if (restoredDraftKey === draftKey() && sourceParam.value) {
+    await setImpressionDraft({
+      prompt: val,
+      source: sourceParam.value,
+      renovation: renovationParam.value,
+      impression: impressionParam.value,
+    });
+  }
+});
 
 onMounted(initFromRoute);
 onUnmounted(revokeSourceUrl);
@@ -152,8 +230,17 @@ function onCanvasArea() {
   if (stage.value === "preview") stage.value = "mask";
 }
 
-function onNextChange() {
+async function clearMaskEverywhere() {
+  // Drop the in-memory mask, the cached restore prop, and the persisted IDB
+  // copy in lockstep. Without the IDB delete a sign-in detour would silently
+  // resurrect the cleared mask on the next initFromRoute pass.
   maskingRef.value?.clearMask();
+  initialMask.value = null;
+  await clearImpressionMask();
+}
+
+async function onNextChange() {
+  await clearMaskEverywhere();
   stage.value = "mask";
 }
 
@@ -167,6 +254,7 @@ function onPromptBack() {
 
 async function onRetake() {
   await clearImpressionSource();
+  await clearPersistedDraft();
   router.replace("/photo");
 }
 
@@ -189,6 +277,7 @@ async function onTrash() {
       }
     }
     await clearImpressionSource();
+    await clearPersistedDraft();
     if (renovationParam.value) {
       router.replace(`/renovation/${renovationParam.value}`);
     } else {
@@ -203,10 +292,12 @@ async function onTrash() {
       // ignore
     }
     await clearImpressionSource();
+    await clearPersistedDraft();
     router.replace("/renovations");
   } else {
     // photo / crop
     await clearImpressionSource();
+    await clearPersistedDraft();
     router.replace("/renovations");
   }
 }
@@ -249,12 +340,18 @@ function waitForCompletion(
 
 async function onGenerate() {
   if (!canGenerate.value) return;
-  if (!currentUser.value) {
-    errorMessage.value = "You must be signed in.";
-    return;
-  }
   if (!maskingRef.value) {
     errorMessage.value = "Mask not ready.";
+    return;
+  }
+  if (!currentUser.value) {
+    // Persist the in-progress mask + prompt so signing in and coming back
+    // restores the wizard exactly where the user left off.
+    await persistDraft();
+    router.push({
+      path: "/login",
+      query: { redirect: route.fullPath },
+    });
     return;
   }
 
@@ -325,6 +422,7 @@ async function onGenerate() {
     const resultUrl = await resolveStorageUrl(resultPath);
     const resultBlob = await fetch(resultUrl).then((r) => r.blob());
     await setImpressionSource(resultBlob);
+    await clearPersistedDraft();
 
     router.replace({
       path: "/new-impression",
@@ -371,6 +469,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
           v-if="sourceObjectUrl"
           ref="maskingRef"
           :image-url="sourceObjectUrl"
+          :initial-mask="initialMask"
         />
 
         <!-- Hidden marker so E2E `getByAltText('Result')` can detect a
@@ -406,7 +505,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
       <button
         v-if="stage === 'mask'"
         class="transparent small-round center-block"
-        @click="maskingRef?.clearMask()"
+        @click="clearMaskEverywhere"
       >
         <i aria-hidden="true">delete_sweep</i>
         <span>Clear Mask</span>

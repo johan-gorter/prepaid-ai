@@ -2,6 +2,7 @@ import type { User } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { computed, ref, watch } from "vue";
 import { db, firebaseApp } from "../firebase";
+import { clearAllImpressionData } from "./useImpressionStore";
 
 const currentUser = ref<User | null>(null);
 const loading = ref(true);
@@ -79,6 +80,14 @@ export function useAuth() {
   async function signOut() {
     const { signOut: firebaseSignOut, getAuth } = await import("firebase/auth");
     await firebaseSignOut(getAuth(firebaseApp));
+    // Wipe app-managed local state so a different user on the same device
+    // can't recover the previous session's chat draft, prompt, or mask.
+    try {
+      localStorage.clear();
+    } catch {
+      // ignore: localStorage may be unavailable in some browser modes
+    }
+    await clearAllImpressionData();
   }
 
   return {

@@ -3,7 +3,11 @@ import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import StickyFooter from "../components/StickyFooter.vue";
-import { setImpressionSource } from "../composables/useImpressionStore";
+import {
+  clearImpressionDraft,
+  clearImpressionMask,
+  setImpressionSource,
+} from "../composables/useImpressionStore";
 
 const router = useRouter();
 
@@ -71,6 +75,7 @@ async function handleCapture() {
   );
   stopStream();
   await setImpressionSource(blob);
+  await Promise.all([clearImpressionMask(), clearImpressionDraft()]);
   router.push("/new-impression?source=photo");
 }
 

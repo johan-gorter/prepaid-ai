@@ -182,6 +182,16 @@ watch(
       <div>
         <NewRenovationCard />
       </div>
+      <div v-if="!currentUser">
+        <router-link
+          :to="{ path: '/login', query: { redirect: '/renovations' } }"
+          class="button responsive small-round guest-renovations-cta"
+          data-testid="renovations-sign-in"
+        >
+          <i aria-hidden="true">login</i>
+          <span>Log in to see your renovations</span>
+        </router-link>
+      </div>
       <div v-for="renovation in renovations" :key="renovation.id">
         <article
           class="round no-padding small-elevate"
@@ -214,5 +224,14 @@ watch(
 .card-grid article {
   min-height: 300px;
   text-align: center;
+}
+
+.guest-renovations-cta {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
 }
 </style>

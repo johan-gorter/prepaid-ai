@@ -2,6 +2,8 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import {
+  clearImpressionDraft,
+  clearImpressionMask,
   setImpressionSource,
   setUncroppedSource,
 } from "../composables/useImpressionStore";
@@ -18,6 +20,7 @@ async function onCameraSelected(event: Event) {
   const file = input.files?.[0];
   if (!file || !file.type.startsWith("image/")) return;
   await setImpressionSource(file);
+  await Promise.all([clearImpressionMask(), clearImpressionDraft()]);
   router.push("/new-impression?source=photo");
 }
 

@@ -1,15 +1,46 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
-import { estimateLocalCredits, useChat } from "../composables/useChat";
+import {
+  estimateLocalCredits,
+  useChat,
+  type ChatMessage,
+} from "../composables/useChat";
 
+const router = useRouter();
 const { currentUser } = useAuth();
 const { messages, streaming, estimate, lastCost, error, send, stop } =
   useChat();
 
-const userInput = ref("");
-const maxCredits = ref(15);
+const CHAT_DRAFT_KEY = "payasyougo-chat-draft";
+
+interface ChatDraft {
+  messages: ChatMessage[];
+  input: string;
+  maxCredits: number;
+}
+
+function loadChatDraft(): ChatDraft | null {
+  try {
+    const raw = localStorage.getItem(CHAT_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ChatDraft;
+    if (!Array.isArray(parsed.messages)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+const initialDraft = loadChatDraft();
+if (initialDraft) {
+  messages.value = initialDraft.messages;
+}
+
+const userInput = ref(initialDraft?.input ?? "");
+const maxCredits = ref(initialDraft?.maxCredits ?? 15);
 const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
@@ -90,6 +121,12 @@ watch(
 async function handleSend() {
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
+  if (!currentUser.value) {
+    // Persist the draft so the conversation + typed input survive sign-in.
+    persistChatDraft();
+    router.push({ path: "/login", query: { redirect: "/chat" } });
+    return;
+  }
   userInput.value = "";
   lastEstimatedLength = 0;
   chatMode.value = "streaming";
@@ -98,6 +135,37 @@ async function handleSend() {
   });
   await send(text, maxCredits.value);
 }
+
+function persistChatDraft() {
+  const draft: ChatDraft = {
+    messages: messages.value,
+    input: userInput.value,
+    maxCredits: maxCredits.value,
+  };
+  try {
+    localStorage.setItem(CHAT_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // localStorage may be full or disabled — ignore
+  }
+}
+
+// Persist chat state only at meaningful checkpoints. Skipping streaming
+// avoids a synchronous JSON.stringify + localStorage.setItem on every chunk
+// (useChat reassigns messages.value[idx] per chunk), which scales O(history²)
+// for long replies.
+watch(
+  [userInput, maxCredits],
+  () => {
+    if (streaming.value) return;
+    persistChatDraft();
+  },
+);
+watch(streaming, (isStreamingNow, wasStreaming) => {
+  if (wasStreaming && !isStreamingNow) {
+    // Capture the final messages array exactly once when the response ends.
+    persistChatDraft();
+  }
+});
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && e.ctrlKey) {
@@ -150,7 +218,7 @@ function continueChat() {
       >
         <i class="extra" style="font-size: 3rem">chat</i>
         <p>Start a private conversation with AI.</p>
-        <p class="small">No conversation data is stored.</p>
+        <p class="small">Conversations are stored only on this device.</p>
       </div>
 
       <div v-for="(msg, i) in messages" :key="i" class="chat-message">
