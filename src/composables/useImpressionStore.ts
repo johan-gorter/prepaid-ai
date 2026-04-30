@@ -90,3 +90,29 @@ export interface ImpressionDraft {
 export const setImpressionDraft = (d: ImpressionDraft) => put(KEY_DRAFT, d);
 export const getImpressionDraft = () => get<ImpressionDraft>(KEY_DRAFT);
 export const clearImpressionDraft = () => del(KEY_DRAFT);
+
+/**
+ * Drop the entire impressions database. Used on sign-out so a different user
+ * on the same device can't recover the previous user's drafts, masks, or
+ * cached source images.
+ *
+ * Closes the cached connection first because IndexedDB blocks deletion while
+ * any tab still holds the database open.
+ */
+export async function clearAllImpressionData(): Promise<void> {
+  if (dbPromise) {
+    try {
+      const db = await dbPromise;
+      db.close();
+    } catch {
+      // ignore: a failed open is already cleared with the reset below
+    }
+    dbPromise = null;
+  }
+  await new Promise<void>((resolve) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
+  });
+}

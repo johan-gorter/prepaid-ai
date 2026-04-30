@@ -490,6 +490,19 @@ watch(
     loadImage(url);
   },
 );
+
+// Safety net: if initialMask arrives after the source image has already
+// finished decoding (e.g. parent's IDB reads resolved late), apply it now.
+// loadImage() also applies the mask once on mount; this watcher only fires
+// for prop changes after that initial pass.
+watch(
+  () => props.initialMask,
+  (mask) => {
+    if (mask && maskCtx) {
+      loadMaskFromBlob(mask);
+    }
+  },
+);
 </script>
 
 <template>

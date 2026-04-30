@@ -128,7 +128,15 @@ async function initFromRoute(): Promise<void> {
     return;
   }
 
-  let blob = await getImpressionSource();
+  // Read source + draft + mask in parallel, then assign sourceObjectUrl last
+  // so MaskingCanvas mounts with the saved mask already in props. Setting the
+  // object URL first would race the canvas's image decode against the draft
+  // IDB reads, dropping the saved mask if the decode finishes first.
+  const [savedSource, draft] = await Promise.all([
+    getImpressionSource(),
+    getImpressionDraft(),
+  ]);
+  let blob = savedSource;
   if (!blob && (source === "original" || source === "impression")) {
     blob = await fetchAndCacheSource(source);
   }
@@ -137,13 +145,10 @@ async function initFromRoute(): Promise<void> {
     return;
   }
 
-  sourceObjectUrl.value = URL.createObjectURL(blob);
-
   // Restore prompt + mask drafts only when they match the current wizard
   // context — otherwise stale drafts from a different renovation could leak
   // across flows. Drafts are written when a guest hits Generate so that
   // signing in and returning preserves their work.
-  const draft = await getImpressionDraft();
   const matches =
     draft &&
     (draft.source ?? "") === source &&
@@ -153,6 +158,11 @@ async function initFromRoute(): Promise<void> {
     prompt.value = draft.prompt;
     initialMask.value = await getImpressionMask();
     restoredDraftKey = draftKey();
+  }
+
+  sourceObjectUrl.value = URL.createObjectURL(blob);
+
+  if (matches && draft) {
     stage.value = prompt.value || initialMask.value ? "prompt" : "mask";
   } else {
     stage.value =
@@ -220,8 +230,17 @@ function onCanvasArea() {
   if (stage.value === "preview") stage.value = "mask";
 }
 
-function onNextChange() {
+async function clearMaskEverywhere() {
+  // Drop the in-memory mask, the cached restore prop, and the persisted IDB
+  // copy in lockstep. Without the IDB delete a sign-in detour would silently
+  // resurrect the cleared mask on the next initFromRoute pass.
   maskingRef.value?.clearMask();
+  initialMask.value = null;
+  await clearImpressionMask();
+}
+
+async function onNextChange() {
+  await clearMaskEverywhere();
   stage.value = "mask";
 }
 
@@ -486,7 +505,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
       <button
         v-if="stage === 'mask'"
         class="transparent small-round center-block"
-        @click="maskingRef?.clearMask()"
+        @click="clearMaskEverywhere"
       >
         <i aria-hidden="true">delete_sweep</i>
         <span>Clear Mask</span>

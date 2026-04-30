@@ -149,13 +149,23 @@ function persistChatDraft() {
   }
 }
 
+// Persist chat state only at meaningful checkpoints. Skipping streaming
+// avoids a synchronous JSON.stringify + localStorage.setItem on every chunk
+// (useChat reassigns messages.value[idx] per chunk), which scales O(history²)
+// for long replies.
 watch(
-  [messages, userInput, maxCredits],
+  [userInput, maxCredits],
   () => {
+    if (streaming.value) return;
     persistChatDraft();
   },
-  { deep: true },
 );
+watch(streaming, (isStreamingNow, wasStreaming) => {
+  if (wasStreaming && !isStreamingNow) {
+    // Capture the final messages array exactly once when the response ends.
+    persistChatDraft();
+  }
+});
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && e.ctrlKey) {
@@ -208,7 +218,7 @@ function continueChat() {
       >
         <i class="extra" style="font-size: 3rem">chat</i>
         <p>Start a private conversation with AI.</p>
-        <p class="small">No conversation data is stored.</p>
+        <p class="small">Conversations are stored only on this device.</p>
       </div>
 
       <div v-for="(msg, i) in messages" :key="i" class="chat-message">
