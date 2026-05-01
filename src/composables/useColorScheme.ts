@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { idbDelete, idbGet, idbSet } from "./useIdbStorage";
 
 declare function ui(cmd: string, val?: string): string | undefined;
 
@@ -10,22 +11,27 @@ function applyScheme(scheme: ColorScheme) {
   ui("mode", scheme === "system" ? "auto" : scheme);
 }
 
-const stored = localStorage.getItem(STORAGE_KEY) as ColorScheme | null;
-const initial: ColorScheme =
-  stored === "light" || stored === "dark" ? stored : "system";
+const colorScheme = ref<ColorScheme>("system");
 
-applyScheme(initial);
-
-const colorScheme = ref<ColorScheme>(initial);
+// Load the persisted scheme asynchronously and re-apply once we have it.
+// Until it resolves we keep the default ("system") which already matches
+// what the OS exposes via prefers-color-scheme.
+applyScheme("system");
+idbGet<ColorScheme>(STORAGE_KEY).then((stored) => {
+  if (stored === "light" || stored === "dark") {
+    colorScheme.value = stored;
+    applyScheme(stored);
+  }
+});
 
 export function useColorScheme() {
   function setColorScheme(scheme: ColorScheme) {
     colorScheme.value = scheme;
     applyScheme(scheme);
     if (scheme === "system") {
-      localStorage.removeItem(STORAGE_KEY);
+      void idbDelete(STORAGE_KEY);
     } else {
-      localStorage.setItem(STORAGE_KEY, scheme);
+      void idbSet(STORAGE_KEY, scheme);
     }
   }
 

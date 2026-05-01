@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { idbGet } from "../composables/useIdbStorage";
 
 const router = useRouter();
-
-const lastPage = localStorage.getItem("payasyougo-last-page") ?? "main";
 const redirectMap: Record<string, string> = {
   renovations: "/renovations",
   chat: "/chat",
 };
-router.replace(redirectMap[lastPage] ?? "/main");
+
+idbGet<string>("lastPage").then((lastPage) => {
+  router.replace(redirectMap[lastPage ?? "main"] ?? "/main");
+});
 </script>
 
 <template>

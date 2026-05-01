@@ -11,6 +11,7 @@ import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import { useAuth } from "../composables/useAuth";
+import { useBalance } from "../composables/useBalance";
 import {
   clearImpressionDraft,
   clearImpressionMask,
@@ -26,6 +27,7 @@ import {
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db, storage } from "../firebase";
+import { IMPRESSION_CREDITS } from "../credits";
 
 type Stage = "preview" | "mask" | "prompt" | "processing";
 type Source = "photo" | "crop" | "original" | "impression";
@@ -33,6 +35,7 @@ type Source = "photo" | "crop" | "original" | "impression";
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
+const { balance, waitForLoad: waitForBalance } = useBalance();
 const { createRenovation, createImpression, deleteImpression, deleteRenovation } =
   useRenovations();
 
@@ -344,13 +347,21 @@ async function onGenerate() {
     errorMessage.value = "Mask not ready.";
     return;
   }
-  if (!currentUser.value) {
-    // Persist the in-progress mask + prompt so signing in and coming back
-    // restores the wizard exactly where the user left off.
+  // Make sure we know the user's actual balance before deciding whether
+  // to redirect to /buy-credits — otherwise the initial Firestore snapshot
+  // race would bounce a user with funds straight to the purchase page.
+  if (currentUser.value) await waitForBalance();
+  if (!currentUser.value || balance.value < IMPRESSION_CREDITS) {
+    // Persist the in-progress mask + prompt so the buy-credits / sign-in
+    // detour leaves the wizard exactly where the user left off.
     await persistDraft();
     router.push({
-      path: "/login",
-      query: { redirect: route.fullPath },
+      path: "/buy-credits",
+      query: {
+        min: String(IMPRESSION_CREDITS),
+        max: String(IMPRESSION_CREDITS),
+        redirect: route.fullPath,
+      },
     });
     return;
   }

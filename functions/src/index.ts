@@ -3,3 +3,4 @@ export { beforeCreate } from "./beforeCreate.js";
 export { chat } from "./chat.js";
 export { deleteUserAccount } from "./deleteUserAccount.js";
 export { processImpression } from "./processImpression.js";
+export { purchaseCredits } from "./purchaseCredits.js";

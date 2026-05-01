@@ -1,66 +1,47 @@
 import { getDownloadURL, ref as storageRef } from "firebase/storage";
 import { ref, toValue, watch, type MaybeRefOrGetter } from "vue";
 import { storage } from "../firebase";
+import { idbGet, idbSet } from "./useIdbStorage";
 
 const resolvedUrlCache = new Map<string, string>();
 const inflightUrlCache = new Map<string, Promise<string>>();
-const STORAGE_URL_CACHE_KEY = "storage-download-url-cache-v1";
+const STORAGE_URL_CACHE_KEY = "storageDownloadUrlCache";
 
-function readPersistedUrlCache(): Record<string, string> {
-  if (typeof window === "undefined") return {};
+let persistedCachePromise: Promise<Record<string, string>> | null = null;
 
+function loadPersistedCache(): Promise<Record<string, string>> {
+  if (persistedCachePromise) return persistedCachePromise;
+  persistedCachePromise = idbGet<Record<string, string>>(
+    STORAGE_URL_CACHE_KEY,
+  ).then((value) => {
+    const entries = value ?? {};
+    for (const [path, url] of Object.entries(entries)) {
+      if (typeof path === "string" && typeof url === "string") {
+        resolvedUrlCache.set(path, url);
+      }
+    }
+    return entries;
+  });
+  return persistedCachePromise;
+}
+
+// Kick off the persisted-cache load eagerly so the in-memory cache is hot
+// by the time the first <StorageImage> mounts. Failures are swallowed —
+// missing cache just means we'll re-resolve URLs on demand.
+void loadPersistedCache().catch(() => {});
+
+async function persistResolvedUrl(path: string, url: string) {
   try {
-    const rawValue = window.localStorage.getItem(STORAGE_URL_CACHE_KEY);
-    if (!rawValue) return {};
-
-    const parsed = JSON.parse(rawValue) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-
-    return Object.fromEntries(
-      Object.entries(parsed).filter(
-        ([path, url]) => typeof path === "string" && typeof url === "string",
-      ),
-    );
+    const entries = await loadPersistedCache();
+    entries[path] = url;
+    await idbSet(STORAGE_URL_CACHE_KEY, entries);
   } catch {
-    return {};
+    // ignore: persistence is a best-effort optimisation
   }
-}
-
-function writePersistedUrlCache(cacheEntries: Record<string, string>) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(
-      STORAGE_URL_CACHE_KEY,
-      JSON.stringify(cacheEntries),
-    );
-  } catch {
-    // Ignore storage quota and serialization failures.
-  }
-}
-
-function getPersistedUrl(path: string): string | null {
-  const persistedEntries = readPersistedUrlCache();
-  return persistedEntries[path] ?? null;
-}
-
-function persistResolvedUrl(path: string, url: string) {
-  const persistedEntries = readPersistedUrlCache();
-  persistedEntries[path] = url;
-  writePersistedUrlCache(persistedEntries);
 }
 
 function getCachedUrl(path: string): string | null {
-  const inMemoryUrl = resolvedUrlCache.get(path);
-  if (inMemoryUrl) return inMemoryUrl;
-
-  const persistedUrl = getPersistedUrl(path);
-  if (persistedUrl) {
-    resolvedUrlCache.set(path, persistedUrl);
-    return persistedUrl;
-  }
-
-  return null;
+  return resolvedUrlCache.get(path) ?? null;
 }
 
 async function fetchStorageUrl(path: string): Promise<string> {
@@ -73,7 +54,7 @@ async function fetchStorageUrl(path: string): Promise<string> {
   const request = getDownloadURL(storageRef(storage, path)).then(
     (url) => {
       resolvedUrlCache.set(path, url);
-      persistResolvedUrl(path, url);
+      void persistResolvedUrl(path, url);
       inflightUrlCache.delete(path);
       return url;
     },
@@ -114,6 +95,12 @@ export function useStorageUrl(
         loading.value = false;
         return;
       }
+
+      // Wait for the persisted cache to load before deciding whether we
+      // already know the URL — otherwise a cold load would always trigger
+      // a network round-trip even when the path is cached on disk.
+      await loadPersistedCache();
+      if (cancelled) return;
 
       const cachedUrl = getCachedUrl(path);
       if (cachedUrl) {

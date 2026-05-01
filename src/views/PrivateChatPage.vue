@@ -3,18 +3,21 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
+import { useBalance } from "../composables/useBalance";
 import {
   estimateLocalCredits,
   useChat,
   type ChatMessage,
 } from "../composables/useChat";
+import { idbGet, idbSet } from "../composables/useIdbStorage";
 
 const router = useRouter();
 const { currentUser } = useAuth();
+const { balance, waitForLoad: waitForBalance } = useBalance();
 const { messages, streaming, estimate, lastCost, error, send, stop } =
   useChat();
 
-const CHAT_DRAFT_KEY = "payasyougo-chat-draft";
+const CHAT_DRAFT_KEY = "chatDraft";
 
 interface ChatDraft {
   messages: ChatMessage[];
@@ -22,25 +25,8 @@ interface ChatDraft {
   maxCredits: number;
 }
 
-function loadChatDraft(): ChatDraft | null {
-  try {
-    const raw = localStorage.getItem(CHAT_DRAFT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as ChatDraft;
-    if (!Array.isArray(parsed.messages)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-const initialDraft = loadChatDraft();
-if (initialDraft) {
-  messages.value = initialDraft.messages;
-}
-
-const userInput = ref(initialDraft?.input ?? "");
-const maxCredits = ref(initialDraft?.maxCredits ?? 15);
+const userInput = ref("");
+const maxCredits = ref(15);
 const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
@@ -93,8 +79,16 @@ const userInitials = computed(() => {
     .toUpperCase();
 });
 
-onMounted(() => {
-  localStorage.setItem("payasyougo-last-page", "chat");
+onMounted(async () => {
+  void idbSet("lastPage", "chat");
+  const draft = await idbGet<ChatDraft>(CHAT_DRAFT_KEY);
+  if (draft && Array.isArray(draft.messages)) {
+    messages.value = draft.messages;
+    userInput.value = draft.input ?? "";
+    if (typeof draft.maxCredits === "number") {
+      maxCredits.value = draft.maxCredits;
+    }
+  }
   if (messages.value.length > 0) {
     localEstimate.value = estimateLocalCredits(messages.value, userInput.value);
     lastEstimatedLength = userInput.value.length;
@@ -121,10 +115,23 @@ watch(
 async function handleSend() {
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
-  if (!currentUser.value) {
-    // Persist the draft so the conversation + typed input survive sign-in.
-    persistChatDraft();
-    router.push({ path: "/login", query: { redirect: "/chat" } });
+  const minCost = estimateLocalCredits(messages.value, text);
+  // Make sure we know the user's actual balance before deciding whether
+  // to redirect to /buy-credits — otherwise the initial Firestore snapshot
+  // race would bounce a user with funds straight to the purchase page.
+  if (currentUser.value) await waitForBalance();
+  if (!currentUser.value || balance.value < minCost) {
+    // Persist the draft so the conversation + typed input survive the
+    // sign-in / buy-credits detour.
+    await persistChatDraft();
+    router.push({
+      path: "/buy-credits",
+      query: {
+        min: String(minCost),
+        max: String(maxCredits.value),
+        redirect: "/chat",
+      },
+    });
     return;
   }
   userInput.value = "";
@@ -136,34 +143,33 @@ async function handleSend() {
   await send(text, maxCredits.value);
 }
 
-function persistChatDraft() {
+async function persistChatDraft() {
   const draft: ChatDraft = {
     messages: messages.value,
     input: userInput.value,
     maxCredits: maxCredits.value,
   };
   try {
-    localStorage.setItem(CHAT_DRAFT_KEY, JSON.stringify(draft));
+    await idbSet(CHAT_DRAFT_KEY, draft);
   } catch {
-    // localStorage may be full or disabled — ignore
+    // ignore: persistence is best-effort
   }
 }
 
 // Persist chat state only at meaningful checkpoints. Skipping streaming
-// avoids a synchronous JSON.stringify + localStorage.setItem on every chunk
-// (useChat reassigns messages.value[idx] per chunk), which scales O(history²)
-// for long replies.
+// avoids a per-chunk write to IndexedDB (useChat reassigns messages.value[idx]
+// per chunk), which would scale O(history²) for long replies.
 watch(
   [userInput, maxCredits],
   () => {
     if (streaming.value) return;
-    persistChatDraft();
+    void persistChatDraft();
   },
 );
 watch(streaming, (isStreamingNow, wasStreaming) => {
   if (wasStreaming && !isStreamingNow) {
     // Capture the final messages array exactly once when the response ends.
-    persistChatDraft();
+    void persistChatDraft();
   }
 });
 

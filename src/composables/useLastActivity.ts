@@ -1,20 +1,21 @@
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { idbGet, idbSet } from "./useIdbStorage";
 import { useAuth } from "./useAuth";
 
-const THROTTLE_KEY = "payasyougo-last-activity-sync";
+const THROTTLE_KEY = "lastActivitySync";
 const THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
 
-export function updateLastActivity() {
+export async function updateLastActivity() {
   const { currentUser } = useAuth();
   const uid = currentUser.value?.uid;
   if (!uid) return;
 
-  const lastSync = localStorage.getItem(THROTTLE_KEY);
-  if (lastSync && Date.now() - Number(lastSync) < THROTTLE_MS) return;
+  const lastSync = await idbGet<number>(THROTTLE_KEY);
+  if (lastSync && Date.now() - lastSync < THROTTLE_MS) return;
 
-  localStorage.setItem(THROTTLE_KEY, String(Date.now()));
-  setDoc(
+  await idbSet(THROTTLE_KEY, Date.now());
+  void setDoc(
     doc(db, "users", uid),
     { lastActivity: serverTimestamp() },
     { merge: true },

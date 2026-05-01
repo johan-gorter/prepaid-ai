@@ -6,6 +6,7 @@ import AppBar from "../../components/AppBar.vue";
 import NewRenovationCard from "../../components/NewRenovationCard.vue";
 import StorageImage from "../../components/StorageImage.vue";
 import { useAuth } from "../../composables/useAuth";
+import { idbSet } from "../../composables/useIdbStorage";
 import { updateLastActivity } from "../../composables/useLastActivity";
 import { useRenovations } from "../../composables/useRenovations";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
@@ -17,8 +18,8 @@ const router = useRouter();
 const cardDataUrls = ref<Record<string, string>>({});
 
 onMounted(() => {
-  localStorage.setItem("payasyougo-last-page", "renovations");
-  updateLastActivity();
+  void idbSet("lastPage", "renovations");
+  void updateLastActivity();
 });
 
 /**
