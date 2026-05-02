@@ -1,9 +1,9 @@
 import { ref } from "vue";
+import {
+  CREDIT_AI_USD,
+  GEMINI_PRO_INPUT_PRICE_PER_M,
+} from "../credits";
 import { firebaseApp } from "../firebase";
-
-// Mirror of server-side constants from functions/src/credits.ts
-const GEMINI_PRO_INPUT_PRICE_PER_M = 1.25; // USD per 1M input tokens
-const CREDIT_AI_USD = 0.008; // 1 credit = $0.008 of AI budget
 
 /**
  * Client-side credit estimate for a chat turn.

@@ -3,6 +3,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { onMounted, ref } from "vue";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
+import { idbSet } from "../composables/useIdbStorage";
 import { updateLastActivity } from "../composables/useLastActivity";
 import { db } from "../firebase";
 
@@ -12,8 +13,8 @@ const feedbackSending = ref(false);
 const feedbackSent = ref(false);
 
 onMounted(() => {
-  localStorage.setItem("payasyougo-last-page", "main");
-  updateLastActivity();
+  void idbSet("lastPage", "main");
+  void updateLastActivity();
 });
 
 async function submitFeedback() {

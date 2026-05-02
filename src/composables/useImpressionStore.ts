@@ -6,79 +6,27 @@
  *  - "uncroppedImpressionSource": raw user image waiting to be cropped
  *  - "impressionSource":          1024² webp blob the wizard paints on
  *  - "impressionMask":            mask layer the wizard has painted so far
- *  - "impressionPrompt":          stringified { prompt, query } draft
+ *  - "impressionPromptDraft":     stringified { prompt, query } draft
  */
 
-const DB_NAME = "payasyougo-impressions";
-const DB_VERSION = 1;
-const STORE = "images";
+import { idbDelete, idbGet, idbSet } from "./useIdbStorage";
 
 const KEY_SOURCE = "impressionSource";
 const KEY_UNCROPPED = "uncroppedImpressionSource";
 const KEY_MASK = "impressionMask";
 const KEY_DRAFT = "impressionPromptDraft";
 
-let dbPromise: Promise<IDBDatabase> | null = null;
+export const setImpressionSource = (b: Blob) => idbSet(KEY_SOURCE, b);
+export const getImpressionSource = () => idbGet<Blob>(KEY_SOURCE);
+export const clearImpressionSource = () => idbDelete(KEY_SOURCE);
 
-function open(): Promise<IDBDatabase> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
-}
+export const setUncroppedSource = (b: Blob) => idbSet(KEY_UNCROPPED, b);
+export const getUncroppedSource = () => idbGet<Blob>(KEY_UNCROPPED);
+export const clearUncroppedSource = () => idbDelete(KEY_UNCROPPED);
 
-async function get<T = Blob>(key: string): Promise<T | null> {
-  const db = await open();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).get(key);
-    req.onsuccess = () => resolve((req.result as T | undefined) ?? null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function put(key: string, value: unknown): Promise<void> {
-  const db = await open();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
-}
-
-async function del(key: string): Promise<void> {
-  const db = await open();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
-}
-
-export const setImpressionSource = (b: Blob) => put(KEY_SOURCE, b);
-export const getImpressionSource = () => get<Blob>(KEY_SOURCE);
-export const clearImpressionSource = () => del(KEY_SOURCE);
-
-export const setUncroppedSource = (b: Blob) => put(KEY_UNCROPPED, b);
-export const getUncroppedSource = () => get<Blob>(KEY_UNCROPPED);
-export const clearUncroppedSource = () => del(KEY_UNCROPPED);
-
-export const setImpressionMask = (b: Blob) => put(KEY_MASK, b);
-export const getImpressionMask = () => get<Blob>(KEY_MASK);
-export const clearImpressionMask = () => del(KEY_MASK);
+export const setImpressionMask = (b: Blob) => idbSet(KEY_MASK, b);
+export const getImpressionMask = () => idbGet<Blob>(KEY_MASK);
+export const clearImpressionMask = () => idbDelete(KEY_MASK);
 
 export interface ImpressionDraft {
   prompt: string;
@@ -87,32 +35,6 @@ export interface ImpressionDraft {
   impression?: string | null;
 }
 
-export const setImpressionDraft = (d: ImpressionDraft) => put(KEY_DRAFT, d);
-export const getImpressionDraft = () => get<ImpressionDraft>(KEY_DRAFT);
-export const clearImpressionDraft = () => del(KEY_DRAFT);
-
-/**
- * Drop the entire impressions database. Used on sign-out so a different user
- * on the same device can't recover the previous user's drafts, masks, or
- * cached source images.
- *
- * Closes the cached connection first because IndexedDB blocks deletion while
- * any tab still holds the database open.
- */
-export async function clearAllImpressionData(): Promise<void> {
-  if (dbPromise) {
-    try {
-      const db = await dbPromise;
-      db.close();
-    } catch {
-      // ignore: a failed open is already cleared with the reset below
-    }
-    dbPromise = null;
-  }
-  await new Promise<void>((resolve) => {
-    const req = indexedDB.deleteDatabase(DB_NAME);
-    req.onsuccess = () => resolve();
-    req.onerror = () => resolve();
-    req.onblocked = () => resolve();
-  });
-}
+export const setImpressionDraft = (d: ImpressionDraft) => idbSet(KEY_DRAFT, d);
+export const getImpressionDraft = () => idbGet<ImpressionDraft>(KEY_DRAFT);
+export const clearImpressionDraft = () => idbDelete(KEY_DRAFT);

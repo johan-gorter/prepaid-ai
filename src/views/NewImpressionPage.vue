@@ -11,6 +11,7 @@ import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import { useAuth } from "../composables/useAuth";
+import { useBalance } from "../composables/useBalance";
 import {
   clearImpressionDraft,
   clearImpressionMask,
@@ -26,6 +27,7 @@ import {
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { db, storage } from "../firebase";
+import { IMPRESSION_CREDITS } from "../credits";
 
 type Stage = "preview" | "mask" | "prompt" | "processing";
 type Source = "photo" | "crop" | "original" | "impression";
@@ -33,6 +35,7 @@ type Source = "photo" | "crop" | "original" | "impression";
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
+const { balance, waitForLoad: waitForBalance } = useBalance();
 const { createRenovation, createImpression, deleteImpression, deleteRenovation } =
   useRenovations();
 
@@ -42,6 +45,11 @@ const prompt = ref("");
 const errorMessage = ref<string | null>(null);
 const initialMask = ref<Blob | null>(null);
 let restoredDraftKey: string | null = null;
+// Synchronous re-entry guard for onGenerate. Awaiting the balance load
+// before flipping stage→"processing" otherwise allows two rapid clicks
+// to both pass the guards, upload the same composite, and create two
+// impression docs (and double-bill the user).
+let generateInFlight = false;
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 const promptInputRef = ref<HTMLTextAreaElement | null>(null);
@@ -339,102 +347,118 @@ function waitForCompletion(
 }
 
 async function onGenerate() {
+  // Synchronous guard — must come before any await so a double-click can't
+  // get two invocations through to upload + createImpression.
+  if (generateInFlight) return;
   if (!canGenerate.value) return;
   if (!maskingRef.value) {
     errorMessage.value = "Mask not ready.";
     return;
   }
-  if (!currentUser.value) {
-    // Persist the in-progress mask + prompt so signing in and coming back
-    // restores the wizard exactly where the user left off.
-    await persistDraft();
-    router.push({
-      path: "/login",
-      query: { redirect: route.fullPath },
-    });
-    return;
-  }
-
-  errorMessage.value = null;
-  stage.value = "processing";
-
+  generateInFlight = true;
   try {
-    const uid = currentUser.value.uid;
-    const ts = Date.now();
-    const source = sourceParam.value!;
-
-    let renovationId = renovationParam.value;
-    let sourceImagePath: string;
-
-    if (source === "photo" || source === "crop") {
-      // Upload the IDB blob as the new renovation's original
-      const sourceBlob = await getImpressionSource();
-      if (!sourceBlob) throw new Error("Source image missing");
-      const originalImagePath = `users/${uid}/originals/${ts}.webp`;
-      await uploadBytes(storageRef(storage, originalImagePath), sourceBlob);
-      renovationId = await createRenovation({ originalImagePath });
-      sourceImagePath = originalImagePath;
-    } else if (source === "original") {
-      if (!renovationId) throw new Error("Renovation ID missing");
-      const snap = await getDoc(
-        doc(db, "users", uid, "renovations", renovationId),
-      );
-      if (!snap.exists()) throw new Error("Renovation not found");
-      sourceImagePath = snap.data().originalImagePath;
-    } else {
-      // impression
-      if (!renovationId || !impressionParam.value) {
-        throw new Error("Renovation/impression IDs missing");
-      }
-      const snap = await getDoc(
-        doc(
-          db,
-          "users",
-          uid,
-          "renovations",
-          renovationId,
-          "impressions",
-          impressionParam.value,
-        ),
-      );
-      if (!snap.exists()) throw new Error("Source impression not found");
-      const path = snap.data().resultImagePath;
-      if (!path) throw new Error("Source impression has no result image");
-      sourceImagePath = path;
+    // Make sure we know the user's actual balance before deciding whether
+    // to redirect to /buy-credits — otherwise the initial Firestore snapshot
+    // race would bounce a user with funds straight to the purchase page.
+    if (currentUser.value) await waitForBalance();
+    if (!currentUser.value || balance.value < IMPRESSION_CREDITS) {
+      // Persist the in-progress mask + prompt so the buy-credits / sign-in
+      // detour leaves the wizard exactly where the user left off.
+      await persistDraft();
+      router.push({
+        path: "/buy-credits",
+        query: {
+          min: String(IMPRESSION_CREDITS),
+          max: String(IMPRESSION_CREDITS),
+          redirect: route.fullPath,
+        },
+      });
+      return;
     }
 
-    const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
-    const compositeBlob = await maskingRef.value.getCompositeBlob();
-    await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
+    errorMessage.value = null;
+    stage.value = "processing";
 
-    const newImpressionId = await createImpression(renovationId!, {
-      sourceImagePath,
-      compositeImagePath,
-      prompt: prompt.value.trim(),
-    });
+    try {
+      const uid = currentUser.value.uid;
+      const ts = Date.now();
+      const source = sourceParam.value!;
 
-    const resultPath = await waitForCompletion(
-      uid,
-      renovationId!,
-      newImpressionId,
-    );
+      let renovationId = renovationParam.value;
+      let sourceImagePath: string;
 
-    const resultUrl = await resolveStorageUrl(resultPath);
-    const resultBlob = await fetch(resultUrl).then((r) => r.blob());
-    await setImpressionSource(resultBlob);
-    await clearPersistedDraft();
+      if (source === "photo" || source === "crop") {
+        // Upload the IDB blob as the new renovation's original
+        const sourceBlob = await getImpressionSource();
+        if (!sourceBlob) throw new Error("Source image missing");
+        const originalImagePath = `users/${uid}/originals/${ts}.webp`;
+        await uploadBytes(storageRef(storage, originalImagePath), sourceBlob);
+        renovationId = await createRenovation({ originalImagePath });
+        sourceImagePath = originalImagePath;
+      } else if (source === "original") {
+        if (!renovationId) throw new Error("Renovation ID missing");
+        const snap = await getDoc(
+          doc(db, "users", uid, "renovations", renovationId),
+        );
+        if (!snap.exists()) throw new Error("Renovation not found");
+        sourceImagePath = snap.data().originalImagePath;
+      } else {
+        // impression
+        if (!renovationId || !impressionParam.value) {
+          throw new Error("Renovation/impression IDs missing");
+        }
+        const snap = await getDoc(
+          doc(
+            db,
+            "users",
+            uid,
+            "renovations",
+            renovationId,
+            "impressions",
+            impressionParam.value,
+          ),
+        );
+        if (!snap.exists()) throw new Error("Source impression not found");
+        const path = snap.data().resultImagePath;
+        if (!path) throw new Error("Source impression has no result image");
+        sourceImagePath = path;
+      }
 
-    router.replace({
-      path: "/new-impression",
-      query: {
-        source: "impression",
-        renovation: renovationId!,
-        impression: newImpressionId,
-      },
-    });
-  } catch (err) {
-    errorMessage.value = err instanceof Error ? err.message : "Unknown error";
-    stage.value = "prompt";
+      const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
+      const compositeBlob = await maskingRef.value.getCompositeBlob();
+      await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
+
+      const newImpressionId = await createImpression(renovationId!, {
+        sourceImagePath,
+        compositeImagePath,
+        prompt: prompt.value.trim(),
+      });
+
+      const resultPath = await waitForCompletion(
+        uid,
+        renovationId!,
+        newImpressionId,
+      );
+
+      const resultUrl = await resolveStorageUrl(resultPath);
+      const resultBlob = await fetch(resultUrl).then((r) => r.blob());
+      await setImpressionSource(resultBlob);
+      await clearPersistedDraft();
+
+      router.replace({
+        path: "/new-impression",
+        query: {
+          source: "impression",
+          renovation: renovationId!,
+          impression: newImpressionId,
+        },
+      });
+    } catch (err) {
+      errorMessage.value = err instanceof Error ? err.message : "Unknown error";
+      stage.value = "prompt";
+    }
+  } finally {
+    generateInFlight = false;
   }
 }
 
