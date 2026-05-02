@@ -30,6 +30,11 @@ const maxCredits = ref(15);
 const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
+// Synchronous re-entry guard for handleSend. We can't rely on
+// `streaming.value` because handleSend awaits balance load before flipping
+// it — without this flag a fast double-click (or two Ctrl+Enter presses)
+// would push two copies of the user message and open two chat streams.
+let sendInFlight = false;
 
 const localEstimate = ref(2);
 let lastEstimatedLength = 0;
@@ -83,8 +88,15 @@ onMounted(async () => {
   void idbSet("lastPage", "chat");
   const draft = await idbGet<ChatDraft>(CHAT_DRAFT_KEY);
   if (draft && Array.isArray(draft.messages)) {
-    messages.value = draft.messages;
-    userInput.value = draft.input ?? "";
+    // The textarea autofocuses and accepts keystrokes immediately, so the
+    // user may have already typed something during the IDB read. Restore
+    // each field only if it would not clobber that input.
+    if (messages.value.length === 0) {
+      messages.value = draft.messages;
+    }
+    if (!userInput.value) {
+      userInput.value = draft.input ?? "";
+    }
     if (typeof draft.maxCredits === "number") {
       maxCredits.value = draft.maxCredits;
     }
@@ -113,34 +125,42 @@ watch(
 );
 
 async function handleSend() {
+  // Synchronous guard — must come before any await so a double-click can't
+  // get two invocations through to the network.
+  if (sendInFlight) return;
   const text = userInput.value.trim();
   if (!text || streaming.value) return;
-  const minCost = estimateLocalCredits(messages.value, text);
-  // Make sure we know the user's actual balance before deciding whether
-  // to redirect to /buy-credits — otherwise the initial Firestore snapshot
-  // race would bounce a user with funds straight to the purchase page.
-  if (currentUser.value) await waitForBalance();
-  if (!currentUser.value || balance.value < minCost) {
-    // Persist the draft so the conversation + typed input survive the
-    // sign-in / buy-credits detour.
-    await persistChatDraft();
-    router.push({
-      path: "/buy-credits",
-      query: {
-        min: String(minCost),
-        max: String(maxCredits.value),
-        redirect: "/chat",
-      },
+  sendInFlight = true;
+  try {
+    const minCost = estimateLocalCredits(messages.value, text);
+    // Make sure we know the user's actual balance before deciding whether
+    // to redirect to /buy-credits — otherwise the initial Firestore snapshot
+    // race would bounce a user with funds straight to the purchase page.
+    if (currentUser.value) await waitForBalance();
+    if (!currentUser.value || balance.value < minCost) {
+      // Persist the draft so the conversation + typed input survive the
+      // sign-in / buy-credits detour.
+      await persistChatDraft();
+      router.push({
+        path: "/buy-credits",
+        query: {
+          min: String(minCost),
+          max: String(maxCredits.value),
+          redirect: "/chat",
+        },
+      });
+      return;
+    }
+    userInput.value = "";
+    lastEstimatedLength = 0;
+    chatMode.value = "streaming";
+    nextTick(() => {
+      if (chatInputEl.value) chatInputEl.value.style.height = "auto";
     });
-    return;
+    await send(text, maxCredits.value);
+  } finally {
+    sendInFlight = false;
   }
-  userInput.value = "";
-  lastEstimatedLength = 0;
-  chatMode.value = "streaming";
-  nextTick(() => {
-    if (chatInputEl.value) chatInputEl.value.style.height = "auto";
-  });
-  await send(text, maxCredits.value);
 }
 
 async function persistChatDraft() {

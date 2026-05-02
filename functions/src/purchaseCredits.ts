@@ -11,6 +11,11 @@ import { type TransactionReasonKey } from "./balance.js";
  * step. In production this function only runs when triggered by the Stripe
  * webhook, which lives outside the user's auth session, so direct callable
  * invocations are rejected.
+ *
+ * Idempotency: callers MUST supply a stable `idempotencyKey` per checkout
+ * attempt. We name the resulting balance-transaction doc after that key,
+ * so a retry that lands after the first attempt already committed
+ * short-circuits to the existing balance instead of double-crediting.
  */
 export const purchaseCredits = onCall(
   { region: "europe-west1" },
@@ -27,7 +32,10 @@ export const purchaseCredits = onCall(
       );
     }
 
-    const { amount } = request.data as { amount: unknown };
+    const { amount, idempotencyKey } = request.data as {
+      amount: unknown;
+      idempotencyKey: unknown;
+    };
     if (
       typeof amount !== "number" ||
       !Number.isInteger(amount) ||
@@ -39,24 +47,42 @@ export const purchaseCredits = onCall(
         "amount must be an integer between 10 and 10000",
       );
     }
+    if (typeof idempotencyKey !== "string" || idempotencyKey.length < 8) {
+      throw new HttpsError(
+        "invalid-argument",
+        "idempotencyKey must be a non-empty string",
+      );
+    }
 
     const userRef = db.doc(`users/${callerUid}`);
-    const txnCollection = db.collection(
-      `users/${callerUid}/balanceTransactions`,
+    const txnRef = db.doc(
+      `users/${callerUid}/balanceTransactions/purchase_${idempotencyKey}`,
     );
 
     const newBalance = await db.runTransaction(async (txn) => {
-      const snap = await txn.get(userRef);
-      const currentBalance: number = snap.data()?.balance ?? 0;
+      const existingTxn = await txn.get(txnRef);
+      if (existingTxn.exists) {
+        // The same idempotency key already produced a credit — return the
+        // current balance instead of double-applying.
+        const userSnap = await txn.get(userRef);
+        return (userSnap.data()?.balance ?? 0) as number;
+      }
+
+      const userSnap = await txn.get(userRef);
+      const currentBalance: number = userSnap.data()?.balance ?? 0;
       const updatedBalance = currentBalance + amount;
 
-      txn.set(txnCollection.doc(), {
+      txn.set(txnRef, {
         reasonKey: "credit_purchase" as TransactionReasonKey,
         amount,
         balanceAfter: updatedBalance,
         createdAt: FieldValue.serverTimestamp(),
+        idempotencyKey,
       });
-      txn.update(userRef, { balance: updatedBalance });
+      // Use set+merge so the very first purchase from a brand-new user
+      // (whose user doc may not have been created yet by the client-side
+      // setDoc in useAuth) doesn't fail with NOT_FOUND.
+      txn.set(userRef, { balance: updatedBalance }, { merge: true });
 
       return updatedBalance;
     });

@@ -29,25 +29,51 @@ const isEmulatorMode = import.meta.env.VITE_USE_EMULATORS === "true";
 
 const minCredits = computed(() => Number(route.query.min ?? 0) || 0);
 const maxCredits = computed(() => Number(route.query.max ?? 0) || 0);
-const redirectTo = computed(
-  () => (route.query.redirect as string | undefined) ?? "/main",
+
+/**
+ * Same-origin path the user should land on after a successful purchase.
+ * Vue Router types `route.query.redirect` as `string | string[] | null`,
+ * and we want to refuse arrays, foreign-origin URLs, and `javascript:`
+ * payloads even if a stray link happens to include them.
+ */
+const redirectTo = computed(() => {
+  const raw = route.query.redirect;
+  const candidate = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof candidate === "string" && candidate.startsWith("/") && !candidate.startsWith("//")) {
+    return candidate;
+  }
+  return "/main";
+});
+
+/**
+ * Lower bound for the custom-amount input. The page is invoked by a flow
+ * that already knows the user needs at least `minCredits` to unblock the
+ * pending action, so let the smaller of the two limits win — but never
+ * dip below MIN_CUSTOM so we don't let the price tier go absurdly small.
+ */
+const effectiveMinCustom = computed(() =>
+  Math.max(MIN_CUSTOM, minCredits.value),
 );
 
-const minUsd = computed(() => creditsToUsd(minCredits.value));
-const maxUsd = computed(() => creditsToUsd(maxCredits.value));
-
 const costMessage = computed(() => {
-  if (!minCredits.value && !maxCredits.value) return null;
-  if (minCredits.value === maxCredits.value) {
-    return `This operation costs ${minCredits.value} credits ($${minUsd.value.toFixed(2)}). You must buy credits in order to proceed.`;
+  // Tolerate callers that flip min/max (e.g. a chat turn whose minCost
+  // exceeds the per-message ceiling) so the banner never reads
+  // "between {larger} and {smaller}".
+  const lo = Math.min(minCredits.value, maxCredits.value);
+  const hi = Math.max(minCredits.value, maxCredits.value);
+  if (!lo && !hi) return null;
+  const loUsd = creditsToUsd(lo).toFixed(2);
+  const hiUsd = creditsToUsd(hi).toFixed(2);
+  if (lo === hi) {
+    return `This operation costs ${lo} credits ($${loUsd}). You must buy credits in order to proceed.`;
   }
-  return `This operation costs between ${minCredits.value} and ${maxCredits.value} credits ($${minUsd.value.toFixed(2)} – $${maxUsd.value.toFixed(2)}). You must buy credits in order to proceed.`;
+  return `This operation costs between ${lo} and ${hi} credits ($${loUsd} – $${hiUsd}). You must buy credits in order to proceed.`;
 });
 
 const customAmountValid = computed(
   () =>
     Number.isInteger(customAmount.value) &&
-    customAmount.value >= MIN_CUSTOM &&
+    customAmount.value >= effectiveMinCustom.value &&
     customAmount.value <= MAX_CUSTOM,
 );
 
@@ -55,10 +81,14 @@ async function tryResumePending() {
   const pending = await getPendingPurchase();
   if (!pending) return;
   customAmount.value = pending.credits;
-  // If the user just signed in to complete their purchase, jump straight
-  // back into checkout instead of forcing them to click the amount again.
-  if (currentUser.value && !isProcessing.value) {
-    await startCheckout(pending.credits);
+  // Auto-resume only when the post-login detour brought us back here. A
+  // user who navigated to /buy-credits manually shouldn't have a stale
+  // intent silently fire on them — and re-firing on every visit would
+  // also overwrite `pending.redirect` with whatever the URL currently
+  // says (which could legitimately differ from what was saved).
+  const isResume = route.query.resume === "1";
+  if (isResume && currentUser.value && !isProcessing.value) {
+    await runCheckout(pending.credits, pending.redirect);
   }
 }
 
@@ -73,20 +103,25 @@ watch(
   },
 );
 
-async function startCheckout(credits: number) {
+/**
+ * Run a checkout against an explicit (already-persisted) intent. Used by
+ * `tryResumePending` so the saved redirect from the original buy click
+ * isn't overwritten by whatever query happens to be on the URL now.
+ */
+async function runCheckout(credits: number, redirect: string) {
   if (isProcessing.value) return;
   errorMessage.value = null;
   isProcessing.value = true;
 
   try {
-    await setPendingPurchase({ credits, redirect: redirectTo.value });
-
     if (!currentUser.value) {
-      // Sign in first; the login page will return us here, and the watcher
-      // below will pick up the pending purchase and continue checkout.
+      // Sign in first; the login page returns us to /buy-credits with a
+      // resume=1 flag so the watcher below picks the intent back up.
       router.push({
         path: "/login",
-        query: { redirect: route.fullPath },
+        query: {
+          redirect: `/buy-credits?resume=1&min=${minCredits.value}&max=${maxCredits.value}&redirect=${encodeURIComponent(redirect)}`,
+        },
       });
       return;
     }
@@ -96,12 +131,13 @@ async function startCheckout(credits: number) {
       // credit the balance via a Cloud Function, then return to the
       // page that initiated the purchase.
       const purchase = httpsCallable<
-        { amount: number },
+        { amount: number; idempotencyKey: string },
         { amount: number; newBalance: number }
       >(functions, "purchaseCredits");
-      await purchase({ amount: credits });
+      const idempotencyKey = newIdempotencyKey();
+      await purchase({ amount: credits, idempotencyKey });
       await clearPendingPurchase();
-      router.replace(redirectTo.value);
+      router.replace(redirect);
       return;
     }
 
@@ -114,8 +150,29 @@ async function startCheckout(credits: number) {
   } catch (err) {
     errorMessage.value =
       err instanceof Error ? err.message : "Failed to start checkout";
+    // Drop the saved intent so a returning user isn't trapped in an
+    // auto-fire loop replaying the same failure on every /buy-credits
+    // visit. They can pick an amount again to retry.
+    await clearPendingPurchase();
+  } finally {
     isProcessing.value = false;
   }
+}
+
+function newIdempotencyKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback for ancient browsers — collision-resistant enough for the
+  // purposes of de-duping a single user's retries.
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function startCheckout(credits: number) {
+  // Persist the intent first so a sign-in detour or a tab refresh after
+  // the user picks an amount can resume from the same place.
+  await setPendingPurchase({ credits, redirect: redirectTo.value });
+  await runCheckout(credits, redirectTo.value);
 }
 
 function buyCustom() {
@@ -158,7 +215,7 @@ function buyCustom() {
         v-for="preset in PRESETS"
         :key="preset"
         class="responsive small-round"
-        :disabled="isProcessing"
+        :disabled="isProcessing || preset < effectiveMinCustom"
         :data-testid="`buy-credits-preset-${preset}`"
         @click="startCheckout(preset)"
       >
@@ -174,7 +231,7 @@ function buyCustom() {
         <input
           v-model.number="customAmount"
           type="number"
-          :min="MIN_CUSTOM"
+          :min="effectiveMinCustom"
           :max="MAX_CUSTOM"
           step="1"
           data-testid="buy-credits-custom-input"
@@ -196,7 +253,7 @@ function buyCustom() {
       </button>
     </div>
     <p class="small-text" style="opacity: 0.7; margin-top: 0.25rem">
-      Between {{ MIN_CUSTOM }} and {{ MAX_CUSTOM }} credits.
+      Between {{ effectiveMinCustom }} and {{ MAX_CUSTOM }} credits.
     </p>
 
     <div v-if="isProcessing" class="center-align" style="padding-top: 1.5rem">

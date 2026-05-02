@@ -65,6 +65,20 @@ export async function idbDelete(key: string): Promise<void> {
   });
 }
 
+// Pre-migration databases that earlier builds wrote into. We delete these
+// alongside the unified store so a returning user on a device that still
+// has those legacy IDBs around cannot recover the previous session's data.
+const LEGACY_DB_NAMES = ["payasyougo-impressions"];
+
+function deleteDatabase(name: string): Promise<void> {
+  return new Promise((resolve) => {
+    const req = indexedDB.deleteDatabase(name);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
+  });
+}
+
 /**
  * Drop the entire app database. Used on sign-out so a different user on the
  * same device can't recover drafts, cached URLs, or in-progress purchases.
@@ -82,10 +96,7 @@ export async function idbClearAll(): Promise<void> {
     }
     dbPromise = null;
   }
-  await new Promise<void>((resolve) => {
-    const req = indexedDB.deleteDatabase(DB_NAME);
-    req.onsuccess = () => resolve();
-    req.onerror = () => resolve();
-    req.onblocked = () => resolve();
-  });
+  await Promise.all(
+    [DB_NAME, ...LEGACY_DB_NAMES].map((name) => deleteDatabase(name)),
+  );
 }

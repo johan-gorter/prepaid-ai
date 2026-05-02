@@ -8,9 +8,14 @@ const redirectMap: Record<string, string> = {
   chat: "/chat",
 };
 
-idbGet<string>("lastPage").then((lastPage) => {
-  router.replace(redirectMap[lastPage ?? "main"] ?? "/main");
-});
+idbGet<string>("lastPage")
+  .then((lastPage) => {
+    router.replace(redirectMap[lastPage ?? "main"] ?? "/main");
+  })
+  .catch(() => {
+    // If IDB is unavailable, never strand the user on the loading spinner.
+    router.replace("/main");
+  });
 </script>
 
 <template>

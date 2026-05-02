@@ -12,27 +12,33 @@ function applyScheme(scheme: ColorScheme) {
 }
 
 const colorScheme = ref<ColorScheme>("system");
+// Tracks whether the user has explicitly chosen a scheme since module load.
+// Without this, an in-flight `idbGet` resolving after the user toggles would
+// clobber their choice with the persisted value.
+let userSelected = false;
 
-// Load the persisted scheme asynchronously and re-apply once we have it.
-// Until it resolves we keep the default ("system") which already matches
-// what the OS exposes via prefers-color-scheme.
 applyScheme("system");
-idbGet<ColorScheme>(STORAGE_KEY).then((stored) => {
-  if (stored === "light" || stored === "dark") {
-    colorScheme.value = stored;
-    applyScheme(stored);
-  }
-});
+idbGet<ColorScheme>(STORAGE_KEY)
+  .then((stored) => {
+    if (userSelected) return;
+    if (stored === "light" || stored === "dark") {
+      colorScheme.value = stored;
+      applyScheme(stored);
+    }
+  })
+  .catch(() => {
+    // ignore: a failed read just leaves us on the default "system" scheme
+  });
 
 export function useColorScheme() {
   function setColorScheme(scheme: ColorScheme) {
+    userSelected = true;
     colorScheme.value = scheme;
     applyScheme(scheme);
-    if (scheme === "system") {
-      void idbDelete(STORAGE_KEY);
-    } else {
-      void idbSet(STORAGE_KEY, scheme);
-    }
+    const persist = scheme === "system" ? idbDelete(STORAGE_KEY) : idbSet(STORAGE_KEY, scheme);
+    persist.catch(() => {
+      // ignore: persistence is best-effort
+    });
   }
 
   return { colorScheme, setColorScheme };

@@ -11,24 +11,27 @@ let persistedCachePromise: Promise<Record<string, string>> | null = null;
 
 function loadPersistedCache(): Promise<Record<string, string>> {
   if (persistedCachePromise) return persistedCachePromise;
-  persistedCachePromise = idbGet<Record<string, string>>(
-    STORAGE_URL_CACHE_KEY,
-  ).then((value) => {
-    const entries = value ?? {};
-    for (const [path, url] of Object.entries(entries)) {
-      if (typeof path === "string" && typeof url === "string") {
-        resolvedUrlCache.set(path, url);
+  // Always resolve, even when IndexedDB is unavailable (Firefox private
+  // browsing, quota errors, transient I/O failures). A rejected promise
+  // would propagate through every `await loadPersistedCache()` call site
+  // and silently break image loading for affected users.
+  persistedCachePromise = idbGet<Record<string, string>>(STORAGE_URL_CACHE_KEY)
+    .then((value) => {
+      const entries = value ?? {};
+      for (const [path, url] of Object.entries(entries)) {
+        if (typeof path === "string" && typeof url === "string") {
+          resolvedUrlCache.set(path, url);
+        }
       }
-    }
-    return entries;
-  });
+      return entries;
+    })
+    .catch(() => ({}));
   return persistedCachePromise;
 }
 
 // Kick off the persisted-cache load eagerly so the in-memory cache is hot
-// by the time the first <StorageImage> mounts. Failures are swallowed —
-// missing cache just means we'll re-resolve URLs on demand.
-void loadPersistedCache().catch(() => {});
+// by the time the first <StorageImage> mounts.
+void loadPersistedCache();
 
 async function persistResolvedUrl(path: string, url: string) {
   try {
@@ -38,6 +41,18 @@ async function persistResolvedUrl(path: string, url: string) {
   } catch {
     // ignore: persistence is a best-effort optimisation
   }
+}
+
+/**
+ * Drop in-memory and persisted-load state. Called from `signOut` so the
+ * next user on the same device can't see token-bearing download URLs the
+ * previous user resolved (which would otherwise be re-persisted into the
+ * freshly-cleared IndexedDB on the next image load).
+ */
+export function resetStorageUrlCaches(): void {
+  resolvedUrlCache.clear();
+  inflightUrlCache.clear();
+  persistedCachePromise = null;
 }
 
 function getCachedUrl(path: string): string | null {
