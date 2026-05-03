@@ -8,6 +8,26 @@ import {
   getStripeBackend,
   getStripeClient,
 } from "./stripe.js";
+import { isAllowedOrigin } from "./utils.js";
+
+function validateRedirectUrl(url: unknown, name: string): string {
+  if (typeof url !== "string") {
+    throw new HttpsError("invalid-argument", `${name} must be a string`);
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new HttpsError("invalid-argument", `${name} is not a valid URL`);
+  }
+  if (!isAllowedOrigin(parsed.origin)) {
+    throw new HttpsError(
+      "invalid-argument",
+      `${name} origin not allowed: ${parsed.origin}`,
+    );
+  }
+  return url;
+}
 
 export const createCheckoutSession = onCall(
   {
@@ -31,12 +51,8 @@ export const createCheckoutSession = onCall(
         `packageId must be one of: ${validIds.join(", ")}`,
       );
     }
-    if (typeof successUrl !== "string" || !successUrl.startsWith("http")) {
-      throw new HttpsError("invalid-argument", "successUrl must be a valid URL");
-    }
-    if (typeof cancelUrl !== "string" || !cancelUrl.startsWith("http")) {
-      throw new HttpsError("invalid-argument", "cancelUrl must be a valid URL");
-    }
+    const validatedSuccessUrl = validateRedirectUrl(successUrl, "successUrl");
+    const validatedCancelUrl = validateRedirectUrl(cancelUrl, "cancelUrl");
 
     const pkg = getCreditPackage(packageId as CreditPackageId);
     const backend = getStripeBackend();
@@ -60,7 +76,7 @@ export const createCheckoutSession = onCall(
           createdAt: FieldValue.serverTimestamp(),
           metadata: { packageId, source: "dummy" },
         });
-        txn.update(userRef, { balance: newBalance });
+        txn.set(userRef, { balance: newBalance }, { merge: true });
       });
 
       return { dummy: true as const, credits: pkg.credits };
@@ -82,8 +98,8 @@ export const createCheckoutSession = onCall(
           quantity: 1,
         },
       ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: validatedSuccessUrl,
+      cancel_url: validatedCancelUrl,
     });
 
     return { url: session.url };

@@ -31,14 +31,14 @@ export function useCheckout() {
 
       if ("dummy" in data && data.dummy) {
         dummyResult.value = { credits: data.credits };
+        purchasing.value = false;
       } else if ("url" in data && data.url) {
         window.location.href = data.url;
-        // Navigation is in progress — keep purchasing=true so the button stays disabled.
-        return;
+        // Page is unloading — leave purchasing=true so the button stays
+        // disabled and a quick double-click can't trigger a duplicate session.
       }
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : "Purchase failed";
-    } finally {
       purchasing.value = false;
     }
   }

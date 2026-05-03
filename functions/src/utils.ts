@@ -9,23 +9,34 @@ export function storagePathFromUrl(url: string): string {
 
 /**
  * CORS — derived from GCLOUD_PROJECT (the Firebase project ID, set
- * automatically by Cloud Functions). Falls back to ALLOWED_ORIGINS env var
- * if set, or localhost-only for emulator mode.
+ * automatically by Cloud Functions) plus any extra entries in the
+ * ALLOWED_ORIGINS env var (comma-separated, used for custom domains).
+ * Falls back to localhost-only for emulator mode.
  */
 export function getAllowedOrigins(): (string | RegExp)[] {
   const project = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
+  const extra = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   if (project) {
-    return [`https://${project}.web.app`, `https://${project}.firebaseapp.com`];
+    return [
+      `https://${project}.web.app`,
+      `https://${project}.firebaseapp.com`,
+      ...extra,
+    ];
   }
-  const raw = process.env.ALLOWED_ORIGINS;
-  if (raw) {
-    return raw
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean);
-  }
-  // Default: localhost only (emulator / dev)
+  if (extra.length > 0) return extra;
   return [/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
+}
+
+/** Whether `origin` matches any allowed origin (string or RegExp). */
+export function isAllowedOrigin(origin: string): boolean {
+  for (const allowed of getAllowedOrigins()) {
+    if (typeof allowed === "string" && allowed === origin) return true;
+    if (allowed instanceof RegExp && allowed.test(origin)) return true;
+  }
+  return false;
 }
 
 /** Admin UIDs that may call addCredits. Set via ADMIN_UIDS env var (comma-separated). */

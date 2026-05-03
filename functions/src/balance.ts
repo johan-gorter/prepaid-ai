@@ -45,7 +45,7 @@ export async function deductCredits(
       createdAt: FieldValue.serverTimestamp(),
       ...metadata,
     });
-    txn.update(userRef, { balance: newBalance });
+    txn.set(userRef, { balance: newBalance }, { merge: true });
 
     return newBalance;
   });

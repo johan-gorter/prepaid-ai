@@ -1,14 +1,31 @@
 <script setup lang="ts">
+import { httpsCallable } from "firebase/functions";
+import { onMounted, ref } from "vue";
 import AppBar from "../components/AppBar.vue";
 import { useBalance } from "../composables/useBalance";
 import { useCheckout } from "../composables/useCheckout";
+import { functions } from "../firebase";
 import { CREDIT_PACKAGES, TRANSACTION_REASONS } from "../types";
 import type { CreditPackageId } from "../types";
 
 const { balance, transactions, loading } = useBalance();
 const { purchasing, error: checkoutError, dummyResult, purchase } = useCheckout();
 
-const isEmulator = import.meta.env.VITE_USE_EMULATORS === "true";
+// Driven by the server so it reflects the actual STRIPE_BACKEND, not the
+// build-time emulator flag (a deployed sandbox can run with backend=dummy).
+const isDummyBackend = ref(false);
+onMounted(async () => {
+  try {
+    const getConfig = httpsCallable<unknown, { backend: string }>(
+      functions,
+      "getStripeConfig",
+    );
+    const { data } = await getConfig({});
+    isDummyBackend.value = data.backend === "dummy";
+  } catch {
+    // Banner just won't show — safe default.
+  }
+});
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -37,12 +54,12 @@ function formatPrice(cents: number): string {
 
       <!-- Buy credits -->
       <h6>Buy credits</h6>
-      <div v-if="isEmulator" class="row surface-variant" style="padding: 0.5rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; gap: 0.5rem; align-items: center">
+      <div v-if="isDummyBackend" class="row surface-variant" style="padding: 0.5rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; gap: 0.5rem; align-items: center" data-testid="dummy-backend-banner">
         <i>science</i>
-        <span class="small">Emulator mode — purchases add credits directly without Stripe.</span>
+        <span class="small">Test mode — purchases add credits directly without charging.</span>
       </div>
 
-      <div class="grid" style="--grid-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem">
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem">
         <button
           v-for="pkg in CREDIT_PACKAGES"
           :key="pkg.id"

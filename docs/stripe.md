@@ -115,14 +115,15 @@ echo -n "whsec_YOUR_SIGNING_SECRET_HERE" | \
 
 ### 5. Switch STRIPE_BACKEND to "stripe"
 
-`STRIPE_BACKEND` is managed by Terraform. Set it in the appropriate `.tfvars` file:
+`stripe_backend` defaults to `"dummy"` in Terraform so a fresh `terraform apply`
+never produces a deploy where Cloud Functions reference unset Stripe secrets.
+Flip it to `"stripe"` in a **second** apply, after step 4 has populated
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`:
 
-| Environment | File                                    | Value      |
-| ----------- | --------------------------------------- | ---------- |
-| production  | `terraform/environments/production.tfvars` | `"stripe"` |
-| sandbox     | `terraform/environments/sandbox.tfvars`    | `"dummy"` (default — change when you add Stripe test keys) |
-
-After editing the `.tfvars` file, re-apply Terraform:
+```hcl
+# terraform/environments/production.tfvars
+stripe_backend = "stripe"
+```
 
 ```bash
 cd terraform
@@ -137,6 +138,10 @@ Then redeploy functions to pick up the new secret value:
 ```bash
 firebase deploy --only functions --project prepaid-ai-production
 ```
+
+For sandbox, leave `stripe_backend` at the default `"dummy"` until you've
+added test keys (`sk_test_...`, `whsec_...`) and want to exercise the real
+Stripe path.
 
 ---
 
@@ -200,24 +205,22 @@ This gives you a local `whsec_...` signing secret to use with the emulator. Note
 
 ## Idempotency
 
-The webhook handler processes `checkout.session.completed` events. Stripe may deliver the same event more than once. The current implementation does **not** deduplicate by `stripeSessionId` — a duplicate delivery would add credits twice.
+Stripe delivers webhooks at-least-once. The handler stores each fulfilment as
+`users/{uid}/balanceTransactions/stripe_<sessionId>` and checks `existing.exists`
+inside the transaction, so a duplicate delivery (or the
+`checkout.session.completed` + `checkout.session.async_payment_succeeded` pair
+for async payments) becomes a no-op.
 
-To make it idempotent, add a Firestore check before the transaction:
+## Async payment methods
 
-```typescript
-// Example: check if session already processed
-const existing = await db
-  .collectionGroup("balanceTransactions")
-  .where("metadata.stripeSessionId", "==", session.id)
-  .limit(1)
-  .get();
-if (!existing.empty) {
-  res.status(200).json({ received: true, duplicate: true });
-  return;
-}
-```
+For SEPA, ACH, BNPL, OXXO and other async methods, `checkout.session.completed`
+fires when the customer finishes Checkout but `payment_status` stays `unpaid`
+until the underlying debit settles. The handler:
 
-This is left as a future improvement. In practice, Stripe retries are rare for successful webhook deliveries.
+- Grants credits on `checkout.session.completed` only when `payment_status === "paid"`.
+- Grants credits on `checkout.session.async_payment_succeeded` (uses the same
+  deterministic transaction doc id, so no double-credit if both events fire).
+- Logs `checkout.session.async_payment_failed` (no credits granted, nothing to reverse).
 
 ---
 
