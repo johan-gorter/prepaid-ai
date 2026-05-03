@@ -84,9 +84,12 @@ Managed by Terraform. Injected into Cloud Functions at runtime via the `secrets`
 
 | Secret           | Terraform resource                            | Value source                    | Used in                               | Description                                                           |
 | ---------------- | --------------------------------------------- | ------------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
-| `GEMINI_API_KEY` | `google_secret_manager_secret.gemini_api_key` | Manually set in GCP Console     | `ai.ts` (`chat`, `processImpression`) | API key for Google AI Studio; only needed when `AI_BACKEND=google-ai` |
-| `AI_BACKEND`     | `google_secret_manager_secret.ai_backend`     | Terraform variable `ai_backend` | `ai.ts` (`chat`, `processImpression`) | Which AI backend to use: `vertex`, `google-ai`, or `dummy`            |
-| `AI_REGION`      | `google_secret_manager_secret.ai_region`      | Terraform variable `ai_region`  | `ai.ts` (`chat`, `processImpression`) | GCP region for Vertex AI workloads (e.g. `us-central1`)               |
+| `GEMINI_API_KEY`        | `google_secret_manager_secret.gemini_api_key`        | Manually set in GCP Console          | `ai.ts` (`chat`, `processImpression`)                             | API key for Google AI Studio; only needed when `AI_BACKEND=google-ai`              |
+| `AI_BACKEND`            | `google_secret_manager_secret.ai_backend`            | Terraform variable `ai_backend`      | `ai.ts` (`chat`, `processImpression`)                             | Which AI backend to use: `vertex`, `google-ai`, or `dummy`                         |
+| `AI_REGION`             | `google_secret_manager_secret.ai_region`             | Terraform variable `ai_region`       | `ai.ts` (`chat`, `processImpression`)                             | GCP region for Vertex AI workloads (e.g. `us-central1`)                            |
+| `STRIPE_BACKEND`        | `google_secret_manager_secret.stripe_backend`        | Terraform variable `stripe_backend`  | `stripe.ts` (`createCheckoutSession`, `stripeWebhook`)            | Payment backend: `stripe` (real Checkout) or `dummy` (no Stripe, for testing)      |
+| `STRIPE_SECRET_KEY`     | `google_secret_manager_secret.stripe_secret_key`     | Manually set in GCP Console          | `stripe.ts` (`createCheckoutSession`, `stripeWebhook`)            | Stripe secret key (`sk_live_...` or `sk_test_...`); only needed when backend=stripe |
+| `STRIPE_WEBHOOK_SECRET` | `google_secret_manager_secret.stripe_webhook_secret` | Manually set in GCP Console          | `stripeWebhook.ts`                                                | Stripe webhook signing secret (`whsec_...`); only needed when backend=stripe       |
 
 ### IAM bindings (per secret)
 
@@ -116,8 +119,9 @@ These contain non-sensitive, environment-specific settings:
 | `region`             | `europe-west1`                   | GCP region for Cloud Functions and Storage                                        |
 | `firestore_location` | `eur3`                           | Firestore multi-region location                                                   |
 | `public_url`         | `https://prepaid-ai-dev.web.app` | Primary public URL                                                                |
-| `ai_backend`         | `vertex`                         | AI backend (`vertex`, `google-ai`, `dummy`) → stored in Secret Manager            |
-| `ai_region`          | `us-central1`                    | GCP region for AI workloads (may differ from `region`) → stored in Secret Manager |
+| `ai_backend`         | `vertex`                         | AI backend (`vertex`, `google-ai`, `dummy`) → stored in Secret Manager                      |
+| `ai_region`          | `us-central1`                    | GCP region for AI workloads (may differ from `region`) → stored in Secret Manager           |
+| `stripe_backend`     | `stripe`                         | Stripe backend (`stripe` or `dummy`) → stored in Secret Manager; defaults to `dummy`        |
 
 ### Secret files (`*.auto.tfvars` — not committed)
 

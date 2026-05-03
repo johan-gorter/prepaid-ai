@@ -261,6 +261,162 @@ resource "google_secret_manager_secret_iam_member" "compute_gemini_api_key_acces
 }
 
 # ---------------------------------------------------------------------------
+# Secret Manager — STRIPE_BACKEND
+# Stores the active Stripe backend ("stripe" | "dummy").
+# Change var.stripe_backend in the environment tfvars and re-apply to switch.
+# ---------------------------------------------------------------------------
+resource "google_secret_manager_secret" "stripe_backend" {
+  project   = var.project_id
+  secret_id = "STRIPE_BACKEND"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "stripe_backend" {
+  secret      = google_secret_manager_secret.stripe_backend.id
+  secret_data = var.stripe_backend
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "functions_stripe_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_backend_viewer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_backend.secret_id
+  role      = "roles/secretmanager.viewer"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "compute_stripe_backend_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_backend.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# ---------------------------------------------------------------------------
+# Secret Manager — STRIPE_SECRET_KEY
+# Value must be set manually in GCP Console after terraform apply.
+# Use sk_live_... for production; sk_test_... for sandbox.
+# ---------------------------------------------------------------------------
+resource "google_secret_manager_secret" "stripe_secret_key" {
+  project   = var.project_id
+  secret_id = "STRIPE_SECRET_KEY"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_iam_member" "functions_stripe_secret_key_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_secret_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_secret_key_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_secret_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_secret_key_viewer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_secret_key.secret_id
+  role      = "roles/secretmanager.viewer"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "compute_stripe_secret_key_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_secret_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# ---------------------------------------------------------------------------
+# Secret Manager — STRIPE_WEBHOOK_SECRET
+# Value must be set manually in GCP Console after terraform apply.
+# Obtain from Stripe Dashboard → Developers → Webhooks → signing secret.
+# ---------------------------------------------------------------------------
+resource "google_secret_manager_secret" "stripe_webhook_secret" {
+  project   = var.project_id
+  secret_id = "STRIPE_WEBHOOK_SECRET"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_iam_member" "functions_stripe_webhook_secret_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_webhook_secret.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_webhook_secret_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_webhook_secret.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "ci_deployer_stripe_webhook_secret_viewer" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_webhook_secret.secret_id
+  role      = "roles/secretmanager.viewer"
+  member    = "serviceAccount:${google_service_account.ci_deployer.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "compute_stripe_webhook_secret_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.stripe_webhook_secret.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# ---------------------------------------------------------------------------
 # CI deployer service account
 # ---------------------------------------------------------------------------
 resource "google_service_account" "ci_deployer" {

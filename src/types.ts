@@ -1,5 +1,28 @@
 import type { Timestamp } from "firebase/firestore";
 
+// ---------------------------------------------------------------------------
+// Credit packages — keep in sync with CREDIT_PACKAGES in functions/src/credits.ts
+// ---------------------------------------------------------------------------
+
+export interface CreditPackage {
+  id: CreditPackageId;
+  credits: number;
+  priceCents: number;
+}
+
+export type CreditPackageId =
+  | "credits_100"
+  | "credits_500"
+  | "credits_1000"
+  | "credits_5000";
+
+export const CREDIT_PACKAGES: CreditPackage[] = [
+  { id: "credits_100", credits: 100, priceCents: 100 },
+  { id: "credits_500", credits: 500, priceCents: 500 },
+  { id: "credits_1000", credits: 1000, priceCents: 1000 },
+  { id: "credits_5000", credits: 5000, priceCents: 5000 },
+];
+
 export interface Renovation {
   id: string;
   originalImagePath: string;
