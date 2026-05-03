@@ -70,6 +70,12 @@ variable "ai_region" {
   default     = "europe-west1"
 }
 
+variable "stripe_backend" {
+  description = "Stripe payment backend: stripe (real Checkout) or dummy (adds credits directly, no Stripe call)"
+  type        = string
+  default     = "dummy"
+}
+
 variable "public_url" {
   description = "Primary public URL for this environment"
   type        = string

@@ -27,6 +27,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/balance/success",
+    name: "checkout-success",
+    component: () => import("../views/CheckoutSuccessPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/buy-credits",
     name: "buy-credits",
     component: () => import("../views/BuyCreditsPage.vue"),

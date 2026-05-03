@@ -1,4 +1,21 @@
 // ---------------------------------------------------------------------------
+// Credit packages — keep in sync with CREDIT_PACKAGES in src/types.ts
+// ---------------------------------------------------------------------------
+
+export const CREDIT_PACKAGES = [
+  { id: "credits_100", credits: 100, priceCents: 100 },
+  { id: "credits_500", credits: 500, priceCents: 500 },
+  { id: "credits_1000", credits: 1000, priceCents: 1000 },
+  { id: "credits_5000", credits: 5000, priceCents: 5000 },
+] as const satisfies ReadonlyArray<{
+  id: string;
+  credits: number;
+  priceCents: number;
+}>;
+
+export type CreditPackageId = (typeof CREDIT_PACKAGES)[number]["id"];
+
+// ---------------------------------------------------------------------------
 // Tariffs — update these constants when pricing changes
 // ---------------------------------------------------------------------------
 

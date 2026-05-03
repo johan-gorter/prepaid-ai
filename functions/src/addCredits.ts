@@ -68,7 +68,7 @@ export const addCredits = onCall(
         createdAt: FieldValue.serverTimestamp(),
         adminUid: callerUid,
       });
-      txn.update(userRef, { balance: updatedBalance });
+      txn.set(userRef, { balance: updatedBalance }, { merge: true });
 
       return updatedBalance;
     });
