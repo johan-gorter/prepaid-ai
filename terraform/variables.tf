@@ -86,6 +86,20 @@ variable "ai_region" {
 }
 
 # ---------------------------------------------------------------------------
+# Stripe payments
+# ---------------------------------------------------------------------------
+variable "stripe_backend" {
+  description = "Stripe payment backend: stripe (real Checkout) or dummy (adds credits directly, no Stripe call)"
+  type        = string
+  default     = "dummy"
+
+  validation {
+    condition     = contains(["stripe", "dummy"], var.stripe_backend)
+    error_message = "Must be one of: stripe, dummy."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # Public URLs
 # ---------------------------------------------------------------------------
 variable "public_url" {
