@@ -108,26 +108,22 @@ Copy the **Signing secret** (`whsec_...`) — you will need it in the next step.
 
 ### 4. Store secrets in GCP Secret Manager
 
-After running `terraform apply`, the secret resources exist but have no value. Set them manually:
+After running `terraform apply`, the secret resources exist but have no value.
+Set them manually from PowerShell. Each command prompts for the secret value and
+pipes it to `gcloud`.
 
-```bash
-# Stripe secret key
-echo -n "sk_live_YOUR_KEY_HERE" | \
-  gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=payasyougo-production
+```powershell
+Read-Host "Stripe secret key" | gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=payasyougo-production
 
-# Stripe webhook signing secret
-echo -n "whsec_YOUR_SIGNING_SECRET_HERE" | \
-  gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=payasyougo-production
+Read-Host "Stripe webhook signing secret" | gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=payasyougo-production
 ```
 
 For sandbox, use `sk_test_...` and point to `prepaid-ai-sandbox`:
 
-```bash
-echo -n "sk_test_YOUR_KEY_HERE" | \
-  gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=prepaid-ai-sandbox
+```powershell
+Read-Host "Stripe secret key" | gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=prepaid-ai-sandbox
 
-echo -n "whsec_YOUR_SIGNING_SECRET_HERE" | \
-  gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=prepaid-ai-sandbox
+Read-Host "Stripe webhook signing secret" | gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=prepaid-ai-sandbox
 ```
 
 ### 5. Switch STRIPE_BACKEND to "stripe"
@@ -144,10 +140,8 @@ stripe_backend = "stripe"
 
 ```bash
 cd terraform
-terraform init -reconfigure \
-  "-backend-config=bucket=prepaid-ai-terraform-state" \
-  "-backend-config=prefix=env/production"
-terraform apply -var-file=environments/production.tfvars
+terraform init -reconfigure "-backend-config=bucket=prepaid-ai-terraform-state" "-backend-config=prefix=env/production"
+terraform apply "-var-file=environments/production.tfvars"
 ```
 
 Then redeploy functions to pick up the new secret value:
