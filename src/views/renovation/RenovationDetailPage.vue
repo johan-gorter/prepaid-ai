@@ -83,7 +83,7 @@ watch(
             (item as HTMLElement).scrollIntoView({ block: "center" });
           }
         } else {
-          scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+          window.scrollTo({ top: document.documentElement.scrollHeight });
         }
       }
     }

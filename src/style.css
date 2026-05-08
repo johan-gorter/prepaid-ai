@@ -47,8 +47,8 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
 
 /* AppBar contract: Beer CSS's `header.fixed` computes to sticky, which keeps
   it in normal document flow. Our pages reserve top space themselves, so the
-  AppBar must be a real overlay or viewport-locked pages become one header
-  taller than the visible viewport. */
+  AppBar must be a real overlay instead of adding its own height to every
+  document-scrolling route. */
 #app header.fixed {
   position: fixed;
   inset: 0 0 auto 0;

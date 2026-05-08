@@ -226,13 +226,25 @@ watch(stage, async (next) => {
   await nextTick();
   const el = promptInputRef.value;
   if (!el) return;
-  el.focus({ preventScroll: true });
-  // iOS Safari fallback: VisualViewport resize can be slow, so explicitly
-  // scroll the textarea into view once focus has settled.
-  setTimeout(() => {
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, 250);
+  growPromptInput();
+  el.focus();
+  revealPromptInput();
 });
+
+function growPromptInput() {
+  const el = promptInputRef.value;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+}
+
+function revealPromptInput() {
+  const el = promptInputRef.value;
+  if (!el) return;
+  el.scrollIntoView({ block: "nearest" });
+  // VisualViewport resize can land after focus on mobile, especially iOS.
+  window.setTimeout(() => el.scrollIntoView({ block: "center" }), 250);
+}
 
 function onCanvasArea() {
   if (stage.value === "preview") stage.value = "mask";
@@ -527,6 +539,8 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
             data-testid="prompt"
             v-model="prompt"
             placeholder=" "
+            @focus="revealPromptInput"
+            @input="growPromptInput"
           ></textarea>
           <label for="prompt-input">What should change in the red area?</label>
         </div>
@@ -613,7 +627,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 .page-layout {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: calc(100dvh - var(--kb-inset, 0px));
 }
 
 .wizard-main {
@@ -625,10 +639,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 }
 
 .wizard-main--prompt {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  min-height: calc(100dvh - var(--kb-inset, 0px));
 }
 
 .canvas-area {
@@ -676,28 +687,27 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 }
 
 .prompt-flex {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
   padding: 0.5rem;
   width: 100%;
   max-width: 544px;
   margin: 0 auto;
+  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
 }
 
 .prompt-field {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   background: var(--surface, #fff);
 }
 
 .prompt-field textarea {
-  flex: 1;
-  min-height: 0;
+  min-height: clamp(
+    14rem,
+    calc(100dvh - var(--app-bar-clearance) - 12rem - var(--kb-inset, 0px)),
+    28rem
+  );
+  overflow-y: hidden;
   resize: none;
+  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
 }
 
 .processing-overlay {

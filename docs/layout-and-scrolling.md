@@ -11,17 +11,17 @@ combinations break in mutually inconsistent ways otherwise.
 
 ## Goals
 
-1. The document never extends past the visible viewport when the on-screen
-   keyboard is open. No black gap below the body, no needless document
-   scrolling, no fixed footer hidden underneath the keyboard.
-2. Pages whose content fits in the visible viewport do not scroll.
-3. Pages whose content overflows the viewport scroll inside `<main>` (or a
-   designated inner container), not at the document level on top of fixed
-   chrome.
+1. The document is the only page-level vertical scroll owner. Do not create a
+  second scrolling `<main>` or message pane for route content.
+2. Pages whose content fits in the visible viewport do not scroll. Pages whose
+  content overflows scroll naturally at the `html` / `body` level.
+3. Fixed chrome is removed from document flow. Pages reserve explicit top and
+  bottom clearance so content is not hidden underneath the AppBar or footer.
 4. A fixed footer always sits at the bottom of the visible viewport — above
-   the keyboard when it is open, at the screen bottom when it is not.
-5. Inputs near the bottom of the page (chat composer, prompt textarea) stay
-   visible above the keyboard without the user scrolling.
+  the keyboard when it is open, at the screen bottom when it is not.
+5. Inputs near the bottom of the page (chat composer, prompt textarea) remain
+  in normal document flow. When they receive focus, the browser and the page's
+  small focus helpers scroll the document so the user can see what they type.
 
 ## The keyboard inset
 
@@ -64,7 +64,7 @@ that breaks the inset calculation on at least one platform.
 
 ## Body and `#app` height
 
-`src/style.css` caps the document at the visible viewport:
+`src/style.css` gives the document a keyboard-aware minimum height:
 
 ```css
 body {
@@ -77,10 +77,10 @@ body {
 }
 ```
 
-This is a `min-height`, not a fixed height: pages with content that
-overflows can still grow past it and scroll. Pages whose content fits stay
-exactly at the visible viewport and do not introduce a document-level
-scrollbar.
+This is a `min-height`, not a fixed height. Content is allowed to grow past it;
+when it does, the document scrolls. The keyboard inset only changes the minimum
+visible page height so short pages and bottom controls can reflow above the
+keyboard instead of leaving a dead area below the body.
 
 `overflow-x: clip` keeps the page horizontally readable at 320 px even when
 a child element refuses to shrink.
@@ -101,10 +101,9 @@ flow. The page patterns below reserve their own top space for the AppBar, so
 
 This keeps the page-height math single-source: routes add
 `padding-top: var(--app-bar-clearance)` to clear the AppBar visually, while the
-header itself does not make the document one toolbar taller. Without this
-override, viewport-locked pages such as chat end up with
-`html.scrollHeight === visualViewport.height + 64px`, so the browser scrolls
-even when only the inner message pane should scroll.
+header itself does not make the document one toolbar taller. The document may
+still scroll, but only because route content is taller than the viewport, not
+because the AppBar secretly contributed another toolbar-height block.
 
 ## Fixed footer that follows the keyboard
 
@@ -125,15 +124,10 @@ slides up to stay visible.
 Pages that use `StickyFooter` should reserve `padding-bottom: 5rem` on
 their `<main>` so content does not hide underneath it.
 
-## Two page-height patterns
+## Page-Height Pattern
 
-There are two correct ways to lay out a page. Pick the one that matches
-your content.
-
-### Pattern A — Scrolling page (most pages)
-
-The default. Use this when the page content is browseable: lists, detail
-pages, settings, balance, the renovation timeline.
+Use one pattern everywhere: fixed chrome plus natural document scrolling. This
+includes browseable pages, chat, and prompt/editor flows.
 
 ```vue
 <template>
@@ -142,7 +136,7 @@ pages, settings, balance, the renovation timeline.
     class="responsive"
     style="max-width: 800px; margin: 0 auto;
            padding-top: var(--app-bar-clearance); /* clears the fixed AppBar */
-           padding-bottom: 5rem;    /* clears the StickyFooter, omit if no footer */"
+           padding-bottom: 5rem;    /* clears StickyFooter, omit if no footer */"
   >
     <!-- content -->
   </main>
@@ -150,53 +144,29 @@ pages, settings, balance, the renovation timeline.
 </template>
 ```
 
-The page can grow past the viewport; the document scrolls naturally; the
-fixed AppBar and StickyFooter stay in place.
-
-### Pattern B — Viewport-locked flex column (chat & prompt stage)
-
-Use this when an input must stay anchored at the bottom of the visible
-viewport while messages or media scroll above it. The current users are
-`PrivateChatPage.vue` and the `prompt` stage in `NewImpressionPage.vue`.
+The page can grow past the viewport; the document scrolls naturally; the fixed
+AppBar and StickyFooter stay in place. If the page should feel full-height when
+content is short, use `min-height`, not `height`, so overflow still belongs to
+the document:
 
 ```vue
-<template>
-  <AppBar title="..." />
-  <main class="page-layout">
-    <div class="scroll-area">
-      <!-- messages, prompt content -->
-    </div>
-    <div class="bottom">
-      <!-- composer / textarea / actions -->
-    </div>
-  </main>
-</template>
-
 <style scoped>
 .page-layout {
-  display: flex;
-  flex-direction: column;
-  height: calc(100dvh - var(--kb-inset, 0px));
-  padding-top: var(--app-bar-clearance); /* clears the fixed AppBar */
-}
-.scroll-area {
-  flex: 1;
-  overflow-y: auto;
-}
-.bottom {
-  flex-shrink: 0;
+  min-height: calc(100dvh - var(--kb-inset, 0px));
 }
 </style>
 ```
 
-The container is sized to the visible viewport, so the bottom slot
-automatically anchors above the keyboard via flex layout — no
-`position: fixed`, no manual offsets. The scroll area takes the remaining
-space and scrolls inside itself.
+Avoid `height: calc(100dvh - var(--kb-inset))` on route containers unless the
+route is intentionally clipping its content. A fixed height forces overflow
+into child panes and recreates the mobile double-scroll problems this contract
+is trying to avoid.
 
-This pattern intentionally does **not** use `StickyFooter`, because
-`StickyFooter` is `position: fixed` and would overlap the in-flow bottom
-slot.
+For chat-like composers and large prompt textareas, keep the input area in
+document flow. Let it auto-grow when appropriate, and use `scrollIntoView()` on
+focus as a small assist for iOS/Android keyboard timing. A user who scrolls up
+to read earlier content should be able to move the composer or prompt off
+screen; the UI should not fight them with a second inner scroll layer.
 
 ## Header / footer width clamps
 
@@ -206,10 +176,10 @@ the viewport on narrow screens. `src/style.css` clamps the column to the
 available header width:
 
 ```css
-header.fixed {
+#app header.fixed {
   grid-template-columns: minmax(0, 1fr);
 }
-header.fixed > nav {
+#app header.fixed > nav {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -227,20 +197,18 @@ content wrap with `overflow-wrap: anywhere` so a single long word like
 ## Invariants to verify after layout changes
 
 When you touch any of `src/style.css`, `useKeyboardInset.ts`,
-`StickyFooter.vue`, `index.html`'s viewport meta, or any page using
-Pattern B above, manually verify all of the following before pushing:
+`StickyFooter.vue`, `index.html`'s viewport meta, or a page with a bottom input,
+manually verify all of the following before pushing:
 
 - [ ] **Android Chrome — chat page.** Tap the composer. Keyboard appears.
-      The composer sits flush above the keyboard. The document does **not**
-      scroll. Closing the keyboard returns the composer to the screen
-      bottom with no jump.
-- [ ] **iOS Safari — chat page.** Same as above. The on-screen keyboard
-      should not leave a black gap.
+  The document scrolls enough to keep the composer visible. Chat messages
+  are not inside their own scrolling pane.
+- [ ] **iOS Safari — chat page.** Same as above. The on-screen keyboard should
+  not leave a black gap or trap scrolling inside the composer area.
 - [ ] **Android Chrome — `/new-impression` prompt stage.** Tap the prompt
       textarea. The textarea and the StickyFooter (`Back` / `Generate`)
-      both stay visible above the keyboard. The painted image area
-      collapses to zero height during the prompt stage so the textarea has
-      room — verify this still works.
+  are reachable above the keyboard. The document, not the prompt wrapper,
+  owns vertical scrolling.
 - [ ] **iPhone SE (320 × 568 dvh).** Open `/new-impression?source=photo`
       and step through `mask` → `prompt`. The footer is reachable, the
       header does not overflow, and no horizontal scrollbar appears.
@@ -259,8 +227,8 @@ Pattern B above, manually verify all of the following before pushing:
 | `index.html`                                                                      | Viewport meta — `viewport-fit=cover`, **no** `interactive-widget`                  |
 | `src/App.vue`                                                                     | Mounts `useKeyboardInset()` once globally                                          |
 | `src/composables/useKeyboardInset.ts`                                             | Tracks `visualViewport`, writes `--kb-inset` on `<html>`                           |
-| `src/style.css`                                                                   | Caps `body` / `#app` to `100dvh - --kb-inset`; horizontal clip; header width clamp |
+| `src/style.css`                                                                   | Keyboard-aware body / app min-height; horizontal clip; fixed AppBar override       |
 | `src/components/StickyFooter.vue`                                                 | Fixed footer using `bottom: var(--kb-inset, 0px)`; mobile bottom-nav layout        |
-| `src/views/PrivateChatPage.vue`                                                   | Pattern B example — chat composer above keyboard                                   |
-| `src/views/NewImpressionPage.vue`                                                 | Pattern B during prompt stage; Pattern A footer otherwise                          |
-| `src/views/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Pattern A — `min-height: 100dvh` page-layout columns                               |
+| `src/views/PrivateChatPage.vue`                                                   | Document-scrolling chat with an in-flow auto-growing composer                      |
+| `src/views/NewImpressionPage.vue`                                                 | Document-scrolling wizard; prompt textarea reveals itself on focus                 |
+| `src/views/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Document-scrolling page-layout columns                                             |

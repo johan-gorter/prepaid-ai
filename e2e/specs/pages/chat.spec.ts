@@ -20,7 +20,7 @@ test.describe("PrivateChatPage", () => {
     await expect(page.getByTestId("chat-send")).toBeVisible();
   });
 
-  test("keeps document scrolling locked to the chat message pane", async ({
+  test("uses document scrolling for overflowing chat content", async ({
     authenticatedPage: page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -31,21 +31,28 @@ test.describe("PrivateChatPage", () => {
       const root = document.documentElement;
       const chatMessages =
         document.querySelector<HTMLElement>(".chat-messages");
+      const filler = document.createElement("div");
+      filler.dataset.testid = "chat-scroll-filler";
+      filler.style.height = "1200px";
+      chatMessages?.append(filler);
+      window.scrollTo({ top: root.scrollHeight });
       return {
         documentScrollHeight: root.scrollHeight,
         documentClientHeight: root.clientHeight,
         documentScrollTop: root.scrollTop,
+        messageScrollTop: chatMessages?.scrollTop ?? null,
         messageOverflowY: chatMessages
           ? getComputedStyle(chatMessages).overflowY
           : null,
       };
     });
 
-    expect(layout.messageOverflowY).toBe("auto");
-    expect(layout.documentScrollHeight).toBeLessThanOrEqual(
+    expect(layout.messageOverflowY).toBe("visible");
+    expect(layout.documentScrollHeight).toBeGreaterThan(
       layout.documentClientHeight,
     );
-    expect(layout.documentScrollTop).toBe(0);
+    expect(layout.documentScrollTop).toBeGreaterThan(0);
+    expect(layout.messageScrollTop).toBe(0);
   });
 
   test("send button disabled when input empty", async ({

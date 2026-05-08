@@ -27,7 +27,6 @@ interface ChatDraft {
 
 const userInput = ref("");
 const maxCredits = ref(15);
-const chatContainer = ref<HTMLElement | null>(null);
 const chatInputEl = ref<HTMLTextAreaElement | null>(null);
 const messageCosts = ref<Map<number, number>>(new Map());
 // Synchronous re-entry guard for handleSend. We can't rely on
@@ -105,14 +104,21 @@ onMounted(async () => {
     localEstimate.value = estimateLocalCredits(messages.value, userInput.value);
     lastEstimatedLength = userInput.value.length;
   }
+  await nextTick();
+  autoGrow();
 });
 
 function scrollToBottom() {
   nextTick(() => {
-    if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-    }
+    window.scrollTo({ top: document.documentElement.scrollHeight });
   });
+}
+
+function revealChatInput() {
+  const el = chatInputEl.value;
+  if (!el) return;
+  el.scrollIntoView({ block: "nearest" });
+  window.setTimeout(() => el.scrollIntoView({ block: "center" }), 250);
 }
 
 watch(
@@ -202,6 +208,7 @@ function autoGrow() {
   if (!el) return;
   el.style.height = "auto";
   el.style.height = el.scrollHeight + "px";
+  el.scrollIntoView({ block: "nearest" });
 }
 
 function downloadConversation() {
@@ -232,7 +239,7 @@ function continueChat() {
 
   <main class="chat-page">
     <!-- Chat messages -->
-    <div ref="chatContainer" class="chat-messages">
+    <div class="chat-messages">
       <div
         v-if="messages.length === 0"
         class="center-align"
@@ -331,6 +338,7 @@ function continueChat() {
               placeholder="Paste text from documents and type questions"
               autofocus
               @keydown="handleKeydown"
+              @focus="revealChatInput"
               @input="autoGrow"
               data-testid="chat-input"
             ></textarea>
@@ -382,13 +390,13 @@ function continueChat() {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  /* padding-top clears the fixed AppBar overlay; height fills the visible
-     viewport so the chat-bottom anchors at the bottom (above the on-screen
-     keyboard when present) without leaving dead space below it. */
+  /* padding-top clears the fixed AppBar overlay. min-height keeps the composer
+     near the viewport bottom on short chats while allowing long chats to grow
+     the document and use native page scrolling. */
   padding: var(--app-bar-clearance) 0 0;
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: calc(100dvh - var(--kb-inset, 0px));
   overflow: visible;
 }
 .chat-input-row .field {
@@ -397,17 +405,17 @@ function continueChat() {
 .chat-input-row .field textarea {
   font-size: 1.05rem;
   resize: none;
-  overflow-y: auto;
+  overflow-y: hidden;
   min-height: 2.5rem;
-  max-height: calc(1.5em * 5 + 1rem);
   line-height: 1.5;
   padding: 0.5rem 0.75rem;
   width: 100%;
   box-sizing: border-box;
+  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
 }
 .chat-messages {
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding: 1rem calc(50vw - 400px);
 }
 @media (max-width: 800px) {
@@ -483,6 +491,7 @@ function continueChat() {
   display: flex;
   flex-direction: column;
   align-items: center;
+  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 1rem);
 }
 .chat-bottom-streaming {
   justify-content: center;
