@@ -1,14 +1,30 @@
 import { onMounted, onUnmounted } from "vue";
 
 let activeListeners = 0;
-let onResize: (() => void) | null = null;
-let onScroll: (() => void) | null = null;
+let raf = 0;
+
+function setInset(inset: number) {
+  document.documentElement.style.setProperty("--kb-inset", `${inset}px`);
+  document.documentElement.classList.toggle("kb-open", inset > 0);
+}
 
 function updateInset() {
   const vv = window.visualViewport;
-  if (!vv) return;
-  const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-  document.documentElement.style.setProperty("--kb-inset", `${inset}px`);
+  if (!vv) {
+    setInset(0);
+    return;
+  }
+  const raw = window.innerHeight - vv.height - vv.offsetTop;
+  const inset = raw > 80 ? Math.round(raw) : 0;
+  setInset(inset);
+}
+
+function scheduleUpdate() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => {
+    raf = 0;
+    updateInset();
+  });
 }
 
 export function useKeyboardInset() {
@@ -16,26 +32,24 @@ export function useKeyboardInset() {
     activeListeners++;
     if (activeListeners > 1) return;
 
-    document.documentElement.style.setProperty("--kb-inset", "0px");
+    setInset(0);
 
-    if (!window.visualViewport) return;
-
-    onResize = updateInset;
-    onScroll = updateInset;
-    window.visualViewport.addEventListener("resize", onResize);
-    window.visualViewport.addEventListener("scroll", onScroll);
     updateInset();
+    window.visualViewport?.addEventListener("resize", scheduleUpdate);
+    window.visualViewport?.addEventListener("scroll", scheduleUpdate);
+    window.addEventListener("orientationchange", scheduleUpdate);
   });
 
   onUnmounted(() => {
     activeListeners = Math.max(0, activeListeners - 1);
     if (activeListeners > 0) return;
-    if (window.visualViewport) {
-      if (onResize) window.visualViewport.removeEventListener("resize", onResize);
-      if (onScroll) window.visualViewport.removeEventListener("scroll", onScroll);
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
     }
-    onResize = null;
-    onScroll = null;
-    document.documentElement.style.setProperty("--kb-inset", "0px");
+    window.visualViewport?.removeEventListener("resize", scheduleUpdate);
+    window.visualViewport?.removeEventListener("scroll", scheduleUpdate);
+    window.removeEventListener("orientationchange", scheduleUpdate);
+    setInset(0);
   });
 }

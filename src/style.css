@@ -6,16 +6,18 @@
 
 :root {
   --app-bar-clearance: 4.5rem;
+  --kb-inset: 0px;
+}
+
+html {
+  scroll-padding-bottom: calc(var(--kb-inset, 0px) + 1rem);
 }
 
 body {
   margin: 0;
-  /* Cap body to the visible viewport so the document never extends past the
-     on-screen keyboard. Fixed footers and bottom-anchored inputs can then sit
-     above the keyboard via flex layout, and pages with content that fits
-     don't scroll. Pages whose content overflows still scroll because content
-     is allowed to grow past this min-height. */
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  /* Keep the document at the viewport's natural height. Keyboard space is
+     additive scroll runway on #app, not something subtracted from height. */
+  min-height: 100dvh;
   /* Never allow the page itself to scroll horizontally, regardless of what
      a child element's intrinsic width tries to do. Pages must stay readable
      down to 320px viewports. */
@@ -23,7 +25,11 @@ body {
 }
 
 #app {
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
+  padding-bottom: calc(
+    var(--kb-inset, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+  transition: padding-bottom 120ms ease-out;
 }
 
 /* Beer-css canvas override: prevent beer-css from styling canvases */

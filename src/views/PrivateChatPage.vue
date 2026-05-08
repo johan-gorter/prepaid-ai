@@ -85,6 +85,8 @@ const userInitials = computed(() => {
 
 onMounted(async () => {
   void idbSet("lastPage", "chat");
+  await nextTick();
+  chatInputEl.value?.focus({ preventScroll: true });
   const draft = await idbGet<ChatDraft>(CHAT_DRAFT_KEY);
   if (draft && Array.isArray(draft.messages)) {
     // The textarea autofocuses and accepts keystrokes immediately, so the
@@ -106,6 +108,7 @@ onMounted(async () => {
   }
   await nextTick();
   autoGrow();
+  revealChatInput();
 });
 
 function scrollToBottom() {
@@ -117,8 +120,9 @@ function scrollToBottom() {
 function revealChatInput() {
   const el = chatInputEl.value;
   if (!el) return;
-  el.scrollIntoView({ block: "nearest" });
-  window.setTimeout(() => el.scrollIntoView({ block: "center" }), 250);
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
 }
 
 watch(
@@ -208,7 +212,12 @@ function autoGrow() {
   if (!el) return;
   el.style.height = "auto";
   el.style.height = el.scrollHeight + "px";
-  el.scrollIntoView({ block: "nearest" });
+  const rect = el.getBoundingClientRect();
+  const vv = window.visualViewport;
+  const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+  if (rect.bottom > visibleBottom - 8) {
+    el.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function downloadConversation() {
@@ -390,13 +399,13 @@ function continueChat() {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  /* padding-top clears the fixed AppBar overlay. min-height keeps the composer
-     near the viewport bottom on short chats while allowing long chats to grow
-     the document and use native page scrolling. */
+    /* padding-top clears the fixed AppBar overlay. Keyboard compensation is
+      additive padding on #app, so short chats gain scroll runway instead of
+      shrinking when the on-screen keyboard opens. */
   padding: var(--app-bar-clearance) 0 0;
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+    min-height: 100dvh;
   overflow: visible;
 }
 .chat-input-row .field {
@@ -412,6 +421,7 @@ function continueChat() {
   width: 100%;
   box-sizing: border-box;
   scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
+  scroll-margin-top: calc(var(--app-bar-clearance) + 0.5rem);
 }
 .chat-messages {
   flex: 1;

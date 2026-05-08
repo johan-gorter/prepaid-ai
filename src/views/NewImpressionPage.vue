@@ -627,7 +627,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 .page-layout {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
 }
 
 .wizard-main {
@@ -639,7 +639,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 }
 
 .wizard-main--prompt {
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
 }
 
 .canvas-area {
@@ -702,7 +702,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
 .prompt-field textarea {
   min-height: clamp(
     14rem,
-    calc(100dvh - var(--app-bar-clearance) - 12rem - var(--kb-inset, 0px)),
+    calc(100dvh - var(--app-bar-clearance) - 12rem),
     28rem
   );
   overflow-y: hidden;

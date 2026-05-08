@@ -43,44 +43,52 @@ The composable is registered globally in `src/App.vue` via `useKeyboardInset()`
 so every route gets the variable. There is a single set of viewport
 listeners no matter how many components mount or unmount.
 
-### Why we do **not** use `interactive-widget=resizes-content` or `VirtualKeyboard.overlaysContent`
+### Viewport meta
 
-An earlier iteration opted into both. On Android Chrome that combination
-**prevents** the visual viewport from shrinking when the keyboard appears,
-so `--kb-inset` stays at 0 and the fixed footer ends up underneath the
-keyboard. iOS Safari ignores both APIs.
-
-The current setup (see `index.html`) opts into none of them:
+The current setup opts into `interactive-widget=resizes-content` where browsers
+support it:
 
 ```html
 <meta
   name="viewport"
-  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
 />
 ```
 
-`viewport-fit=cover` is needed for PWA safe-area handling. Anything beyond
-that breaks the inset calculation on at least one platform.
+Chromium-based mobile browsers can then shrink the layout viewport when the
+keyboard opens, so `--kb-inset` remains `0px` and the document naturally fits
+the visible area. iOS Safari and iOS installed PWAs ignore
+`interactive-widget`, so the VisualViewport-based `--kb-inset` polyfill below
+is still required there.
+
+`viewport-fit=cover` is needed for PWA safe-area handling.
 
 ## Body and `#app` height
 
-`src/style.css` gives the document a keyboard-aware minimum height:
+`src/style.css` keeps the document at its natural viewport height and adds
+keyboard space as bottom scroll runway:
 
 ```css
+html {
+  scroll-padding-bottom: calc(var(--kb-inset, 0px) + 1rem);
+}
+
 body {
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
   overflow-x: clip;
 }
 
 #app {
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
+  padding-bottom: calc(var(--kb-inset, 0px) + env(safe-area-inset-bottom, 0px));
 }
 ```
 
-This is a `min-height`, not a fixed height. Content is allowed to grow past it;
-when it does, the document scrolls. The keyboard inset only changes the minimum
-visible page height so short pages and bottom controls can reflow above the
-keyboard instead of leaving a dead area below the body.
+Do **not** subtract `--kb-inset` from `min-height`. On iOS the layout viewport
+and `100dvh` do not shrink for the keyboard, so subtracting the keyboard height
+removes the scroll runway a bottom-of-flow composer needs. Adding the inset as
+bottom padding grows the document by the keyboard height, letting the browser
+scroll the focused input above the keyboard.
 
 `overflow-x: clip` keeps the page horizontally readable at 320 px even when
 a child element refuses to shrink.
@@ -152,21 +160,26 @@ the document:
 ```vue
 <style scoped>
 .page-layout {
-  min-height: calc(100dvh - var(--kb-inset, 0px));
+  min-height: 100dvh;
 }
 </style>
 ```
 
-Avoid `height: calc(100dvh - var(--kb-inset))` on route containers unless the
-route is intentionally clipping its content. A fixed height forces overflow
-into child panes and recreates the mobile double-scroll problems this contract
-is trying to avoid.
+Avoid `height: calc(100dvh - var(--kb-inset))` or
+`min-height: calc(100dvh - var(--kb-inset))` on route containers unless the
+route is intentionally clipping its content. Subtracting the keyboard inset
+removes the bottom space needed for document scrolling.
 
 For chat-like composers and large prompt textareas, keep the input area in
 document flow. Let it auto-grow when appropriate, and use `scrollIntoView()` on
 focus as a small assist for iOS/Android keyboard timing. A user who scrolls up
 to read earlier content should be able to move the composer or prompt off
 screen; the UI should not fight them with a second inner scroll layer.
+
+`autofocus` and `element.focus()` move focus where browsers allow it, but iOS
+Safari does not reliably open the on-screen keyboard from script unless focus
+happens inside a trusted user gesture. Keep autofocus for Android, desktop, and
+hardware keyboards, but do not treat it as a guaranteed mobile keyboard opener.
 
 ## Header / footer width clamps
 
@@ -224,10 +237,10 @@ manually verify all of the following before pushing:
 
 | File                                                                              | Role                                                                               |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `index.html`                                                                      | Viewport meta — `viewport-fit=cover`, **no** `interactive-widget`                  |
+| `index.html`                                                                      | Viewport meta — `viewport-fit=cover`, `interactive-widget=resizes-content`         |
 | `src/App.vue`                                                                     | Mounts `useKeyboardInset()` once globally                                          |
-| `src/composables/useKeyboardInset.ts`                                             | Tracks `visualViewport`, writes `--kb-inset` on `<html>`                           |
-| `src/style.css`                                                                   | Keyboard-aware body / app min-height; horizontal clip; fixed AppBar override       |
+| `src/composables/useKeyboardInset.ts`                                             | Tracks `visualViewport`, writes `--kb-inset` and `kb-open` on `<html>`             |
+| `src/style.css`                                                                   | Body / app min-height; additive keyboard runway; horizontal clip; fixed AppBar     |
 | `src/components/StickyFooter.vue`                                                 | Fixed footer using `bottom: var(--kb-inset, 0px)`; mobile bottom-nav layout        |
 | `src/views/PrivateChatPage.vue`                                                   | Document-scrolling chat with an in-flow auto-growing composer                      |
 | `src/views/NewImpressionPage.vue`                                                 | Document-scrolling wizard; prompt textarea reveals itself on focus                 |

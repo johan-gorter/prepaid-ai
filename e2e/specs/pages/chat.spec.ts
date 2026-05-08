@@ -55,6 +55,44 @@ test.describe("PrivateChatPage", () => {
     expect(layout.messageScrollTop).toBe(0);
   });
 
+  test("adds keyboard inset as document scroll runway", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/chat");
+    await expect(page.getByTestId("chat-input")).toBeVisible();
+
+    const layout = await page.evaluate(async () => {
+      document.documentElement.style.setProperty("--kb-inset", "300px");
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
+      const root = document.documentElement;
+      const app = document.querySelector<HTMLElement>("#app");
+      const chatPage = document.querySelector<HTMLElement>(".chat-page");
+      const input = document.querySelector<HTMLElement>(
+        "[data-testid='chat-input']",
+      );
+      window.scrollTo({ top: root.scrollHeight });
+      const inputRect = input?.getBoundingClientRect();
+      return {
+        appPaddingBottom: app ? getComputedStyle(app).paddingBottom : null,
+        chatMinHeight: chatPage ? getComputedStyle(chatPage).minHeight : null,
+        documentScrollHeight: root.scrollHeight,
+        documentClientHeight: root.clientHeight,
+        documentScrollTop: root.scrollTop,
+        inputBottom: inputRect?.bottom ?? null,
+        visibleBottom: root.clientHeight - 300,
+      };
+    });
+
+    expect(layout.appPaddingBottom).toBe("300px");
+    expect(layout.chatMinHeight).toBe("844px");
+    expect(layout.documentScrollHeight).toBeGreaterThanOrEqual(
+      layout.documentClientHeight + 300,
+    );
+    expect(layout.documentScrollTop).toBeGreaterThan(0);
+    expect(layout.inputBottom).toBeLessThanOrEqual(layout.visibleBottom);
+  });
+
   test("send button disabled when input empty", async ({
     authenticatedPage: page,
   }) => {
