@@ -145,12 +145,21 @@ async function runCheckout(credits: number, redirect: string) {
       return;
     }
 
-    // Production: hand off to Stripe Checkout. The session URL is provided
-    // by a Cloud Function which is not yet wired up — fail loudly until
-    // it's implemented so we never silently lose a purchase intent.
-    throw new Error(
-      "Stripe checkout is not configured for this environment yet.",
-    );
+    // Production: hand off to Stripe Checkout.
+    const createCheckoutSession = httpsCallable<
+      { credits: number; successUrl: string; cancelUrl: string },
+      { url: string }
+    >(functions, "createCheckoutSession");
+    const origin = window.location.origin;
+    const successUrl = `${origin}/balance/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${origin}/buy-credits`;
+    const result = await createCheckoutSession({
+      credits,
+      successUrl,
+      cancelUrl,
+    });
+    await clearPendingPurchase();
+    window.location.href = result.data.url;
   } catch (err) {
     errorMessage.value =
       err instanceof Error ? err.message : "Failed to start checkout";

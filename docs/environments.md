@@ -52,7 +52,7 @@ In this mode the app uses real Firebase services and the emulator-only dev login
 
 ## 3. Sandbox Deploy
 
-This is the hosted preview environment deployed by CI to the `prepaid-ai-sandbox` Firebase project.
+This is the hosted preview environment deployed to the `prepaid-ai-sandbox` Firebase project. It uses real Firebase services and real Stripe (test mode keys).
 
 Source of truth:
 

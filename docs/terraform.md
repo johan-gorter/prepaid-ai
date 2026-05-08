@@ -111,17 +111,28 @@ terraform plan  "-var-file=environments/sandbox.tfvars" "-var-file=environments/
 terraform apply "-var-file=environments/sandbox.tfvars" "-var-file=environments/sandbox.auto.tfvars"
 ```
 
-### 5. Set the GEMINI_API_KEY secret value
+### 5. Set secret values
 
-Terraform creates the secret _container_. You set the actual value once per environment.
+Terraform creates the secret _containers_ but never writes the actual values. Populate them using the `push-secrets` script, which reads from your local (gitignored) `.env` file and writes each value to a temp file before calling `gcloud` — avoiding the trailing-newline pitfall of `Read-Host` piping.
 
-Get a key from https://aistudio.google.com/apikey — select the target project when creating it.
+Add the secrets you need to your `.env` file:
+
+```ini
+# .env  (gitignored)
+GEMINI_API_KEY=AIza...          # from https://aistudio.google.com/apikey
+STRIPE_SECRET_KEY=sk_test_...   # or sk_live_... for production
+STRIPE_WEBHOOK_SECRET=whsec_... # from Stripe Dashboard → Webhooks → endpoint
+```
+
+Then push to the target environment:
 
 ```powershell
-"your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY `
-  --project=prepaid-ai-dev `
-  --data-file=-
+node scripts/push-secrets.mjs .env sandbox
+# or: node scripts/push-secrets.mjs .env dev
+# or: node scripts/push-secrets.mjs .env production
 ```
+
+The script skips any key not present in the file, so you can push a partial set safely. See [docs/stripe.md](stripe.md) for the full Stripe setup sequence.
 
 ### 6. Export CI service account key
 
@@ -191,26 +202,23 @@ gcloud storage buckets update gs://prepaid-ai-dev.firebasestorage.app "--cors-fi
 
 ## Cloud Functions + Secret Manager
 
-Terraform creates three Secret Manager secrets and manages their IAM bindings. The function code declares them in the `secrets` option and reads them as `process.env.<SECRET_NAME>` at runtime.
+Terraform creates Secret Manager secrets and manages their IAM bindings. The function code declares them in the `secrets` option and reads them as `process.env.<SECRET_NAME>` at runtime.
 
-| Secret           | Terraform variable | Description                                                           |
-| ---------------- | ------------------ | --------------------------------------------------------------------- |
-| `GEMINI_API_KEY` | (manual)           | API key for Google AI Studio; only needed when `AI_BACKEND=google-ai` |
-| `AI_BACKEND`     | `ai_backend`       | Which AI backend to use: `vertex`, `google-ai`, or `dummy`            |
-| `AI_REGION`      | `ai_region`        | GCP region for Vertex AI workloads (e.g. `us-central1`)               |
+| Secret                  | Set by    | Description                                                            |
+| ----------------------- | --------- | ---------------------------------------------------------------------- |
+| `GEMINI_API_KEY`        | manual    | API key for Google AI Studio; only needed when `AI_BACKEND=google-ai`  |
+| `AI_BACKEND`            | Terraform | Which AI backend to use: `vertex`, `google-ai`, or `dummy`             |
+| `AI_REGION`             | Terraform | GCP region for Vertex AI workloads (e.g. `us-central1`)                |
+| `STRIPE_BACKEND`        | Terraform | `"stripe"` for real Stripe Checkout, `"dummy"` to skip Stripe entirely |
+| `STRIPE_SECRET_KEY`     | manual    | Stripe secret key (`sk_test_...` or `sk_live_...`)                     |
+| `STRIPE_WEBHOOK_SECRET` | manual    | Stripe webhook signing secret (`whsec_...`)                            |
 
-`AI_BACKEND` and `AI_REGION` values are set automatically by Terraform from the `.tfvars` file. `GEMINI_API_KEY` must be set manually once per environment:
-
-```powershell
-"your-gemini-api-key" | gcloud secrets versions add GEMINI_API_KEY `
-  --project=prepaid-ai-dev `
-  --data-file=-
-```
+`AI_BACKEND`, `AI_REGION`, and `STRIPE_BACKEND` are set automatically by Terraform from the `.tfvars` file. The remaining three must be set manually using the `push-secrets` script — see step 5 above.
 
 To deploy functions after changing secrets:
 
 ```powershell
-firebase deploy --only functions --project prepaid-ai-dev --force
+firebase deploy --only functions --project prepaid-ai-dev
 ```
 
 ### Cloud Functions environment variables

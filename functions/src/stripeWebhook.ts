@@ -49,7 +49,9 @@ async function fulfillSession(session: Stripe.Checkout.Session): Promise<void> {
       createdAt: FieldValue.serverTimestamp(),
       metadata: {
         stripeSessionId: session.id,
-        packageId: session.metadata?.packageId,
+        ...(session.metadata?.packageId
+          ? { packageId: session.metadata.packageId }
+          : {}),
       },
     });
     txn.set(userRef, { balance: newBalance }, { merge: true });
@@ -123,7 +125,10 @@ export const stripeWebhook = onRequest(
       }
       // All other event types: ack and ignore.
     } catch (err) {
-      logger.error("stripeWebhook: handler error", { err });
+      logger.error("stripeWebhook: handler error", {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       // Transient — let Stripe retry.
       res.status(500).send("Internal error");
       return;

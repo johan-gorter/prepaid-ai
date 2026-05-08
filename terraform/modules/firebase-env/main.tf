@@ -483,6 +483,15 @@ resource "google_identity_platform_config" "auth" {
     }
   }
 
+  # blocking_functions is registered by `firebase deploy --only functions` when
+  # it deploys beforeCreate (and similar triggers). Terraform must not touch it
+  # or it will unregister the beforeCreate domain-restriction trigger.
+  # multi_tenant and sign_in.phone_number are GCP-managed defaults; ignore them
+  # to prevent spurious drift after every plan.
+  lifecycle {
+    ignore_changes = [blocking_functions, multi_tenant, sign_in[0].phone_number]
+  }
+
   depends_on = [google_project_service.apis]
 }
 

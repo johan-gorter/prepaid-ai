@@ -2,13 +2,12 @@ import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
-import { CREDIT_PACKAGES, type CreditPackageId } from "./credits.js";
-import {
-  getCreditPackage,
-  getStripeBackend,
-  getStripeClient,
-} from "./stripe.js";
+import { CREDIT_VALUE_USD } from "./credits.js";
+import { getStripeBackend, getStripeClient } from "./stripe.js";
 import { isAllowedOrigin } from "./utils.js";
+
+const MIN_CREDITS = 10;
+const MAX_CREDITS = 10_000;
 
 function validateRedirectUrl(url: unknown, name: string): string {
   if (typeof url !== "string") {
@@ -36,50 +35,54 @@ export const createCheckoutSession = onCall(
   },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated", "Authentication required");
+    if (!uid)
+      throw new HttpsError("unauthenticated", "Authentication required");
 
-    const { packageId, successUrl, cancelUrl } = request.data as {
-      packageId: unknown;
+    const { credits, successUrl, cancelUrl } = request.data as {
+      credits: unknown;
       successUrl: unknown;
       cancelUrl: unknown;
     };
 
-    const validIds = CREDIT_PACKAGES.map((p) => p.id) as string[];
-    if (typeof packageId !== "string" || !validIds.includes(packageId)) {
+    if (
+      typeof credits !== "number" ||
+      !Number.isInteger(credits) ||
+      credits < MIN_CREDITS ||
+      credits > MAX_CREDITS
+    ) {
       throw new HttpsError(
         "invalid-argument",
-        `packageId must be one of: ${validIds.join(", ")}`,
+        `credits must be an integer between ${MIN_CREDITS} and ${MAX_CREDITS}`,
       );
     }
     const validatedSuccessUrl = validateRedirectUrl(successUrl, "successUrl");
     const validatedCancelUrl = validateRedirectUrl(cancelUrl, "cancelUrl");
 
-    const pkg = getCreditPackage(packageId as CreditPackageId);
+    // 1 credit = $0.01 USD = 1 cent
+    const priceCents = Math.round(credits * CREDIT_VALUE_USD * 100);
     const backend = getStripeBackend();
 
     if (backend === "dummy") {
       // Emulator / dummy mode: credit the account directly, no Stripe call.
       const userRef = db.doc(`users/${uid}`);
-      const txnRef = db
-        .collection(`users/${uid}/balanceTransactions`)
-        .doc();
+      const txnRef = db.collection(`users/${uid}/balanceTransactions`).doc();
 
       await db.runTransaction(async (txn) => {
         const snap = await txn.get(userRef);
         const currentBalance: number = snap.data()?.balance ?? 0;
-        const newBalance = currentBalance + pkg.credits;
+        const newBalance = currentBalance + credits;
 
         txn.set(txnRef, {
           reasonKey: "credit_purchase" as TransactionReasonKey,
-          amount: pkg.credits,
+          amount: credits,
           balanceAfter: newBalance,
           createdAt: FieldValue.serverTimestamp(),
-          metadata: { packageId, source: "dummy" },
+          metadata: { credits, source: "dummy" },
         });
         txn.set(userRef, { balance: newBalance }, { merge: true });
       });
 
-      return { dummy: true as const, credits: pkg.credits };
+      return { dummy: true as const, credits };
     }
 
     // Production: create a Stripe Checkout session and return the URL.
@@ -87,13 +90,16 @@ export const createCheckoutSession = onCall(
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: uid,
-      metadata: { credits: String(pkg.credits), packageId },
+      ...(request.auth?.token.email
+        ? { customer_email: request.auth.token.email }
+        : {}),
+      metadata: { credits: String(credits) },
       line_items: [
         {
           price_data: {
             currency: "usd",
-            product_data: { name: `${pkg.credits} credits — payasyougo.app` },
-            unit_amount: pkg.priceCents,
+            product_data: { name: `${credits} credits — payasyougo.app` },
+            unit_amount: priceCents,
           },
           quantity: 1,
         },

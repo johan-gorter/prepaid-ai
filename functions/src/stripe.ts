@@ -5,9 +5,8 @@
 // - "dummy"  — skip Stripe; add credits directly (emulator / sandbox testing)
 // ---------------------------------------------------------------------------
 
-import Stripe from "stripe";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { CREDIT_PACKAGES, type CreditPackageId } from "./credits.js";
+import Stripe from "stripe";
 
 export type StripeBackend = "stripe" | "dummy";
 
@@ -27,14 +26,6 @@ export function getStripeClient(): Stripe {
   return new Stripe(key, {
     apiVersion: STRIPE_API_VERSION as Stripe.LatestApiVersion,
   });
-}
-
-export function getCreditPackage(
-  id: CreditPackageId,
-): (typeof CREDIT_PACKAGES)[number] {
-  const pkg = CREDIT_PACKAGES.find((p) => p.id === id);
-  if (!pkg) throw new Error(`Unknown credit package: ${id}`);
-  return pkg;
 }
 
 /**

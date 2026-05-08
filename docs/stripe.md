@@ -5,7 +5,7 @@ This document explains how the credit purchase flow works in production (real St
 ## Architecture overview
 
 ```
-Frontend (BalancePage)
+Frontend (BuyCreditsPage)
   └── calls createCheckoutSession (Firebase Callable Function)
         ├── STRIPE_BACKEND = "stripe"  → creates Stripe Checkout session → returns URL
         │     └── frontend redirects to Stripe → user pays → Stripe calls stripeWebhook
@@ -29,7 +29,7 @@ The `STRIPE_BACKEND` Secret Manager secret controls which path is taken. In emul
 
 When `FUNCTIONS_EMULATOR === "true"` (Firebase local emulator) or `STRIPE_BACKEND === "dummy"`, calling `createCheckoutSession` **does not contact Stripe at all**. Instead it:
 
-1. Looks up the credit package by ID
+1. Validates the requested credit amount (10–10,000)
 2. Runs a Firestore transaction to increment the user's balance
 3. Returns `{ dummy: true, credits: N }`
 
@@ -43,7 +43,7 @@ npm -s run services:start dev:emulators
 npm -s run services:wait emulators dev:emulators
 npm -s run emulators:seed
 
-# Open http://localhost:5174, sign in, navigate to Balance, click any package.
+# Open http://localhost:5174, sign in, navigate to Buy Credits, pick an amount and confirm.
 # Credits appear immediately — no Stripe account or internet access needed.
 ```
 
@@ -82,12 +82,12 @@ Hosting rewrite is added explicitly.
 
 Current environment URLs:
 
-| Environment    | Status                                       | Stripe webhook endpoint                                                       |
-| -------------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
-| Local emulator | Use Stripe CLI forwarding                    | `http://localhost:5001/prepaid-ai-emulator/europe-west1/stripeWebhook`        |
-| Sandbox        | Expected URL after deploying `stripeWebhook` | `https://europe-west1-prepaid-ai-sandbox.cloudfunctions.net/stripeWebhook`    |
-| Dev            | Deployed                                     | `https://europe-west1-prepaid-ai-dev.cloudfunctions.net/stripeWebhook`        |
-| Production     | Created                                      | `https://europe-west1-payasyougo-production.cloudfunctions.net/stripeWebhook` |
+| Environment    | Status                    | Stripe webhook endpoint                                                       |
+| -------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| Local emulator | Use Stripe CLI forwarding | `http://localhost:5001/prepaid-ai-emulator/europe-west1/stripeWebhook`        |
+| Sandbox        | Deployed                  | `https://europe-west1-prepaid-ai-sandbox.cloudfunctions.net/stripeWebhook`    |
+| Dev            | Deployed                  | `https://europe-west1-prepaid-ai-dev.cloudfunctions.net/stripeWebhook`        |
+| Production     | Created                   | `https://europe-west1-payasyougo-production.cloudfunctions.net/stripeWebhook` |
 
 Firebase Functions v2 also exposes a Cloud Run URL shaped like this:
 
@@ -109,22 +109,28 @@ Copy the **Signing secret** (`whsec_...`) — you will need it in the next step.
 ### 4. Store secrets in GCP Secret Manager
 
 After running `terraform apply`, the secret resources exist but have no value.
-Set them manually from PowerShell. Each command prompts for the secret value and
-pipes it to `gcloud`.
+Use the `push-secrets` script to populate them from a local (gitignored) env file.
 
-```powershell
-Read-Host "Stripe secret key" | gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=payasyougo-production
+**Add the secrets to your `.env` file (or a dedicated `.env.sandbox` / `.env.dev` — all gitignored):**
 
-Read-Host "Stripe webhook signing secret" | gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=payasyougo-production
+```ini
+# .env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+GEMINI_API_KEY=AIza...
 ```
 
-For sandbox, use `sk_test_...` and point to `prepaid-ai-sandbox`:
+**Push all secrets in the file to Secret Manager in one command:**
 
 ```powershell
-Read-Host "Stripe secret key" | gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=prepaid-ai-sandbox
-
-Read-Host "Stripe webhook signing secret" | gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=prepaid-ai-sandbox
+node scripts/push-secrets.mjs .env sandbox
+# or: node scripts/push-secrets.mjs .env dev
+# or: node scripts/push-secrets.mjs .env production
+# or with a dedicated file: node scripts/push-secrets.mjs .env.sandbox sandbox
 ```
+
+The script writes each value to a temp file before calling `gcloud`, so no
+trailing newline is ever included (a common pitfall with `Read-Host` piping).
 
 ### 5. Switch STRIPE_BACKEND to "stripe"
 
@@ -150,44 +156,28 @@ Then redeploy functions to pick up the new secret value:
 firebase deploy --only functions --project payasyougo-production
 ```
 
-For sandbox, leave `stripe_backend` at the default `"dummy"` until you've
-added test keys (`sk_test_...`, `whsec_...`) and want to exercise the real
-Stripe path.
+For sandbox and dev, set `stripe_backend = "stripe"` in the `.tfvars` file after the secrets are populated.
 
 ---
 
-## Credit packages
+## Credit amounts
 
-Packages are defined in two places (must be kept in sync):
+The buy-credits page accepts any integer between 10 and 10,000 credits. There are no fixed packages — the Stripe session is created with inline `price_data` on the fly. No pre-created Stripe products or prices are needed.
 
-| File                       | Used by         |
-| -------------------------- | --------------- |
-| `functions/src/credits.ts` | Cloud Functions |
-| `src/types.ts`             | Vue frontend    |
-
-Current packages (1 credit = $0.01 USD):
-
-| Package ID     | Credits | Price  |
-| -------------- | ------- | ------ |
-| `credits_100`  | 100     | $1.00  |
-| `credits_500`  | 500     | $5.00  |
-| `credits_1000` | 1,000   | $10.00 |
-| `credits_5000` | 5,000   | $50.00 |
-
-To add or change packages: update both files, redeploy functions, rebuild the frontend.
+1 credit = $0.01 USD (1 cent). This constant lives in `functions/src/credits.ts` (`CREDIT_VALUE_USD`) and its client-side mirror `src/credits.ts`.
 
 ---
 
 ## Payment flow (production detail)
 
-1. User clicks a package button on `/balance`.
-2. Frontend calls `createCheckoutSession({ packageId, successUrl, cancelUrl })`.
-3. Function creates a Stripe Checkout session:
+1. User picks an amount on `/buy-credits` (10–10,000 credits).
+2. Frontend calls `createCheckoutSession({ credits, successUrl, cancelUrl })`.
+3. Function creates a Stripe Checkout session with inline `price_data` (no pre-created Stripe product needed):
    - `client_reference_id`: Firebase Auth UID (used in webhook to identify the user)
+   - `customer_email`: pre-filled from Firebase Auth token
    - `metadata.credits`: number of credits to add
-   - `metadata.packageId`: package identifier
    - `success_url`: `<origin>/balance/success?session_id={CHECKOUT_SESSION_ID}`
-   - `cancel_url`: `<origin>/balance`
+   - `cancel_url`: `<origin>/buy-credits`
 4. Frontend receives the session URL and redirects to `checkout.stripe.com/...`.
 5. User completes payment on Stripe's hosted page.
 6. Stripe posts `checkout.session.completed` to `stripeWebhook`.
