@@ -30,7 +30,7 @@ listens to `window.visualViewport`'s `resize` and `scroll` events and writes
 the keyboard height into a CSS custom property on `<html>`:
 
 ```css
---kb-inset: <px>;     /* 0 when the keyboard is closed */
+--kb-inset: <px>; /* 0 when the keyboard is closed */
 ```
 
 The value is computed as
@@ -53,7 +53,10 @@ keyboard. iOS Safari ignores both APIs.
 The current setup (see `index.html`) opts into none of them:
 
 ```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+/>
 ```
 
 `viewport-fit=cover` is needed for PWA safe-area handling. Anything beyond
@@ -81,6 +84,27 @@ scrollbar.
 
 `overflow-x: clip` keeps the page horizontally readable at 320 px even when
 a child element refuses to shrink.
+
+## Fixed AppBar overlay
+
+`AppBar.vue` renders Beer CSS's `header.fixed`, but Beer CSS implements that
+header as `position: sticky`, which means it still occupies normal document
+flow. The page patterns below reserve their own top space for the AppBar, so
+`src/style.css` deliberately promotes it to a real fixed overlay:
+
+```css
+#app header.fixed {
+  position: fixed;
+  inset: 0 0 auto 0;
+}
+```
+
+This keeps the page-height math single-source: routes add
+`padding-top: var(--app-bar-clearance)` to clear the AppBar visually, while the
+header itself does not make the document one toolbar taller. Without this
+override, viewport-locked pages such as chat end up with
+`html.scrollHeight === visualViewport.height + 64px`, so the browser scrolls
+even when only the inner message pane should scroll.
 
 ## Fixed footer that follows the keyboard
 
@@ -117,7 +141,7 @@ pages, settings, balance, the renovation timeline.
   <main
     class="responsive"
     style="max-width: 800px; margin: 0 auto;
-           padding-top: 4.5rem;     /* clears the fixed AppBar */
+           padding-top: var(--app-bar-clearance); /* clears the fixed AppBar */
            padding-bottom: 5rem;    /* clears the StickyFooter, omit if no footer */"
   >
     <!-- content -->
@@ -153,7 +177,7 @@ viewport while messages or media scroll above it. The current users are
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--kb-inset, 0px));
-  padding-top: 4.5rem; /* clears the fixed AppBar */
+  padding-top: var(--app-bar-clearance); /* clears the fixed AppBar */
 }
 .scroll-area {
   flex: 1;
@@ -230,13 +254,13 @@ Pattern B above, manually verify all of the following before pushing:
 
 ## File map
 
-| File | Role |
-|---|---|
-| `index.html` | Viewport meta — `viewport-fit=cover`, **no** `interactive-widget` |
-| `src/App.vue` | Mounts `useKeyboardInset()` once globally |
-| `src/composables/useKeyboardInset.ts` | Tracks `visualViewport`, writes `--kb-inset` on `<html>` |
-| `src/style.css` | Caps `body` / `#app` to `100dvh - --kb-inset`; horizontal clip; header width clamp |
-| `src/components/StickyFooter.vue` | Fixed footer using `bottom: var(--kb-inset, 0px)`; mobile bottom-nav layout |
-| `src/views/PrivateChatPage.vue` | Pattern B example — chat composer above keyboard |
-| `src/views/NewImpressionPage.vue` | Pattern B during prompt stage; Pattern A footer otherwise |
-| `src/views/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Pattern A — `min-height: 100dvh` page-layout columns |
+| File                                                                              | Role                                                                               |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `index.html`                                                                      | Viewport meta — `viewport-fit=cover`, **no** `interactive-widget`                  |
+| `src/App.vue`                                                                     | Mounts `useKeyboardInset()` once globally                                          |
+| `src/composables/useKeyboardInset.ts`                                             | Tracks `visualViewport`, writes `--kb-inset` on `<html>`                           |
+| `src/style.css`                                                                   | Caps `body` / `#app` to `100dvh - --kb-inset`; horizontal clip; header width clamp |
+| `src/components/StickyFooter.vue`                                                 | Fixed footer using `bottom: var(--kb-inset, 0px)`; mobile bottom-nav layout        |
+| `src/views/PrivateChatPage.vue`                                                   | Pattern B example — chat composer above keyboard                                   |
+| `src/views/NewImpressionPage.vue`                                                 | Pattern B during prompt stage; Pattern A footer otherwise                          |
+| `src/views/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Pattern A — `min-height: 100dvh` page-layout columns                               |

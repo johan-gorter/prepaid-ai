@@ -4,11 +4,11 @@
  * Add credits to a user's balance.
  *
  * Usage:
- *   node devtools/add-credits.mjs <environment> <user-email> <amount>
+ *   node scripts/add-credits.mjs <environment> <user-email> <amount>
  *
  * Examples:
- *   node devtools/add-credits.mjs sandbox johan@johangorter.com 100
- *   node devtools/add-credits.mjs production user@example.com 50
+ *   node scripts/add-credits.mjs sandbox johan@johangorter.com 100
+ *   node scripts/add-credits.mjs production user@example.com 50
  *
  * Prerequisites:
  *   gcloud auth application-default login
@@ -18,9 +18,9 @@
  * can run this script successfully.
  */
 
-import { cert, initializeApp } from "firebase-admin/app";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 // ── Environment → project mapping ──────────────────────────────────────────
 
@@ -36,7 +36,7 @@ const [env, email, amountStr] = process.argv.slice(2);
 
 if (!env || !email || !amountStr) {
   console.error(
-    "Usage: node devtools/add-credits.mjs <environment> <user-email> <amount>",
+    "Usage: node scripts/add-credits.mjs <environment> <user-email> <amount>",
   );
   console.error(`  environment: ${Object.keys(ENVIRONMENTS).join(", ")}`);
   process.exit(1);

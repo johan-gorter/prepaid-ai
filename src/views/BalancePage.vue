@@ -5,11 +5,16 @@ import AppBar from "../components/AppBar.vue";
 import { useBalance } from "../composables/useBalance";
 import { useCheckout } from "../composables/useCheckout";
 import { functions } from "../firebase";
-import { CREDIT_PACKAGES, TRANSACTION_REASONS } from "../types";
 import type { CreditPackageId } from "../types";
+import { CREDIT_PACKAGES, TRANSACTION_REASONS } from "../types";
 
 const { balance, transactions, loading } = useBalance();
-const { purchasing, error: checkoutError, dummyResult, purchase } = useCheckout();
+const {
+  purchasing,
+  error: checkoutError,
+  dummyResult,
+  purchase,
+} = useCheckout();
 
 // Driven by the server so it reflects the actual STRIPE_BACKEND, not the
 // build-time emulator flag (a deployed sandbox can run with backend=dummy).
@@ -37,7 +42,11 @@ function formatPrice(cents: number): string {
 
   <main
     class="responsive"
-    style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
+    style="
+      max-width: 800px;
+      margin: 0 auto;
+      padding-top: var(--app-bar-clearance);
+    "
   >
     <div v-if="loading" class="center-align" style="padding-top: 4rem">
       <progress class="circle"></progress>
@@ -54,12 +63,32 @@ function formatPrice(cents: number): string {
 
       <!-- Buy credits -->
       <h6>Buy credits</h6>
-      <div v-if="isDummyBackend" class="row surface-variant" style="padding: 0.5rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; gap: 0.5rem; align-items: center" data-testid="dummy-backend-banner">
+      <div
+        v-if="isDummyBackend"
+        class="row surface-variant"
+        style="
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          margin-bottom: 1rem;
+          gap: 0.5rem;
+          align-items: center;
+        "
+        data-testid="dummy-backend-banner"
+      >
         <i>science</i>
-        <span class="small">Test mode — purchases add credits directly without charging.</span>
+        <span class="small"
+          >Test mode — purchases add credits directly without charging.</span
+        >
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem">
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        "
+      >
         <button
           v-for="pkg in CREDIT_PACKAGES"
           :key="pkg.id"
@@ -68,17 +97,41 @@ function formatPrice(cents: number): string {
           :disabled="purchasing"
           @click="purchase(pkg.id as CreditPackageId)"
         >
-          <span style="font-size: 1.1rem; font-weight: 600">{{ pkg.credits }} credits</span>
-          <span class="small" style="opacity: 0.7">{{ formatPrice(pkg.priceCents) }}</span>
+          <span style="font-size: 1.1rem; font-weight: 600"
+            >{{ pkg.credits }} credits</span
+          >
+          <span class="small" style="opacity: 0.7">{{
+            formatPrice(pkg.priceCents)
+          }}</span>
         </button>
       </div>
 
-      <div v-if="dummyResult" class="row" style="color: var(--primary); gap: 0.5rem; margin-bottom: 0.5rem; align-items: center">
+      <div
+        v-if="dummyResult"
+        class="row"
+        style="
+          color: var(--primary);
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          align-items: center;
+        "
+      >
         <i>check_circle</i>
-        <span data-testid="dummy-purchase-result">{{ dummyResult.credits }} credits added (dummy purchase)</span>
+        <span data-testid="dummy-purchase-result"
+          >{{ dummyResult.credits }} credits added (dummy purchase)</span
+        >
       </div>
 
-      <div v-if="checkoutError" class="row" style="color: var(--error); gap: 0.5rem; margin-bottom: 0.5rem; align-items: center">
+      <div
+        v-if="checkoutError"
+        class="row"
+        style="
+          color: var(--error);
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          align-items: center;
+        "
+      >
         <i>error</i>
         <span>{{ checkoutError }}</span>
       </div>

@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+:root {
+  --app-bar-clearance: 4.5rem;
+}
+
 body {
   margin: 0;
   /* Cap body to the visible viewport so the document never extends past the
@@ -41,17 +45,25 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
   white-space: nowrap;
 }
 
-/* Constrain fixed header/footer nav content to match main content width.
-   Beer CSS uses `display: grid` on <header>, and a single grid cell sized
-   `auto` will expand to its content's intrinsic width — which lets the nav
-   push past the viewport when its flex children refuse to shrink. Forcing
-   the column to `minmax(0, 1fr)` clamps the grid cell to the available
-   header width regardless of content. */
-header.fixed {
+/* AppBar contract: Beer CSS's `header.fixed` computes to sticky, which keeps
+  it in normal document flow. Our pages reserve top space themselves, so the
+  AppBar must be a real overlay or viewport-locked pages become one header
+  taller than the visible viewport. */
+#app header.fixed {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 12;
   grid-template-columns: minmax(0, 1fr);
 }
 
-header.fixed > nav {
+/* Constrain fixed header/footer nav content to match main content width.
+  Beer CSS uses `display: grid` on <header>, and a single grid cell sized
+  `auto` will expand to its content's intrinsic width — which lets the nav
+  push past the viewport when its flex children refuse to shrink. Forcing
+  the column to `minmax(0, 1fr)` clamps the grid cell to the available
+  header width regardless of content. */
+
+#app header.fixed > nav {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -68,11 +80,11 @@ header.fixed > nav {
 /* Tighten the AppBar at narrow widths so the logo, title, balance and
    user-menu all fit within a 320px viewport. */
 @media (max-width: 599px) {
-  header.fixed {
+  #app header.fixed {
     padding-inline: 0.5rem;
   }
 
-  header.fixed > nav {
+  #app header.fixed > nav {
     gap: 0.5rem;
   }
 

@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-} from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -26,8 +22,8 @@ import {
 } from "../composables/useImpressionStore";
 import { useRenovations } from "../composables/useRenovations";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
-import { db, storage } from "../firebase";
 import { IMPRESSION_CREDITS } from "../credits";
+import { db, storage } from "../firebase";
 
 type Stage = "preview" | "mask" | "prompt" | "processing";
 type Source = "photo" | "crop" | "original" | "impression";
@@ -36,8 +32,12 @@ const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
 const { balance, waitForLoad: waitForBalance } = useBalance();
-const { createRenovation, createImpression, deleteImpression, deleteRenovation } =
-  useRenovations();
+const {
+  createRenovation,
+  createImpression,
+  deleteImpression,
+  deleteRenovation,
+} = useRenovations();
 
 const stage = ref<Stage>("preview");
 const sourceObjectUrl = ref<string | null>(null);
@@ -335,7 +335,11 @@ function waitForCompletion(
           resolve(data.resultImagePath as string);
         } else if (data.status === "failed") {
           unsub();
-          reject(new Error((data.error as string | undefined) ?? "Processing failed"));
+          reject(
+            new Error(
+              (data.error as string | undefined) ?? "Processing failed",
+            ),
+          );
         }
       },
       (err) => {
@@ -478,7 +482,9 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
       :class="{ 'wizard-main--prompt': stage === 'prompt' }"
     >
       <div class="step-hint">
-        <span v-if="stage === 'mask'">Paint the area you want to change (shown in red)</span>
+        <span v-if="stage === 'mask'"
+          >Paint the area you want to change (shown in red)</span
+        >
       </div>
 
       <div
@@ -554,7 +560,11 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
         <i aria-hidden="true">delete</i>
         <span>Trash</span>
       </button>
-      <button class="max small-round" @click="onNextChange" aria-label="Next Change">
+      <button
+        class="max small-round"
+        @click="onNextChange"
+        aria-label="Next Change"
+      >
         <i aria-hidden="true">edit</i>
         <span>Next Change</span>
       </button>
@@ -610,7 +620,7 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
-  padding-top: 4.5rem;
+  padding-top: var(--app-bar-clearance);
   padding-bottom: 5rem;
 }
 

@@ -20,6 +20,34 @@ test.describe("PrivateChatPage", () => {
     await expect(page.getByTestId("chat-send")).toBeVisible();
   });
 
+  test("keeps document scrolling locked to the chat message pane", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/chat");
+    await expect(page.getByTestId("chat-input")).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const chatMessages =
+        document.querySelector<HTMLElement>(".chat-messages");
+      return {
+        documentScrollHeight: root.scrollHeight,
+        documentClientHeight: root.clientHeight,
+        documentScrollTop: root.scrollTop,
+        messageOverflowY: chatMessages
+          ? getComputedStyle(chatMessages).overflowY
+          : null,
+      };
+    });
+
+    expect(layout.messageOverflowY).toBe("auto");
+    expect(layout.documentScrollHeight).toBeLessThanOrEqual(
+      layout.documentClientHeight,
+    );
+    expect(layout.documentScrollTop).toBe(0);
+  });
+
   test("send button disabled when input empty", async ({
     authenticatedPage: page,
   }) => {

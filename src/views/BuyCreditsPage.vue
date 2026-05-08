@@ -39,7 +39,11 @@ const maxCredits = computed(() => Number(route.query.max ?? 0) || 0);
 const redirectTo = computed(() => {
   const raw = route.query.redirect;
   const candidate = Array.isArray(raw) ? raw[0] : raw;
-  if (typeof candidate === "string" && candidate.startsWith("/") && !candidate.startsWith("//")) {
+  if (
+    typeof candidate === "string" &&
+    candidate.startsWith("/") &&
+    !candidate.startsWith("//")
+  ) {
     return candidate;
   }
   return "/main";
@@ -186,7 +190,11 @@ function buyCustom() {
 
   <main
     class="responsive"
-    style="max-width: 600px; margin: 0 auto; padding-top: 4.5rem"
+    style="
+      max-width: 600px;
+      margin: 0 auto;
+      padding-top: var(--app-bar-clearance);
+    "
   >
     <div class="center-align" style="padding: 1.5rem 0 1rem">
       <i class="extra primary-text" style="font-size: 3rem">savings</i>

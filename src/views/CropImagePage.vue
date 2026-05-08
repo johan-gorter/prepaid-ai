@@ -298,7 +298,7 @@ async function handleCancel() {
       style="
         max-width: 800px;
         margin: 0 auto;
-        padding-top: 4.5rem;
+        padding-top: var(--app-bar-clearance);
         padding-bottom: 5rem;
       "
     >

@@ -179,13 +179,10 @@ async function persistChatDraft() {
 // Persist chat state only at meaningful checkpoints. Skipping streaming
 // avoids a per-chunk write to IndexedDB (useChat reassigns messages.value[idx]
 // per chunk), which would scale O(history²) for long replies.
-watch(
-  [userInput, maxCredits],
-  () => {
-    if (streaming.value) return;
-    void persistChatDraft();
-  },
-);
+watch([userInput, maxCredits], () => {
+  if (streaming.value) return;
+  void persistChatDraft();
+});
 watch(streaming, (isStreamingNow, wasStreaming) => {
   if (wasStreaming && !isStreamingNow) {
     // Capture the final messages array exactly once when the response ends.
@@ -388,7 +385,7 @@ function continueChat() {
   /* padding-top clears the fixed AppBar overlay; height fills the visible
      viewport so the chat-bottom anchors at the bottom (above the on-screen
      keyboard when present) without leaving dead space below it. */
-  padding: 4.5rem 0 0;
+  padding: var(--app-bar-clearance) 0 0;
   display: flex;
   flex-direction: column;
   height: calc(100dvh - var(--kb-inset, 0px));

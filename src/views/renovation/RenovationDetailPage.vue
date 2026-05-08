@@ -6,12 +6,12 @@ import AppBar from "../../components/AppBar.vue";
 import StorageImage from "../../components/StorageImage.vue";
 import { useAuth } from "../../composables/useAuth";
 import { useImpressions } from "../../composables/useImpressions";
-import { useRenovations } from "../../composables/useRenovations";
 import {
   clearImpressionDraft,
   clearImpressionMask,
   clearImpressionSource,
 } from "../../composables/useImpressionStore";
+import { useRenovations } from "../../composables/useRenovations";
 import { db } from "../../firebase";
 import type { Renovation } from "../../types";
 
@@ -175,7 +175,11 @@ onMounted(() => {
     <main
       ref="scrollContainer"
       class="responsive"
-      style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
+      style="
+        max-width: 800px;
+        margin: 0 auto;
+        padding-top: var(--app-bar-clearance);
+      "
     >
       <div v-if="loading" class="center-align large-padding">
         <progress class="circle"></progress>

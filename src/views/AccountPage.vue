@@ -50,7 +50,11 @@ async function handleDeleteAccount() {
 
   <main
     class="responsive"
-    style="max-width: 800px; margin: 0 auto; padding-top: 4.5rem"
+    style="
+      max-width: 800px;
+      margin: 0 auto;
+      padding-top: var(--app-bar-clearance);
+    "
   >
     <h4>Account</h4>
 
@@ -116,4 +120,3 @@ async function handleDeleteAccount() {
     </div>
   </main>
 </template>
-
