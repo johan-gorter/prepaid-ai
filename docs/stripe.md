@@ -16,10 +16,10 @@ Frontend (BalancePage)
 
 Two Cloud Functions are involved:
 
-| Function               | Type       | Purpose                                                        |
-| ---------------------- | ---------- | -------------------------------------------------------------- |
-| `createCheckoutSession`| Callable   | Creates a Stripe Checkout session or performs a dummy purchase |
-| `stripeWebhook`        | HTTP       | Receives and verifies Stripe webhook; adds credits             |
+| Function                | Type     | Purpose                                                        |
+| ----------------------- | -------- | -------------------------------------------------------------- |
+| `createCheckoutSession` | Callable | Creates a Stripe Checkout session or performs a dummy purchase |
+| `stripeWebhook`         | HTTP     | Receives and verifies Stripe webhook; adds credits             |
 
 The `STRIPE_BACKEND` Secret Manager secret controls which path is taken. In emulator mode the code defaults to `dummy` regardless of the secret.
 
@@ -59,28 +59,45 @@ Go to [https://dashboard.stripe.com](https://dashboard.stripe.com) and create an
 
 In Stripe Dashboard → **Developers → API keys**:
 
-| Key               | Where used                                    |
-| ----------------- | --------------------------------------------- |
-| Secret key        | `STRIPE_SECRET_KEY` in Secret Manager         |
-| Publishable key   | Not needed — we use Stripe Checkout (hosted)  |
+| Key             | Where used                                   |
+| --------------- | -------------------------------------------- |
+| Secret key      | `STRIPE_SECRET_KEY` in Secret Manager        |
+| Publishable key | Not needed — we use Stripe Checkout (hosted) |
 
 Use **live keys** (`sk_live_...`) for production and **test keys** (`sk_test_...`) for sandbox.
 
 ### 3. Register the webhook endpoint
 
-After deploying the Cloud Functions, the `stripeWebhook` URL is:
+The `stripeWebhook` function is an HTTP Cloud Function exported from
+`functions/src/stripeWebhook.ts`. It is deployed in `europe-west1`, so the
+stable Firebase Functions URL is:
 
 ```
-https://<region>-<project-id>.cloudfunctions.net/stripeWebhook
+https://europe-west1-<project-id>.cloudfunctions.net/stripeWebhook
 ```
 
-or (Cloud Run URL):
+The public Hosting URL, such as `https://payasyougo.app` or a `.web.app`
+domain, serves the frontend. It is not the webhook base URL unless a Firebase
+Hosting rewrite is added explicitly.
+
+Current environment URLs:
+
+| Environment    | Status                                       | Stripe webhook endpoint                                                       |
+| -------------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| Local emulator | Use Stripe CLI forwarding                    | `http://localhost:5001/prepaid-ai-emulator/europe-west1/stripeWebhook`        |
+| Sandbox        | Expected URL after deploying `stripeWebhook` | `https://europe-west1-prepaid-ai-sandbox.cloudfunctions.net/stripeWebhook`    |
+| Dev            | Deployed                                     | `https://europe-west1-prepaid-ai-dev.cloudfunctions.net/stripeWebhook`        |
+| Production     | Created                                      | `https://europe-west1-payasyougo-production.cloudfunctions.net/stripeWebhook` |
+
+Firebase Functions v2 also exposes a Cloud Run URL shaped like this:
 
 ```
 https://stripewebhook-<hash>-ew.a.run.app
 ```
 
-Find the exact URL in the Firebase Console → Functions, or from `firebase deploy` output.
+Prefer the stable `cloudfunctions.net` URL for Stripe. You can also confirm the
+exact deployed URL in Firebase Console -> Functions, or from `firebase deploy`
+output.
 
 In Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
 
@@ -96,11 +113,11 @@ After running `terraform apply`, the secret resources exist but have no value. S
 ```bash
 # Stripe secret key
 echo -n "sk_live_YOUR_KEY_HERE" | \
-  gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=prepaid-ai-production
+  gcloud secrets versions add STRIPE_SECRET_KEY --data-file=- --project=payasyougo-production
 
 # Stripe webhook signing secret
 echo -n "whsec_YOUR_SIGNING_SECRET_HERE" | \
-  gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=prepaid-ai-production
+  gcloud secrets versions add STRIPE_WEBHOOK_SECRET --data-file=- --project=payasyougo-production
 ```
 
 For sandbox, use `sk_test_...` and point to `prepaid-ai-sandbox`:
@@ -136,7 +153,7 @@ terraform apply -var-file=environments/production.tfvars
 Then redeploy functions to pick up the new secret value:
 
 ```bash
-firebase deploy --only functions --project prepaid-ai-production
+firebase deploy --only functions --project payasyougo-production
 ```
 
 For sandbox, leave `stripe_backend` at the default `"dummy"` until you've
@@ -149,19 +166,19 @@ Stripe path.
 
 Packages are defined in two places (must be kept in sync):
 
-| File                               | Used by           |
-| ---------------------------------- | ----------------- |
-| `functions/src/credits.ts`         | Cloud Functions   |
-| `src/types.ts`                     | Vue frontend      |
+| File                       | Used by         |
+| -------------------------- | --------------- |
+| `functions/src/credits.ts` | Cloud Functions |
+| `src/types.ts`             | Vue frontend    |
 
 Current packages (1 credit = $0.01 USD):
 
-| Package ID       | Credits | Price  |
-| ---------------- | ------- | ------ |
-| `credits_100`    | 100     | $1.00  |
-| `credits_500`    | 500     | $5.00  |
-| `credits_1000`   | 1,000   | $10.00 |
-| `credits_5000`   | 5,000   | $50.00 |
+| Package ID     | Credits | Price  |
+| -------------- | ------- | ------ |
+| `credits_100`  | 100     | $1.00  |
+| `credits_500`  | 500     | $5.00  |
+| `credits_1000` | 1,000   | $10.00 |
+| `credits_5000` | 5,000   | $50.00 |
 
 To add or change packages: update both files, redeploy functions, rebuild the frontend.
 

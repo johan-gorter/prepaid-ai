@@ -374,7 +374,7 @@ Select-String -Path functions/src/index.ts -Pattern 'memory|timeout'
 
 **Attack:** A token obtained from the sandbox project is used against the dev or production project.
 
-**What secures it:** Firebase projects are completely isolated. Each project has its own auth database, Firestore, and Storage. A token for `prepaid-ai-sandbox` is not valid for `prepaid-ai-dev` or `prepaid-ai-production`.
+**What secures it:** Firebase projects are completely isolated. Each project has its own auth database, Firestore, and Storage. A token for `prepaid-ai-sandbox` is not valid for `prepaid-ai-dev` or `payasyougo-production`.
 
 **Verify:**
 

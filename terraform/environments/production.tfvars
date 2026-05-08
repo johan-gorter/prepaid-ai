@@ -1,4 +1,4 @@
-project_id         = "prepaid-ai-production"
+project_id         = "payasyougo-production"
 environment        = "production"
 region             = "europe-west1"
 firestore_location = "eur3"

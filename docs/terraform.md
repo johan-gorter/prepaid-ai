@@ -27,7 +27,7 @@ terraform/
 | ----------- | ----------------------- | ----------------------------------- | -------------------- |
 | sandbox     | `prepaid-ai-sandbox`    | Manual / local dev                  | —                    |
 | dev         | `prepaid-ai-dev`        | CI on merge to `main`               | `main`               |
-| production  | `prepaid-ai-production` | CI on merge to `release/production` | `release/production` |
+| production  | `payasyougo-production` | CI on merge to `release/production` | `release/production` |
 
 ## Prerequisites
 

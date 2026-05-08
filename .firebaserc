@@ -2,6 +2,6 @@
   "projects": {
     "default": "prepaid-ai-sandbox",
     "dev": "prepaid-ai-dev",
-    "production": "prepaid-ai-production"
+    "production": "payasyougo-production"
   }
 }

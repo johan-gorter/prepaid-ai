@@ -27,7 +27,7 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 const ENVIRONMENTS = {
   sandbox: "prepaid-ai-sandbox",
   dev: "prepaid-ai-dev",
-  production: "prepaid-ai-production",
+  production: "payasyougo-production",
 };
 
 // ── Parse arguments ────────────────────────────────────────────────────────
