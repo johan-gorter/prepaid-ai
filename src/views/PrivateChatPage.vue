@@ -174,15 +174,20 @@ async function handleSend() {
 }
 
 async function persistChatDraft() {
+  // JSON round-trip strips Vue's reactive Proxy wrapper on `messages.value`
+  // — without it, IndexedDB's structured clone throws DataCloneError and the
+  // draft never lands. The catch below would swallow that silently, so a
+  // user typing then bouncing through buy-credits → login would return to a
+  // blank input.
   const draft: ChatDraft = {
-    messages: messages.value,
+    messages: JSON.parse(JSON.stringify(messages.value)),
     input: userInput.value,
     maxCredits: maxCredits.value,
   };
   try {
     await idbSet(CHAT_DRAFT_KEY, draft);
-  } catch {
-    // ignore: persistence is best-effort
+  } catch (err) {
+    console.error("Failed to persist chat draft", err);
   }
 }
 

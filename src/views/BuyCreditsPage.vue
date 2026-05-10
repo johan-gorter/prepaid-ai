@@ -132,8 +132,12 @@ async function runCheckout(credits: number, redirect: string) {
 
     if (isEmulatorMode) {
       // Dummy implementation: skip the payment provider entirely and
-      // credit the balance via a Cloud Function, then return to the
-      // page that initiated the purchase.
+      // credit the balance via a Cloud Function, then re-enter the site
+      // via a full page reload — mirroring production where Stripe's
+      // off-site redirect navigates the browser back to the origin.
+      // Doing this with `window.location` rather than `router.replace`
+      // keeps the dummy honest: the chat draft has to survive a real
+      // reload, not just an SPA navigation.
       const purchase = httpsCallable<
         { amount: number; idempotencyKey: string },
         { amount: number; newBalance: number }
@@ -141,7 +145,7 @@ async function runCheckout(credits: number, redirect: string) {
       const idempotencyKey = newIdempotencyKey();
       await purchase({ amount: credits, idempotencyKey });
       await clearPendingPurchase();
-      router.replace(redirect);
+      window.location.href = redirect;
       return;
     }
 

@@ -1,3 +1,5 @@
+import { test as baseTest, expect as baseExpect } from "@playwright/test";
+import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import { expect, test } from "../../fixtures";
 
 test.describe("PrivateChatPage", () => {
@@ -129,4 +131,65 @@ test.describe("PrivateChatPage", () => {
     await page.goto("/chat");
     await expect(page.getByTestId("max-credits")).toBeVisible();
   });
+});
+
+baseTest.describe("PrivateChatPage anonymous → buy → login flow", () => {
+  baseTest.beforeEach(async ({}, testInfo) => {
+    baseTest.skip(testInfo.project.name !== "chromium", "chromium only");
+  });
+
+  baseTest(
+    "restores chat prompt after anonymous send → buy credits → login round-trip",
+    async ({ page }) => {
+      // Pre-create the user server-side (parallel-safe). The user signs in
+      // mid-test, simulating an anonymous → authenticated transition.
+      const user = await createTestUser(createRandomTestUser());
+
+      const prompt = "Investigate the perfect kitchen renovation strategy";
+
+      // 1. Anonymous user lands on /chat and types a prompt.
+      await page.goto("/chat");
+      await baseExpect(page.getByTestId("chat-input")).toBeVisible();
+      await page.getByTestId("chat-input").fill(prompt);
+
+      // 2. Pressing Send while anonymous redirects to /buy-credits.
+      await page.getByTestId("chat-send").click();
+      await page.waitForURL(/\/buy-credits\?/);
+      await baseExpect(
+        page.getByTestId("buy-credits-cost-message"),
+      ).toBeVisible();
+
+      // 3. Pick a preset → not signed in, redirects to /login.
+      await page.getByTestId("buy-credits-preset-200").click();
+      await page.waitForURL(/\/login\?/);
+
+      // Capture the post-login redirect target the BuyCreditsPage stashed.
+      const loginUrl = new URL(page.url());
+      const postLoginRedirect = loginUrl.searchParams.get("redirect");
+      baseExpect(postLoginRedirect).toContain("/buy-credits");
+      baseExpect(postLoginRedirect).toContain("resume=1");
+
+      // 4. Sign in and follow the redirect, mirroring LoginPage.handleSignIn.
+      await page.waitForFunction(
+        () => typeof (window as any).__testSignIn === "function",
+      );
+      await page.evaluate(
+        async (creds) => {
+          await (window as any).__testSignIn(creds.email, creds.password);
+        },
+        { email: user.email, password: user.password },
+      );
+      await page.waitForFunction(() =>
+        (window as any)
+          .__testAuthReady?.()
+          .then((uid: string | null) => uid != null),
+      );
+      await page.goto(postLoginRedirect!);
+
+      // 5. The buy-credits page should auto-resume the pending purchase and
+      //    return the user to the chat with the original prompt restored.
+      await page.waitForURL("/chat", { timeout: 15_000 });
+      await baseExpect(page.getByTestId("chat-input")).toHaveValue(prompt);
+    },
+  );
 });

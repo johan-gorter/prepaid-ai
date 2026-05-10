@@ -1,4 +1,6 @@
 import { rmSync } from "node:fs";
+import { test as baseTest, expect as baseExpect } from "@playwright/test";
+import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import { expect, test } from "../../fixtures";
 import {
   createGrayPng,
@@ -303,4 +305,112 @@ test.describe("New Renovation Page", () => {
       }
     });
   });
+});
+
+baseTest.describe("New Renovation anonymous → buy → login flow", () => {
+  baseTest.beforeEach(async ({}, testInfo) => {
+    baseTest.skip(testInfo.project.name !== "chromium", "chromium only");
+  });
+
+  baseTest(
+    "guest typing prompt + mask survives buy-credits + login round-trip and Generate succeeds",
+    async ({ browser }, testInfo) => {
+      baseTest.setTimeout(90_000);
+
+      // Pre-create the user server-side so we can sign in mid-flow without
+      // hitting an auth provider; the wizard starts anonymous and only
+      // signs in during the buy-credits detour.
+      const user = await createTestUser(createRandomTestUser());
+      const context = await browser.newContext({ ...testInfo.project.use });
+      const page = await context.newPage();
+      const grayPngPath = await createGrayPng();
+
+      try {
+        const promptText = "paint the walls a deep navy blue";
+
+        // 1. Anonymous user lands on /renovations and uploads a photo.
+        await page.goto("/renovations");
+        await baseExpect(
+          page.getByTestId("new-renovation-card"),
+        ).toBeVisible();
+        await page
+          .locator('[data-testid="camera-input"]')
+          .setInputFiles(grayPngPath);
+        await page.waitForURL("/new-impression?source=photo");
+
+        // 2. Draw a mask stroke and advance to the prompt step.
+        const canvas = page.locator("canvas");
+        await baseExpect(canvas).toBeVisible();
+        const box = await canvas.boundingBox();
+        if (!box) throw new Error("canvas has no bounding box");
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(
+          box.x + box.width / 2 + 50,
+          box.y + box.height / 2 + 50,
+        );
+        await page.mouse.up();
+
+        await page.getByRole("button", { name: "Next" }).click();
+        const promptInput = page.getByTestId("prompt");
+        await baseExpect(promptInput).toBeVisible();
+        await promptInput.fill(promptText);
+
+        // 3. Generate while anonymous → redirects to /buy-credits.
+        await page.getByRole("button", { name: "Generate" }).click();
+        await page.waitForURL(/\/buy-credits\?/);
+        await baseExpect(
+          page.getByTestId("buy-credits-cost-message"),
+        ).toBeVisible();
+
+        // 4. Pick a preset → not signed in, redirects to /login.
+        await page.getByTestId("buy-credits-preset-200").click();
+        await page.waitForURL(/\/login\?/);
+
+        const loginUrl = new URL(page.url());
+        const postLoginRedirect = loginUrl.searchParams.get("redirect");
+        baseExpect(postLoginRedirect).toContain("/buy-credits");
+        baseExpect(postLoginRedirect).toContain("resume=1");
+        baseExpect(postLoginRedirect).toContain("new-impression");
+
+        // 5. Sign in and follow the redirect, mirroring LoginPage.handleSignIn.
+        await page.waitForFunction(
+          () => typeof (window as any).__testSignIn === "function",
+        );
+        await page.evaluate(
+          async (creds) => {
+            await (window as any).__testSignIn(creds.email, creds.password);
+          },
+          { email: user.email, password: user.password },
+        );
+        await page.waitForFunction(() =>
+          (window as any)
+            .__testAuthReady?.()
+            .then((uid: string | null) => uid != null),
+        );
+        await page.goto(postLoginRedirect!);
+
+        // 6. /buy-credits auto-resumes the pending purchase, then full-reloads
+        //    back to /new-impression with the prompt + mask restored.
+        await page.waitForURL(/\/new-impression\?source=photo/, {
+          timeout: 15_000,
+        });
+        await baseExpect(page.getByTestId("prompt")).toHaveValue(promptText);
+
+        // 7. Generate now succeeds — the user has the seeded balance plus
+        //    the 200 credits just purchased, so the wizard runs the real
+        //    impression pipeline and a result image appears.
+        await page.getByRole("button", { name: "Generate" }).click();
+        await baseExpect(
+          page.getByRole("button", { name: "Renovation Details" }),
+        ).toBeVisible();
+        await baseExpect(page.getByAltText("Result")).toBeVisible({
+          timeout: 45_000,
+        });
+      } finally {
+        rmSync(grayPngPath, { force: true });
+        await context.close();
+      }
+    },
+  );
 });
