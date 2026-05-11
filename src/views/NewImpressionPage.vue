@@ -72,6 +72,10 @@ const impressionParam = computed(
 const shareDialogOpen = ref(false);
 const shareUrl = ref("");
 const sharePending = ref(false);
+// Set when /share/:token can't be hydrated — drives the dedicated error
+// screen so the recipient sees a polished message + Go home affordance
+// rather than the half-broken preview shell.
+const shareError = ref<string | null>(null);
 
 const headerTitle = computed(() => {
   if (stage.value === "prompt") return "Describe Change";
@@ -136,6 +140,7 @@ function draftKey(): string {
 
 async function initFromRoute(): Promise<void> {
   errorMessage.value = null;
+  shareError.value = null;
   prompt.value = "";
   initialMask.value = null;
   restoredDraftKey = null;
@@ -159,7 +164,8 @@ async function initFromRoute(): Promise<void> {
     }
     const share = await fetchShare(token);
     if (!share) {
-      errorMessage.value = "Share link not found.";
+      shareError.value =
+        "This share link is no longer available. The owner may have deleted the impression.";
       return;
     }
     await Promise.all([
@@ -173,7 +179,8 @@ async function initFromRoute(): Promise<void> {
       if (!res.ok) throw new Error(`status ${res.status}`);
       blob = await res.blob();
     } catch {
-      errorMessage.value = "Failed to load shared image.";
+      shareError.value =
+        "This shared image could not be loaded. The owner may have deleted it.";
       return;
     }
     await setImpressionSource(blob);
@@ -567,13 +574,28 @@ async function onShare() {
       class="responsive wizard-main"
       :class="{ 'wizard-main--prompt': stage === 'prompt' }"
     >
-      <div class="step-hint">
+      <article
+        v-if="shareError"
+        class="border round large-padding center-align share-error-card"
+        data-testid="share-error"
+      >
+        <i class="extra" aria-hidden="true">link_off</i>
+        <h5>Share unavailable</h5>
+        <p>{{ shareError }}</p>
+        <a class="button" href="/" data-testid="share-error-home">
+          <i aria-hidden="true">home</i>
+          <span>Go to home</span>
+        </a>
+      </article>
+
+      <div v-if="!shareError" class="step-hint">
         <span v-if="stage === 'mask'"
           >Paint the area you want to change (shown in red)</span
         >
       </div>
 
       <div
+        v-if="!shareError"
         class="canvas-area"
         :class="{
           'inert-canvas': stage === 'processing',
@@ -635,7 +657,7 @@ async function onShare() {
     </main>
 
     <!-- Preview stage footer: Trash | Next Change -->
-    <StickyFooter v-if="stage === 'preview'">
+    <StickyFooter v-if="stage === 'preview' && !shareError">
       <button
         class="max small-round"
         @click="onBack"
@@ -731,6 +753,15 @@ async function onShare() {
   width: 100%;
   padding-top: var(--app-bar-clearance);
   padding-bottom: 5rem;
+}
+
+.share-error-card {
+  max-width: 480px;
+  margin: 2rem auto;
+}
+
+.share-error-card h5 {
+  margin: 0.5rem 0;
 }
 
 .wizard-main--prompt {
