@@ -21,7 +21,9 @@
       "Bash(npm -s run build)",
       "Bash(npm -s run services:restart emulators)",
       "Bash(npm -s run services:status)",
-      "Bash(npm -s run test:ct --reporter=list)"
+      "Bash(npm -s run test:ct --reporter=list)",
+      "Bash(xargs grep -l \"public\\\\|anonymous\")",
+      "Bash(tsconfig\")"
     ]
   }
 }
