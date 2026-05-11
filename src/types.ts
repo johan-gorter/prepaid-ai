@@ -44,6 +44,13 @@ export interface Impression {
   status: "pending" | "processing" | "completed" | "failed";
   createdAt: Timestamp;
   error?: string;
+  shareToken?: string;
+}
+
+export interface Share {
+  ownerUid: string;
+  resultImageUrl: string;
+  createdAt: Timestamp;
 }
 
 export interface UserProfile {

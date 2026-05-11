@@ -16,6 +16,7 @@ import { ref, watchEffect } from "vue";
 import { db, storage } from "../firebase";
 import type { Impression, Renovation } from "../types";
 import { useAuth } from "./useAuth";
+import { deleteShareForImpression } from "./useShare";
 
 export function useRenovations() {
   const renovations = ref<Renovation[]>([]);
@@ -175,6 +176,13 @@ export function useRenovations() {
       );
     }
 
+    // Delete public share doc (if any) before the impression doc — the share
+    // delete reads `shareToken` off the impression. Tolerate failures so a
+    // missing or already-deleted share doesn't block impression cleanup.
+    await Promise.allSettled([
+      deleteShareForImpression(uid, renovationId, impressionId),
+    ]);
+
     // Delete impression doc
     await deleteDoc(impressionDocRef);
 
@@ -230,6 +238,9 @@ export function useRenovations() {
       await Promise.allSettled(
         pathsToDelete.map((p) => deleteObject(storageRef(storage, p))),
       );
+      await Promise.allSettled([
+        deleteShareForImpression(uid, renovationId, impressionDoc.id),
+      ]);
       await deleteDoc(impressionDoc.ref);
     }
 

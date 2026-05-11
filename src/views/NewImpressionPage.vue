@@ -5,9 +5,11 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
+import ShareDialog from "../components/ShareDialog.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import { useAuth } from "../composables/useAuth";
 import { useBalance } from "../composables/useBalance";
+import { createOrGetShareToken, fetchShare } from "../composables/useShare";
 import {
   clearImpressionDraft,
   clearImpressionMask,
@@ -26,7 +28,7 @@ import { IMPRESSION_CREDITS } from "../credits";
 import { db, storage } from "../firebase";
 
 type Stage = "preview" | "mask" | "prompt" | "processing";
-type Source = "photo" | "crop" | "original" | "impression";
+type Source = "photo" | "crop" | "original" | "impression" | "share";
 
 const route = useRoute();
 const router = useRouter();
@@ -54,13 +56,22 @@ let generateInFlight = false;
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 const promptInputRef = ref<HTMLTextAreaElement | null>(null);
 
-const sourceParam = computed(() => route.query.source as Source | undefined);
+const shareToken = computed(
+  () => (route.params.token as string | undefined) ?? undefined,
+);
+const sourceParam = computed<Source | undefined>(() =>
+  shareToken.value ? "share" : (route.query.source as Source | undefined),
+);
 const renovationParam = computed(
   () => (route.query.renovation as string | undefined) ?? null,
 );
 const impressionParam = computed(
   () => (route.query.impression as string | undefined) ?? null,
 );
+
+const shareDialogOpen = ref(false);
+const shareUrl = ref("");
+const sharePending = ref(false);
 
 const headerTitle = computed(() => {
   if (stage.value === "prompt") return "Describe Change";
@@ -133,6 +144,41 @@ async function initFromRoute(): Promise<void> {
   const source = sourceParam.value;
   if (!source) {
     router.replace("/renovations");
+    return;
+  }
+
+  // /share/:token — fetch the public share doc, drop any stale impression
+  // state from a previous device session, hydrate the source from the share
+  // URL, and land on preview. The recipient can then Next Change → paint /
+  // prompt / Generate like any other source.
+  if (source === "share") {
+    const token = shareToken.value;
+    if (!token) {
+      router.replace("/renovations");
+      return;
+    }
+    const share = await fetchShare(token);
+    if (!share) {
+      errorMessage.value = "Share link not found.";
+      return;
+    }
+    await Promise.all([
+      clearImpressionSource(),
+      clearImpressionMask(),
+      clearImpressionDraft(),
+    ]);
+    let blob: Blob;
+    try {
+      const res = await fetch(share.resultImageUrl);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      blob = await res.blob();
+    } catch {
+      errorMessage.value = "Failed to load shared image.";
+      return;
+    }
+    await setImpressionSource(blob);
+    sourceObjectUrl.value = URL.createObjectURL(blob);
+    stage.value = "preview";
     return;
   }
 
@@ -403,7 +449,7 @@ async function onGenerate() {
       let renovationId = renovationParam.value;
       let sourceImagePath: string;
 
-      if (source === "photo" || source === "crop") {
+      if (source === "photo" || source === "crop" || source === "share") {
         // Upload the IDB blob as the new renovation's original
         const sourceBlob = await getImpressionSource();
         if (!sourceBlob) throw new Error("Source image missing");
@@ -481,8 +527,36 @@ async function onGenerate() {
 const showRetake = computed(
   () => stage.value === "mask" && sourceParam.value === "photo",
 );
-const showResultMarker = computed(() => sourceParam.value === "impression");
+const showResultMarker = computed(
+  () => sourceParam.value === "impression" || sourceParam.value === "share",
+);
 const resultMarkerSrc = computed(() => sourceObjectUrl.value);
+const showShareButton = computed(
+  () =>
+    sourceParam.value === "impression" &&
+    !!renovationParam.value &&
+    !!impressionParam.value,
+);
+const showTrashButton = computed(() => sourceParam.value !== "share");
+
+async function onShare() {
+  if (sharePending.value) return;
+  if (!renovationParam.value || !impressionParam.value) return;
+  sharePending.value = true;
+  try {
+    const token = await createOrGetShareToken(
+      renovationParam.value,
+      impressionParam.value,
+    );
+    shareUrl.value = `${location.origin}/share/${token}`;
+    shareDialogOpen.value = true;
+  } catch (err) {
+    errorMessage.value =
+      err instanceof Error ? err.message : "Failed to create share link";
+  } finally {
+    sharePending.value = false;
+  }
+}
 </script>
 
 <template>
@@ -570,7 +644,22 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
         <i aria-hidden="true">timeline</i>
         <span>Renovation Details</span>
       </button>
-      <button class="max small-round error" @click="onTrash">
+      <button
+        v-if="showShareButton"
+        class="max small-round"
+        :disabled="sharePending"
+        data-testid="share-button"
+        @click="onShare"
+        aria-label="Share"
+      >
+        <i aria-hidden="true">share</i>
+        <span>Share</span>
+      </button>
+      <button
+        v-if="showTrashButton"
+        class="max small-round error"
+        @click="onTrash"
+      >
         <i aria-hidden="true">delete</i>
         <span>Trash</span>
       </button>
@@ -583,6 +672,12 @@ const resultMarkerSrc = computed(() => sourceObjectUrl.value);
         <span>Next Change</span>
       </button>
     </StickyFooter>
+
+    <ShareDialog
+      :open="shareDialogOpen"
+      :url="shareUrl"
+      @close="shareDialogOpen = false"
+    />
 
     <!-- Mask stage footer: [Retake] | Trash | Next -->
     <StickyFooter v-if="stage === 'mask'">
