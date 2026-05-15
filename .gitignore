@@ -42,6 +42,9 @@ terraform/.terraform/
 terraform/*.tfstate*
 terraform/**/*.auto.tfvars
 
+# Claude Code user-local settings
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
