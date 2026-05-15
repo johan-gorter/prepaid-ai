@@ -1,5 +1,6 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { beforeUserCreated } from "firebase-functions/v2/identity";
+import { FUNCTIONS_REGION } from "./region.js";
 import { getEnvironment } from "./utils.js";
 
 // ---------------------------------------------------------------------------
@@ -8,7 +9,7 @@ import { getEnvironment } from "./utils.js";
 const ALLOWED_DOMAIN = "johangorter.com";
 
 export const beforeCreate = beforeUserCreated(
-  { region: process.env.FUNCTIONS_REGION ?? "europe-west4" },
+  { region: FUNCTIONS_REGION },
   (event) => {
     // Skip domain check in production and when running in the Firebase emulator
     const env = getEnvironment();

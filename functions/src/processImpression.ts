@@ -4,13 +4,14 @@ import { bucket, db } from "./admin.js";
 import { dummyProcess, geminiProcess, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
 import { imageGenerationCredits } from "./credits.js";
+import { FUNCTIONS_REGION } from "./region.js";
 import { storagePathFromUrl } from "./utils.js";
 
 export const processImpression = onDocumentCreated(
   {
     document:
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
-    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
+    region: FUNCTIONS_REGION,
     secrets: ["GEMINI_API_KEY", "AI_BACKEND", "AI_REGION"],
     timeoutSeconds: 120,
     memory: "512MiB",

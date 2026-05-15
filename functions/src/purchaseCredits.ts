@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
+import { FUNCTIONS_REGION } from "./region.js";
 
 /**
  * Credit a user's balance for a successful purchase.
@@ -18,7 +19,7 @@ import { type TransactionReasonKey } from "./balance.js";
  * short-circuits to the existing balance instead of double-crediting.
  */
 export const purchaseCredits = onCall(
-  { region: process.env.FUNCTIONS_REGION ?? "europe-west4" },
+  { region: FUNCTIONS_REGION },
   async (request) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) {

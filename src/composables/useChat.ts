@@ -52,6 +52,8 @@ export function useChat() {
   async function getChatUrl(): Promise<string> {
     const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
     const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    // VITE_FUNCTIONS_REGION: see the matching comment in src/firebase.ts.
+    // MUST stay in sync with functions/src/region.ts REGIONS map.
     const region = import.meta.env.VITE_FUNCTIONS_REGION || "europe-west4";
 
     if (useEmulators) {

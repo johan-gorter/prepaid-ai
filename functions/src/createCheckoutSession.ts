@@ -3,6 +3,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
 import { CREDIT_VALUE_USD } from "./credits.js";
+import { FUNCTIONS_REGION } from "./region.js";
 import { getStripeBackend, getStripeClient } from "./stripe.js";
 import { isAllowedOrigin } from "./utils.js";
 
@@ -30,7 +31,7 @@ function validateRedirectUrl(url: unknown, name: string): string {
 
 export const createCheckoutSession = onCall(
   {
-    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
+    region: FUNCTIONS_REGION,
     secrets: ["STRIPE_SECRET_KEY", "STRIPE_BACKEND"],
   },
   async (request) => {

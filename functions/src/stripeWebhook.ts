@@ -4,6 +4,7 @@ import { logger } from "firebase-functions/v2";
 import type Stripe from "stripe";
 import { db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
+import { FUNCTIONS_REGION } from "./region.js";
 import { getStripeBackend, getStripeClient } from "./stripe.js";
 
 /**
@@ -60,7 +61,7 @@ async function fulfillSession(session: Stripe.Checkout.Session): Promise<void> {
 
 export const stripeWebhook = onRequest(
   {
-    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
+    region: FUNCTIONS_REGION,
     secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_BACKEND"],
   },
   async (req, res) => {

@@ -7,6 +7,7 @@
 
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import Stripe from "stripe";
+import { FUNCTIONS_REGION } from "./region.js";
 
 export type StripeBackend = "stripe" | "dummy";
 
@@ -34,7 +35,7 @@ export function getStripeClient(): Stripe {
  */
 export const getStripeConfig = onCall(
   {
-    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
+    region: FUNCTIONS_REGION,
     secrets: ["STRIPE_BACKEND"],
   },
   async (request) => {

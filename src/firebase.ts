@@ -23,6 +23,13 @@ export const db = initializeFirestore(firebaseApp, {
   }),
 });
 export const storage = getStorage(firebaseApp);
+// VITE_FUNCTIONS_REGION is sourced per-environment from terraform/environments/<env>.tfvars
+// `region`, propagated via `scripts/sync-github-vars.mjs` to the GitHub variable
+// `VITE_FUNCTIONS_REGION_<ENV>`, then injected by CI at build time.
+// MUST match the same project's entry in functions/src/region.ts REGIONS map —
+// drift here causes every callable to hit the wrong region and fail with
+// `functions/internal`. The "europe-west4" fallback only applies to local
+// non-emulator dev where `.env` doesn't set it.
 export const functions = getFunctions(
   firebaseApp,
   import.meta.env.VITE_FUNCTIONS_REGION || "europe-west4",

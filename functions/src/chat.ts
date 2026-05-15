@@ -7,11 +7,12 @@ import {
   estimateChatCredits,
   maxOutputTokensForBudget,
 } from "./credits.js";
+import { FUNCTIONS_REGION } from "./region.js";
 import { getAllowedOrigins } from "./utils.js";
 
 export const chat = onRequest(
   {
-    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
+    region: FUNCTIONS_REGION,
     cors: getAllowedOrigins(),
     secrets: ["GEMINI_API_KEY", "AI_BACKEND", "AI_REGION"],
     timeoutSeconds: 300,

@@ -2,10 +2,11 @@ import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { admin, db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
+import { FUNCTIONS_REGION } from "./region.js";
 import { getAdminUids } from "./utils.js";
 
 export const addCredits = onCall(
-  { region: process.env.FUNCTIONS_REGION ?? "europe-west4" },
+  { region: FUNCTIONS_REGION },
   async (request) => {
     // 1. Must be authenticated
     const callerUid = request.auth?.uid;
