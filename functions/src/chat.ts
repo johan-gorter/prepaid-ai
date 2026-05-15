@@ -11,7 +11,7 @@ import { getAllowedOrigins } from "./utils.js";
 
 export const chat = onRequest(
   {
-    region: process.env.FUNCTIONS_REGION,
+    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
     cors: getAllowedOrigins(),
     secrets: ["GEMINI_API_KEY", "AI_BACKEND", "AI_REGION"],
     timeoutSeconds: 300,

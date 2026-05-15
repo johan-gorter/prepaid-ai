@@ -2,7 +2,7 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { bucket, db } from "./admin.js";
 
 export const deleteUserAccount = onCall(
-  { region: process.env.FUNCTIONS_REGION, timeoutSeconds: 120 },
+  { region: process.env.FUNCTIONS_REGION ?? "europe-west4", timeoutSeconds: 120 },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) {
