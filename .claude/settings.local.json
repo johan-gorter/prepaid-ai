@@ -23,7 +23,11 @@
       "Bash(npm -s run services:status)",
       "Bash(npm -s run test:ct --reporter=list)",
       "Bash(xargs grep -l \"public\\\\|anonymous\")",
-      "Bash(tsconfig\")"
+      "Bash(tsconfig\")",
+      "Bash(node scripts/tf.mjs production plan)",
+      "Bash(node scripts/tf.mjs dev plan)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(git ls-remote *)"
     ]
   }
 }

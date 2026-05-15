@@ -46,7 +46,7 @@ node scripts/push-secrets.mjs .env <env>
 
 ## Critical Rules
 
-1. **Never call `terraform` directly** — use `node scripts/tf.mjs <env> <command>`.
+1. **Never call `terraform apply` directly** — use `node scripts/tf.mjs <env> <command>`.
 2. **Never run against production without explicit user confirmation.**
 3. On PowerShell, wrap flags containing `=` in double quotes (e.g., `"-var-file=..."`). The wrapper handles this automatically.
-4. `exit status 1` errors can mean the user is not logged in. Ask the user to run `gcloud auth application-default login` and/or `firebase login --reauth` and wait until he confirms.
+4. Errors like `exit status 1` can mean the user is not logged in. Ask the user to run `gcloud auth application-default login` and/or `firebase login --reauth` and wait until he confirms.
