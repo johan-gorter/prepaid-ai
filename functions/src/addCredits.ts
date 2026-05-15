@@ -5,7 +5,7 @@ import { type TransactionReasonKey } from "./balance.js";
 import { getAdminUids } from "./utils.js";
 
 export const addCredits = onCall(
-  { region: process.env.FUNCTIONS_REGION },
+  { region: process.env.FUNCTIONS_REGION ?? "europe-west4" },
   async (request) => {
     // 1. Must be authenticated
     const callerUid = request.auth?.uid;

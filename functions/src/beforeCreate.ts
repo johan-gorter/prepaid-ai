@@ -8,7 +8,7 @@ import { getEnvironment } from "./utils.js";
 const ALLOWED_DOMAIN = "johangorter.com";
 
 export const beforeCreate = beforeUserCreated(
-  { region: process.env.FUNCTIONS_REGION },
+  { region: process.env.FUNCTIONS_REGION ?? "europe-west4" },
   (event) => {
     // Skip domain check in production and when running in the Firebase emulator
     const env = getEnvironment();

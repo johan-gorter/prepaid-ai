@@ -52,11 +52,12 @@ export function useChat() {
   async function getChatUrl(): Promise<string> {
     const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
     const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    const region = import.meta.env.VITE_FUNCTIONS_REGION || "europe-west4";
 
     if (useEmulators) {
-      return `http://127.0.0.1:5001/${projectId}/europe-west1/chat`;
+      return `http://127.0.0.1:5001/${projectId}/${region}/chat`;
     }
-    return `https://europe-west1-${projectId}.cloudfunctions.net/chat`;
+    return `https://${region}-${projectId}.cloudfunctions.net/chat`;
   }
 
   /** Get the current user's ID token for auth. */

@@ -10,7 +10,7 @@ export const processImpression = onDocumentCreated(
   {
     document:
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
-    region: process.env.FUNCTIONS_REGION,
+    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
     secrets: ["GEMINI_API_KEY", "AI_BACKEND", "AI_REGION"],
     timeoutSeconds: 120,
     memory: "512MiB",

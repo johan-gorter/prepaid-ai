@@ -60,7 +60,7 @@ async function fulfillSession(session: Stripe.Checkout.Session): Promise<void> {
 
 export const stripeWebhook = onRequest(
   {
-    region: process.env.FUNCTIONS_REGION,
+    region: process.env.FUNCTIONS_REGION ?? "europe-west4",
     secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_BACKEND"],
   },
   async (req, res) => {
