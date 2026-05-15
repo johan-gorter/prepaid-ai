@@ -43,3 +43,8 @@ output "ai_region" {
   description = "GCP region for AI / Vertex AI workloads"
   value       = var.ai_region
 }
+
+output "functions_region" {
+  description = "GCP region for Cloud Functions (used as VITE_FUNCTIONS_REGION)"
+  value       = var.region
+}

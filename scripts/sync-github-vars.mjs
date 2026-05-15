@@ -62,6 +62,12 @@ if (!config) {
   process.exit(1);
 }
 
+const functionsRegion = outputs.functions_region?.value;
+if (!functionsRegion) {
+  console.error("Terraform output 'functions_region' not found.");
+  process.exit(1);
+}
+
 // 3. Map to GitHub variable names
 const vars = {
   [`VITE_FIREBASE_API_KEY_${suffix}`]: config.api_key,
@@ -70,6 +76,7 @@ const vars = {
   [`VITE_FIREBASE_STORAGE_BUCKET_${suffix}`]: config.storage_bucket,
   [`VITE_FIREBASE_MESSAGING_SENDER_ID_${suffix}`]: config.messaging_sender_id,
   [`VITE_FIREBASE_APP_ID_${suffix}`]: config.app_id,
+  [`VITE_FUNCTIONS_REGION_${suffix}`]: functionsRegion,
 };
 
 // 4. Set each variable

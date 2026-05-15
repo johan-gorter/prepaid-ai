@@ -6,5 +6,5 @@ public_url         = "https://prepaid-ai-sandbox.web.app"
 
 # AI / image generation — Vertex AI in us-central1 (cheapest GPU region)
 ai_backend     = "vertex"
-ai_region      = "us-central1"
+ai_region      = "global"
 stripe_backend = "stripe"

@@ -57,6 +57,7 @@ export function getAdminUids(): string[] {
 export function getEnvironment(): string {
   const project = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
   if (project) {
+    if (project === "payasyougo-production") return "production";
     const env = project.replace("prepaid-ai-", "");
     if (env) return env;
   }

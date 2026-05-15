@@ -23,7 +23,10 @@ export const db = initializeFirestore(firebaseApp, {
   }),
 });
 export const storage = getStorage(firebaseApp);
-export const functions = getFunctions(firebaseApp, "europe-west1");
+export const functions = getFunctions(
+  firebaseApp,
+  import.meta.env.VITE_FUNCTIONS_REGION || "europe-west4",
+);
 
 // Connect to Firebase emulators in local dev/test
 if (import.meta.env.VITE_USE_EMULATORS === "true") {

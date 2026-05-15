@@ -34,7 +34,7 @@ export function getStripeClient(): Stripe {
  */
 export const getStripeConfig = onCall(
   {
-    region: "europe-west1",
+    region: process.env.FUNCTIONS_REGION,
     secrets: ["STRIPE_BACKEND"],
   },
   async (request) => {

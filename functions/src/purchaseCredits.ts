@@ -18,7 +18,7 @@ import { type TransactionReasonKey } from "./balance.js";
  * short-circuits to the existing balance instead of double-crediting.
  */
 export const purchaseCredits = onCall(
-  { region: "europe-west1" },
+  { region: process.env.FUNCTIONS_REGION },
   async (request) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) {

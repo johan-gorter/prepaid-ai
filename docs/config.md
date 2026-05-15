@@ -42,7 +42,7 @@ These values are **public by design** — security comes from Firestore rules an
 | **Emulator mode** (`npm run dev:emulators`) | `.env.emulator` (committed; contains fake values)                                                           |
 | **Tests** (Playwright)                      | Hardcoded in `scripts/emulator-config.mjs` → `TEST_FIREBASE_ENV`, injected by Playwright configs            |
 | **CI build** (GitHub Actions)               | GitHub repository **variables** (`vars.VITE_FIREBASE_API_KEY_DEV`, etc.) — set in repo Settings → Variables |
-| **Production build**                        | Would use production GitHub variables (not yet configured)                                                  |
+| **Production build**                        | GitHub repository **variables** (`vars.VITE_FIREBASE_API_KEY_PRODUCTION`, etc.)                             |
 
 ### Consumed by
 
@@ -165,6 +165,17 @@ Used by the CI build job to inject Firebase config into the Vite build:
 | `VITE_FIREBASE_MESSAGING_SENDER_ID_DEV` | `VITE_FIREBASE_MESSAGING_SENDER_ID` |
 | `VITE_FIREBASE_APP_ID_DEV`              | `VITE_FIREBASE_APP_ID`              |
 
+Production build uses the same pattern with a `_PRODUCTION` suffix:
+
+| GitHub variable name                           | Maps to                             |
+| ---------------------------------------------- | ----------------------------------- |
+| `VITE_FIREBASE_API_KEY_PRODUCTION`             | `VITE_FIREBASE_API_KEY`             |
+| `VITE_FIREBASE_AUTH_DOMAIN_PRODUCTION`         | `VITE_FIREBASE_AUTH_DOMAIN`         |
+| `VITE_FIREBASE_PROJECT_ID_PRODUCTION`          | `VITE_FIREBASE_PROJECT_ID`          |
+| `VITE_FIREBASE_STORAGE_BUCKET_PRODUCTION`      | `VITE_FIREBASE_STORAGE_BUCKET`      |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID_PRODUCTION` | `VITE_FIREBASE_MESSAGING_SENDER_ID` |
+| `VITE_FIREBASE_APP_ID_PRODUCTION`              | `VITE_FIREBASE_APP_ID`              |
+
 The values come from Terraform output `web_app_config`. Use the sync script to update them automatically:
 
 ```bash
@@ -177,9 +188,10 @@ node scripts/sync-github-vars.mjs production
 
 ### Secrets (`secrets.*`) — sensitive
 
-| GitHub secret name             | Description                                                                                                                  |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `FIREBASE_SERVICE_ACCOUNT_DEV` | JSON key for the `ci-deployer` service account in `prepaid-ai-dev`; used by the deploy job to authenticate `firebase deploy` |
+| GitHub secret name                    | Description                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `FIREBASE_SERVICE_ACCOUNT_DEV`        | JSON key for the `ci-deployer` service account in `prepaid-ai-dev`; used by the deploy-dev job                               |
+| `FIREBASE_SERVICE_ACCOUNT_PRODUCTION` | JSON key for the `ci-deployer` service account in `payasyougo-production`; used by the deploy-production job                 |
 
 ---
 
@@ -194,14 +206,14 @@ terraform apply
   └── Creates ci-deployer service account
         └── JSON key manually stored as GitHub secret (FIREBASE_SERVICE_ACCOUNT_DEV)
 
-CI pipeline (on push to main)
+CI pipeline (on push to main → deploy dev; on push to release → deploy production)
   ├── Build job: GitHub vars → VITE_* env → Vite bundles them into dist/
   ├── Test jobs: hardcoded emulator config (no real credentials needed)
   └── Deploy job: GitHub secret (SA key) → firebase deploy
         ├── Deploys dist/ to Firebase Hosting
         ├── Deploys functions/ to Cloud Functions
         │     ├── Derives ENVIRONMENT and ALLOWED_ORIGINS from GCLOUD_PROJECT
-        │     └── Injects Secret Manager secrets (GEMINI_API_KEY, AI_BACKEND, AI_REGION)
+        │     └── Injects Secret Manager secrets (GEMINI_API_KEY, AI_BACKEND, AI_REGION, STRIPE_*)
         └── Deploys firestore.rules and storage.rules
 
 Local development

@@ -30,7 +30,7 @@ function validateRedirectUrl(url: unknown, name: string): string {
 
 export const createCheckoutSession = onCall(
   {
-    region: "europe-west1",
+    region: process.env.FUNCTIONS_REGION,
     secrets: ["STRIPE_SECRET_KEY", "STRIPE_BACKEND"],
   },
   async (request) => {

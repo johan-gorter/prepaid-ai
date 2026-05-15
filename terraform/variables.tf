@@ -82,7 +82,7 @@ variable "ai_backend" {
 variable "ai_region" {
   description = "GCP region for AI / Vertex AI workloads (may differ from main region)"
   type        = string
-  default     = "europe-west1"
+  default     = "global"
 }
 
 # ---------------------------------------------------------------------------

@@ -32,3 +32,8 @@ output "ai_region" {
   description = "GCP region for AI / Vertex AI workloads"
   value       = module.firebase_env.ai_region
 }
+
+output "functions_region" {
+  description = "GCP region for Cloud Functions"
+  value       = module.firebase_env.functions_region
+}

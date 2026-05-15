@@ -76,11 +76,16 @@ If the emulator login appears on a sandbox deploy, that build was produced with 
 
 ## 4. Production Deploy
 
-The production deploy job is currently commented out in `.github/workflows/ci.yml`, but its intended shape is the same as the sandbox deploy:
+The production deploy runs automatically when the `release` branch is pushed. It is defined in `.github/workflows/ci.yml` (the `deploy-production` job).
 
-- build a normal production bundle into `dist/`
-- deploy Hosting, Functions, Firestore rules, and Storage rules
-- do not set `VITE_USE_EMULATORS`
+How it works:
+
+- CI runs the full test suite (E2E, PWA, component tests) on the `release` push
+- The `deploy-production` job builds a production bundle into `dist/` using `VITE_FIREBASE_*_PRODUCTION` GitHub variables
+- CI deploys Hosting, Functions, Firestore rules, and Storage rules to `payasyougo-production`
+- `VITE_USE_EMULATORS` is not set — the bundle targets real Firebase
+- Cloud Functions deploy to `europe-west4`
+- Custom domain: `payasyougo.app`
 
 The configured Firebase project aliases are:
 
