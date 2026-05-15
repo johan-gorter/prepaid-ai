@@ -1,6 +1,18 @@
 variable "project_id" {
   description = "GCP / Firebase project ID"
   type        = string
+
+  # Cross-checks project_id against environment. Catches the case where someone
+  # runs `terraform apply` with the wrong -var-file but a correctly-initialized
+  # backend (or vice versa). Requires Terraform 1.9+ for cross-variable refs.
+  validation {
+    condition = (
+      (var.environment == "sandbox" && var.project_id == "prepaid-ai-sandbox") ||
+      (var.environment == "dev" && var.project_id == "prepaid-ai-dev") ||
+      (var.environment == "production" && var.project_id == "payasyougo-production")
+    )
+    error_message = "project_id must match environment (sandbox→prepaid-ai-sandbox, dev→prepaid-ai-dev, production→payasyougo-production). Did you mix -var-file with the wrong backend prefix?"
+  }
 }
 
 variable "environment" {

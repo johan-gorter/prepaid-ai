@@ -77,39 +77,24 @@ Find your billing account ID with `gcloud billing accounts list`.
 
 ### 4. Initialize Terraform (per environment)
 
-Each environment gets its own state prefix. From the `terraform/` directory:
+Use the `tf.mjs` wrapper for every Terraform invocation. It takes the env name as its single source of truth and:
 
-```powershell
-# Dev (has an .auto.tfvars for OAuth secrets — include both)
-terraform init `
-  "-backend-config=bucket=prepaid-ai-terraform-state" `
-  "-backend-config=prefix=env/dev"
+1. Runs `terraform init -reconfigure` with `-backend-config=prefix=env/<env>`.
+2. Reads back `terraform/.terraform/terraform.tfstate` and aborts if the recorded bucket/prefix don't match the requested env.
+3. Runs the requested command, auto-appending `-var-file=environments/<env>.tfvars` (and `<env>.auto.tfvars` if it exists) for plan/apply/destroy/refresh.
 
-terraform plan  "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
-terraform apply "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
+```bash
+node scripts/tf.mjs dev plan
+node scripts/tf.mjs dev apply
+
+node scripts/tf.mjs production plan
+node scripts/tf.mjs production apply
+
+node scripts/tf.mjs sandbox plan
+node scripts/tf.mjs sandbox apply
 ```
 
-To switch environments, re-run `terraform init` with a different prefix (Terraform will ask to migrate — say no, it's a separate state):
-
-```powershell
-# Production
-terraform init -reconfigure `
-  "-backend-config=bucket=prepaid-ai-terraform-state" `
-  "-backend-config=prefix=env/production"
-
-terraform plan  "-var-file=environments/production.tfvars"
-terraform apply "-var-file=environments/production.tfvars"
-```
-
-```powershell
-# Sandbox (has an .auto.tfvars for OAuth secrets — include both)
-terraform init -reconfigure `
-  "-backend-config=bucket=prepaid-ai-terraform-state" `
-  "-backend-config=prefix=env/sandbox"
-
-terraform plan  "-var-file=environments/sandbox.tfvars" "-var-file=environments/sandbox.auto.tfvars"
-terraform apply "-var-file=environments/sandbox.tfvars" "-var-file=environments/sandbox.auto.tfvars"
-```
+You should not need to invoke `terraform` directly. If you do, the cross-variable `validation` block on `var.project_id` in `terraform/variables.tf` is the second line of defense: it asserts that the environment label matches the project ID and aborts with a clear error if you mix `-var-file` with the wrong backend prefix. This catches the apply-against-wrong-project case before any state is refreshed.
 
 ### 5. Set secret values
 
@@ -164,19 +149,21 @@ Set the corresponding `VITE_FIREBASE_*` variables in GitHub repo settings for ea
 
 ## Day-to-Day Usage
 
-```powershell
-cd terraform
+Always go through `scripts/tf.mjs <env> <command>`:
 
+```bash
 # See what would change
-terraform plan "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
+node scripts/tf.mjs dev plan
 
 # Apply changes
-terraform apply "-var-file=environments/dev.tfvars" "-var-file=environments/dev.auto.tfvars"
+node scripts/tf.mjs dev apply
 
 # Read outputs (e.g., for updating CI config)
-terraform output web_app_config
-terraform output ci_service_account_email
+node scripts/tf.mjs dev output web_app_config
+node scripts/tf.mjs dev output ci_service_account_email
 ```
+
+Any extra args after the command are passed through to Terraform, e.g. `node scripts/tf.mjs dev plan -target=module.firebase_env.google_firestore_database.default`.
 
 ## Storage CORS
 
@@ -278,9 +265,7 @@ PowerShell uses the backtick (`` ` ``) for line continuation, not backslash (`\`
 
 ### State isolation
 
-Each environment has a **separate GCS state prefix**. You must run `terraform init -reconfigure` with the correct `-backend-config="prefix=env/<env>"` **before** running `plan` or `apply`. Forgetting this will target whatever state was last initialized, potentially planning destructive changes against the wrong project.
-
-The `terraform plan` output always shows the project ID in the resource addresses (e.g., `prepaid-ai-dev` vs `prepaid-ai-sandbox`). **Verify the project in the first few "Refreshing state" lines before approving an apply.**
+Each environment has a **separate GCS state prefix**. The `scripts/tf.mjs` wrapper handles `init -reconfigure` with the correct `-backend-config="prefix=env/<env>"` and verifies the result before running any command — use it instead of calling `terraform` directly. If you do bypass the wrapper, the `validation` block on `var.project_id` will still catch a tfvars/backend mismatch, but the wrapper is what guarantees the backend prefix itself is correct.
 
 ### gcloud auth expiry
 
