@@ -69,11 +69,11 @@ Use **live keys** (`sk_live_...`) for production and **test keys** (`sk_test_...
 ### 3. Register the webhook endpoint
 
 The `stripeWebhook` function is an HTTP Cloud Function exported from
-`functions/src/stripeWebhook.ts`. It is deployed in `europe-west1`, so the
-stable Firebase Functions URL is:
+`functions/src/stripeWebhook.ts`. The region depends on the environment (see
+table below). The stable Firebase Functions URL pattern is:
 
 ```
-https://europe-west1-<project-id>.cloudfunctions.net/stripeWebhook
+https://<region>-<project-id>.cloudfunctions.net/stripeWebhook
 ```
 
 The public Hosting URL, such as `https://payasyougo.app` or a `.web.app`
@@ -84,10 +84,10 @@ Current environment URLs:
 
 | Environment    | Status                    | Stripe webhook endpoint                                                       |
 | -------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| Local emulator | Use Stripe CLI forwarding | `http://localhost:5001/prepaid-ai-emulator/europe-west1/stripeWebhook`        |
-| Sandbox        | Deployed                  | `https://europe-west1-prepaid-ai-sandbox.cloudfunctions.net/stripeWebhook`    |
+| Local emulator | Use Stripe CLI forwarding | `http://localhost:5001/prepaid-ai-emulator/europe-west4/stripeWebhook`        |
+| Sandbox        | Deployed                  | `https://europe-west4-prepaid-ai-sandbox.cloudfunctions.net/stripeWebhook`    |
 | Dev            | Deployed                  | `https://europe-west1-prepaid-ai-dev.cloudfunctions.net/stripeWebhook`        |
-| Production     | Created                   | `https://europe-west1-payasyougo-production.cloudfunctions.net/stripeWebhook` |
+| Production     | Created                   | `https://europe-west4-payasyougo-production.cloudfunctions.net/stripeWebhook` |
 
 Firebase Functions v2 also exposes a Cloud Run URL shaped like this:
 
@@ -197,7 +197,7 @@ With `sk_test_...` keys and `STRIPE_BACKEND = "stripe"` in sandbox:
 
 ```bash
 # Install Stripe CLI, then forward events to the local emulator
-stripe listen --forward-to http://localhost:5001/prepaid-ai-emulator/europe-west1/stripeWebhook
+stripe listen --forward-to http://localhost:5001/prepaid-ai-emulator/europe-west4/stripeWebhook
 ```
 
 This gives you a local `whsec_...` signing secret to use with the emulator. Note: in normal local development, dummy mode is sufficient — you only need this if you want to exercise the real webhook code path locally.

@@ -93,6 +93,40 @@ data "google_project" "current" {
 }
 
 # ---------------------------------------------------------------------------
+# Cloud Functions v2 / Eventarc service-agent IAM
+#
+# Firestore-triggered (v2) functions run on Cloud Run + Eventarc + Pub/Sub.
+# `firebase deploy --only functions` normally adds these bindings itself, but
+# only when the deployer has projectIamAdmin. The ci-deployer SA does not,
+# so we manage them declaratively here.
+# ---------------------------------------------------------------------------
+resource "google_project_service_identity" "pubsub" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "pubsub.googleapis.com"
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_project_iam_member" "pubsub_token_creator" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountTokenCreator"
+  member  = "serviceAccount:${google_project_service_identity.pubsub.email}"
+}
+
+resource "google_project_iam_member" "compute_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "compute_eventarc_receiver" {
+  project = var.project_id
+  role    = "roles/eventarc.eventReceiver"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# ---------------------------------------------------------------------------
 # Secret Manager — AI_BACKEND
 # Stores the active AI backend ("vertex" | "google-ai" | "dummy").
 # Change var.ai_backend in the environment tfvars and re-apply to switch.
@@ -417,6 +451,21 @@ resource "google_secret_manager_secret_iam_member" "compute_stripe_webhook_secre
 }
 
 # ---------------------------------------------------------------------------
+# Artifact Registry — pre-create repository used by Cloud Functions v2 / Cloud Run
+# so `firebase deploy` never races against repository initialisation and the
+# first function deployed (addCredits, alphabetically) doesn't fail.
+# ---------------------------------------------------------------------------
+resource "google_artifact_registry_repository" "cloud_run_source_deploy" {
+  project       = var.project_id
+  location      = var.region
+  repository_id = "cloud-run-source-deploy"
+  description   = "Docker repository for Cloud Functions v2 / Cloud Run deployments"
+  format        = "DOCKER"
+
+  depends_on = [google_project_service.apis]
+}
+
+# ---------------------------------------------------------------------------
 # CI deployer service account
 # ---------------------------------------------------------------------------
 resource "google_service_account" "ci_deployer" {
@@ -437,7 +486,7 @@ locals {
     "roles/firebasestorage.admin",
     "roles/firebaseextensions.admin",
     "roles/run.admin",
-    "roles/artifactregistry.repoAdmin",
+    "roles/artifactregistry.admin",
     "roles/firebaseauth.admin",
   ]
 }
