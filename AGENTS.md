@@ -166,17 +166,13 @@ npx playwright test --config=playwright-ct.config.ts ct/new-renovation.ct.ts
 
 ## How to Verify Changes
 
-A **pre-push git hook** (`.githooks/pre-push`) automatically runs before every `git push`:
+**Verification runs in CI, not locally.** GitHub Actions (`.github/workflows/ci.yml`) is the authoritative gate: every push runs build, component tests, E2E (sharded), and PWA tests. Pushes to `main` deploy to dev; pushes to `release` deploy to production. If CI fails, fix it on a follow-up commit.
 
-1. `npm -s run build` — type-check + Vite production build
-2. `npm -s run test:ct` — component tests
-3. `npx playwright test --retries=0` — E2E tests with no retries
+There is also a local pre-push hook (`.githooks/pre-push`) that runs build + `test:ct` + E2E. **It only works on macOS/Linux** — the hook is a bash script and Git for Windows runs it through its bundled bash, but in practice it is not wired up on this Windows workstation (no `core.hooksPath` is set by the SessionStart on Windows, and `npm` / `npx` invocations from inside the bash hook are unreliable here). Treat the hook as a best-effort local convenience on Unix, not as a precondition for pushing. Do not assume it ran.
 
-The hook is activated by `git config core.hooksPath .githooks`, which the SessionStart hook sets automatically. If you need to set it up manually, run that git config command once.
+If you do have the hook active (Unix), the **emulators and dev:emulators services must be running** before pushing — the hook does not start them. Start them with `npm -s run services:start emulators && npm -s run services:start dev:emulators && npm -s run services:wait emulators && npm -s run services:wait dev:emulators`.
 
-**Emulators and dev:emulators services must be running** before pushing — the hook does not start them. Start them with `npm -s run services:start emulators && npm -s run services:start dev:emulators && npm -s run services:wait emulators && npm -s run services:wait dev:emulators`.
-
-If you change application code, update affected tests to match. If you change test code, ensure the tests pass. The pre-push hook will block pushes with failures. To bypass in emergencies: `git push --no-verify`.
+If you change application code, update affected tests to match. If you change test code, ensure the tests pass. CI will block the deploy on any failure.
 
 ### Debugging test failures
 
