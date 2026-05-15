@@ -81,6 +81,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: "/share/:token",
+    name: "share",
+    component: () => import("../views/NewImpressionPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/renovation/:id",
     name: "renovation-detail",
     component: () => import("../views/renovation/RenovationDetailPage.vue"),

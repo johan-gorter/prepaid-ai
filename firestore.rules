@@ -33,5 +33,17 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
       allow read, delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
+
+    // Shares — single-document reads-by-token are public; list is blocked so
+    // tokens can't be enumerated. Only the owner can create or delete.
+    match /shares/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid', 'resultImageUrl', 'createdAt']);
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow update: if false;
+    }
   }
 }
