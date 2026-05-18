@@ -211,8 +211,9 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      await expect(page.getByText("base for chaining")).toBeVisible();
-      await expect(page.getByText("chained impression")).toBeVisible();
+      await expect(page.getByAltText("Result")).toHaveCount(2);
+      await expect(page.getByText("base for chaining")).not.toBeVisible();
+      await expect(page.getByText("chained impression")).not.toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }

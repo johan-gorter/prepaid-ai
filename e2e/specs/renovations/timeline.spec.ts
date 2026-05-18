@@ -298,12 +298,10 @@ test.describe("Renovation Details Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      // Both impression prompts visible on timeline
-      await expect(page.getByText("base impression")).toBeVisible();
-      await expect(page.getByText("chained from result")).toBeVisible();
-
-      // Two result images present
+      // Two result images present without prompt captions
       await expect(page.getByAltText("Result")).toHaveCount(2);
+      await expect(page.getByText("base impression")).not.toBeVisible();
+      await expect(page.getByText("chained from result")).not.toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }
