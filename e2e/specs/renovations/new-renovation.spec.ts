@@ -1,7 +1,7 @@
+import { expect as baseExpect, test as baseTest } from "@playwright/test";
 import { rmSync } from "node:fs";
-import { test as baseTest, expect as baseExpect } from "@playwright/test";
-import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import { expect, test } from "../../fixtures";
+import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import {
   createGrayPng,
   createRenovationAndWaitForResult,
@@ -280,10 +280,7 @@ test.describe("New Renovation Page", () => {
         const canvas = page.locator("canvas");
         const box = await canvas.boundingBox();
         if (box) {
-          await page.mouse.move(
-            box.x + box.width / 2,
-            box.y + box.height / 2,
-          );
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
           await page.mouse.down();
           await page.mouse.move(
             box.x + box.width / 2 + 30,
@@ -334,9 +331,7 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
 
         // 1. Anonymous user lands on /renovations and uploads a photo.
         await page.goto("/renovations");
-        await baseExpect(
-          page.getByTestId("new-renovation-card"),
-        ).toBeVisible();
+        await baseExpect(page.getByTestId("new-renovation-card")).toBeVisible();
         await page
           .locator('[data-testid="camera-input"]')
           .setInputFiles(grayPngPath);

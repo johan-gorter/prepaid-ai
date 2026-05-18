@@ -173,8 +173,9 @@ test.describe("Renovation Details Page", () => {
 
       const impressions = page.locator("article.impression-item");
 
-      await expect(impressions.nth(0).getByTestId("after-image-star"))
-        .toBeVisible();
+      await expect(
+        impressions.nth(0).getByTestId("after-image-star"),
+      ).toBeVisible();
       await expect(page.getByTitle("Set as after image")).toHaveCount(0);
 
       // Create a second impression by clicking the result image from the timeline
@@ -221,20 +222,24 @@ test.describe("Renovation Details Page", () => {
 
       const starButtons = page.getByTitle("Set as after image");
       await expect(starButtons).toHaveCount(1);
-      await expect(impressions.nth(0).getByTestId("after-image-star"))
-        .toBeVisible();
-      await expect(impressions.nth(1).getByTitle("Set as after image"))
-        .toHaveCount(1);
+      await expect(
+        impressions.nth(0).getByTestId("after-image-star"),
+      ).toBeVisible();
+      await expect(
+        impressions.nth(1).getByTitle("Set as after image"),
+      ).toHaveCount(1);
 
       // First should still be starred (auto-star only happens on first)
       // Click the second star to switch
       await page.getByAltText("Result").nth(1).hover();
       await starButtons.first().click();
 
-      await expect(impressions.nth(1).getByTestId("after-image-star"))
-        .toBeVisible();
-      await expect(impressions.nth(0).getByTitle("Set as after image"))
-        .toHaveCount(1);
+      await expect(
+        impressions.nth(1).getByTestId("after-image-star"),
+      ).toBeVisible();
+      await expect(
+        impressions.nth(0).getByTitle("Set as after image"),
+      ).toHaveCount(1);
     } finally {
       rmSync(grayPngPath, { force: true });
     }

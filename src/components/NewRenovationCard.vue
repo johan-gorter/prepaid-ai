@@ -53,7 +53,10 @@ async function onPasteImage() {
 </script>
 
 <template>
-  <article class="round center-align" data-testid="new-renovation-card">
+  <article
+    class="new-renovation-card center-align"
+    data-testid="new-renovation-card"
+  >
     <i class="extra" aria-hidden="true">photo_camera</i>
     <h5>New Renovation</h5>
     <nav class="vertical">
@@ -65,7 +68,11 @@ async function onPasteImage() {
         <i aria-hidden="true">upload</i>
         <span>Upload Image</span>
       </button>
-      <button class="small-round" data-testid="paste-image-btn" @click="onPasteImage">
+      <button
+        class="small-round"
+        data-testid="paste-image-btn"
+        @click="onPasteImage"
+      >
         <i aria-hidden="true">content_paste</i>
         <span>Paste Image</span>
       </button>
@@ -92,6 +99,11 @@ async function onPasteImage() {
 <style scoped>
 article {
   aspect-ratio: 1 / 1;
+  margin: 0 !important;
+  padding: 16px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 nav button {
   padding: 1rem;

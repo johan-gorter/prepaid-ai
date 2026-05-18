@@ -13,12 +13,24 @@ const pagesToCheck: Array<{
   description: string;
   ready: string;
 }> = [
-  { path: "/renovations", description: "renovations home", ready: "Renovations" },
-  { path: "/main", description: "main landing", ready: "AI Impressions for renovations" },
+  {
+    path: "/renovations",
+    description: "renovations home",
+    ready: "Renovations",
+  },
+  {
+    path: "/main",
+    description: "main landing",
+    ready: "AI Impressions for renovations",
+  },
   { path: "/balance", description: "balance", ready: "Recent transactions" },
   { path: "/account", description: "account", ready: "Last Activity" },
   { path: "/about", description: "about", ready: "About payasyougo.app" },
-  { path: "/chat", description: "chat", ready: "Start a private conversation with AI" },
+  {
+    path: "/chat",
+    description: "chat",
+    ready: "Start a private conversation with AI",
+  },
 ];
 
 test.describe("Narrow viewport (320px)", () => {
@@ -44,20 +56,18 @@ test.describe("Narrow viewport (320px)", () => {
           width: number;
         }> = [];
         const viewport = root.clientWidth;
-        document
-          .querySelectorAll<HTMLElement>("body *")
-          .forEach((el) => {
-            const r = el.getBoundingClientRect();
-            if (r.right > viewport + 1) {
-              offenders.push({
-                tag: el.tagName,
-                id: el.id,
-                cls: el.className.toString().slice(0, 60),
-                right: Math.round(r.right),
-                width: Math.round(r.width),
-              });
-            }
-          });
+        document.querySelectorAll<HTMLElement>("body *").forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.right > viewport + 1) {
+            offenders.push({
+              tag: el.tagName,
+              id: el.id,
+              cls: el.className.toString().slice(0, 60),
+              right: Math.round(r.right),
+              width: Math.round(r.width),
+            });
+          }
+        });
         return {
           scrollWidth: root.scrollWidth,
           clientWidth: root.clientWidth,

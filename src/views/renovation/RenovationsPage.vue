@@ -167,7 +167,7 @@ watch(
     style="
       max-width: 800px;
       margin: 0 auto;
-      padding-top: var(--app-bar-clearance);
+      padding: var(--app-bar-clearance) 0 0;
     "
   >
     <nav v-if="!currentUser" class="guest-renovations-auth">
@@ -190,42 +190,65 @@ watch(
       <p class="error-text">Error loading renovations: {{ error }}</p>
     </div>
 
-    <div v-else class="card-grid">
-      <div>
-        <NewRenovationCard />
-      </div>
-      <div v-for="renovation in renovations" :key="renovation.id">
-        <article
-          class="round no-padding small-elevate"
-          style="cursor: pointer"
-          data-testid="renovation-card"
-          @click="router.push(`/renovation/${renovation.id}`)"
-        >
-          <StorageImage
-            :src="cardDataUrls[renovation.id]"
-            alt="Renovation"
-            data-testid="renovation-thumbnail"
-          />
-        </article>
-      </div>
+    <div v-else class="renovation-grid">
+      <NewRenovationCard />
+      <article
+        v-for="renovation in renovations"
+        :key="renovation.id"
+        class="renovation-grid-item renovation-photo-item"
+        data-testid="renovation-card"
+        @click="router.push(`/renovation/${renovation.id}`)"
+      >
+        <StorageImage
+          :src="cardDataUrls[renovation.id]"
+          alt="Renovation"
+          class="renovation-thumbnail"
+          data-testid="renovation-thumbnail"
+        />
+      </article>
     </div>
   </main>
 </template>
 
 <style scoped>
-.card-grid {
+.renovation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  align-items: start;
 }
 
-.card-grid > div {
-  max-width: 512px;
+.renovation-grid-item {
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
-.card-grid article {
-  min-height: 300px;
-  text-align: center;
+.renovation-photo-item {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: transparent !important;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.renovation-thumbnail {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+:deep(.renovation-thumbnail img) {
+  width: 100%;
+  height: 100%;
+  border-radius: 0 !important;
+  cursor: pointer;
+  object-fit: cover;
 }
 
 .guest-renovations-auth {
