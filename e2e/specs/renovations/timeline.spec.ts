@@ -10,7 +10,7 @@ test.describe("Renovation Details Page", () => {
     test.skip(testInfo.project.name !== "chromium", "chromium only");
   });
 
-  test("shows original image, completed impression, and prompt text", async ({
+  test("shows original image and completed impression without prompt text", async ({
     authenticatedPage: page,
   }) => {
     const promptText = "add a skylight";
@@ -31,13 +31,13 @@ test.describe("Renovation Details Page", () => {
 
       // Original image pinned at top
       await expect(page.getByAltText("Original")).toBeVisible();
-      await expect(page.getByText("Original")).toBeVisible();
 
       // Completed result image
       await expect(page.getByAltText("Result")).toBeVisible();
 
-      // Prompt text shown below the impression
-      await expect(page.getByText(promptText)).toBeVisible();
+      // Prompt text is intentionally hidden from the photo feed
+      await expect(page.getByText(promptText)).not.toBeVisible();
+      await expect(page.getByTestId("impression-more-menu")).toHaveCount(0);
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -55,12 +55,10 @@ test.describe("Renovation Details Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      // Wait for star to appear on the completed impression
-      const starBtn = page.getByTitle("Set as after image");
-      await expect(starBtn).toBeVisible();
-
-      // Should be filled (★ = starred)
-      await expect(starBtn).toHaveClass(/starred/);
+      const afterStar = page.getByTestId("after-image-star");
+      await expect(afterStar).toBeVisible();
+      await expect(afterStar).toHaveClass(/starred/);
+      await expect(page.getByTitle("Set as after image")).toHaveCount(0);
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -76,7 +74,9 @@ test.describe("Renovation Details Page", () => {
 
     try {
       await page.goto("/renovations");
-      await expect(page.getByText("My Renovations")).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Renovations" }),
+      ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -134,7 +134,7 @@ test.describe("Renovation Details Page", () => {
     }
   });
 
-  test("trash button on impression deletes it from timeline", async ({
+  test("completed impression exposes only the star image control", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -149,15 +149,9 @@ test.describe("Renovation Details Page", () => {
       // Verify impression is visible
       await expect(page.getByAltText("Result")).toBeVisible();
 
-      // Open the more menu then click Delete
-      await page.getByTestId("impression-more-menu").click();
-      await page.getByRole("link", { name: "Delete" }).click();
-
-      // Impression should be removed — no more Result images
-      await expect(page.getByAltText("Result")).not.toBeVisible();
-
-      // Original image should still be there
-      await expect(page.getByAltText("Original")).toBeVisible();
+      await expect(page.getByTestId("impression-more-menu")).toHaveCount(0);
+      await expect(page.getByTestId("after-image-star")).toHaveCount(1);
+      await expect(page.getByTitle("Set as after image")).toHaveCount(0);
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -177,10 +171,11 @@ test.describe("Renovation Details Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      // First impression should be starred
-      await expect(page.getByTitle("Set as after image")).toHaveClass(
-        /starred/,
-      );
+      const impressions = page.locator("article.impression-item");
+
+      await expect(impressions.nth(0).getByTestId("after-image-star"))
+        .toBeVisible();
+      await expect(page.getByTitle("Set as after image")).toHaveCount(0);
 
       // Create a second impression by clicking the result image from the timeline
       await expect(page.getByAltText("Result")).toBeVisible();
@@ -219,25 +214,27 @@ test.describe("Renovation Details Page", () => {
       await page.getByRole("button", { name: "Renovation Details" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 
-      // Should see two Result images + prompts
-      await expect(page.getByText("first change")).toBeVisible();
-      await expect(page.getByText("second change")).toBeVisible();
+      // Should see two Result images without prompt captions
+      await expect(page.getByAltText("Result")).toHaveCount(2);
+      await expect(page.getByText("first change")).not.toBeVisible();
+      await expect(page.getByText("second change")).not.toBeVisible();
 
-      // Two star buttons should be visible
       const starButtons = page.getByTitle("Set as after image");
-      await expect(starButtons).toHaveCount(2);
+      await expect(starButtons).toHaveCount(1);
+      await expect(impressions.nth(0).getByTestId("after-image-star"))
+        .toBeVisible();
+      await expect(impressions.nth(1).getByTitle("Set as after image"))
+        .toHaveCount(1);
 
       // First should still be starred (auto-star only happens on first)
       // Click the second star to switch
-      const secondStar = starButtons.nth(1);
-      await secondStar.click();
+      await page.getByAltText("Result").nth(1).hover();
+      await starButtons.first().click();
 
-      // Second star should now be starred
-      await expect(secondStar).toHaveClass(/starred/);
-
-      // First star should be unstarred
-      const firstStar = starButtons.nth(0);
-      await expect(firstStar).not.toHaveClass(/starred/);
+      await expect(impressions.nth(1).getByTestId("after-image-star"))
+        .toBeVisible();
+      await expect(impressions.nth(0).getByTitle("Set as after image"))
+        .toHaveCount(1);
     } finally {
       rmSync(grayPngPath, { force: true });
     }

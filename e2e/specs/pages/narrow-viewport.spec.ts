@@ -13,7 +13,7 @@ const pagesToCheck: Array<{
   description: string;
   ready: string;
 }> = [
-  { path: "/renovations", description: "renovations home", ready: "My Renovations" },
+  { path: "/renovations", description: "renovations home", ready: "Renovations" },
   { path: "/main", description: "main landing", ready: "AI Impressions for renovations" },
   { path: "/balance", description: "balance", ready: "Recent transactions" },
   { path: "/account", description: "account", ready: "Last Activity" },

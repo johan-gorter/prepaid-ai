@@ -69,7 +69,9 @@ test.describe("New Renovation Page", () => {
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
-        await expect(page.getByText("My Renovations")).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: "Renovations" }),
+        ).toBeVisible();
       } finally {
         rmSync(grayPngPath, { force: true });
       }
@@ -156,7 +158,9 @@ test.describe("New Renovation Page", () => {
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
-        await expect(page.getByText("My Renovations")).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: "Renovations" }),
+        ).toBeVisible();
       } finally {
         rmSync(grayPngPath, { force: true });
       }

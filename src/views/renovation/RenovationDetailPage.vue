@@ -18,8 +18,7 @@ import type { Renovation } from "../../types";
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
-const { setAfterImpression, deleteImpression, deleteRenovation } =
-  useRenovations();
+const { setAfterImpression, deleteRenovation } = useRenovations();
 
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
@@ -33,7 +32,27 @@ const renovation = ref<Renovation | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 const showDeleteDialog = ref(false);
 const showRenovationMenu = ref(false);
-const openImpressionMenuId = ref<string | null>(null);
+
+const SET_AFTER_LONG_PRESS_MS = 750;
+const SET_AFTER_LONG_PRESS_MOVE_TOLERANCE_PX = 10;
+let setAfterLongPressTimer: number | undefined;
+let setAfterLongPressStart:
+  | {
+      kind: "pointer";
+      impressionId: string;
+      pointerId: number;
+      clientX: number;
+      clientY: number;
+    }
+  | {
+      kind: "touch";
+      impressionId: string;
+      identifier: number;
+      clientX: number;
+      clientY: number;
+    }
+  | undefined;
+const suppressResultClickImpressionId = ref<string | null>(null);
 
 // Load renovation document
 async function loadRenovation() {
@@ -92,14 +111,161 @@ watch(
 );
 
 async function handleStar(impressionId: string) {
-  await setAfterImpression(renovationId.value, impressionId);
+  const previousAfterImpressionId = renovation.value?.afterImpressionId;
+
   if (renovation.value) {
     renovation.value = { ...renovation.value, afterImpressionId: impressionId };
   }
+
+  try {
+    await setAfterImpression(renovationId.value, impressionId);
+  } catch (error) {
+    if (renovation.value) {
+      renovation.value = {
+        ...renovation.value,
+        afterImpressionId: previousAfterImpressionId,
+      };
+    }
+    throw error;
+  }
 }
 
-async function handleDeleteImpression(impressionId: string) {
-  await deleteImpression(renovationId.value, impressionId);
+function clearSetAfterLongPress() {
+  if (setAfterLongPressTimer !== undefined) {
+    window.clearTimeout(setAfterLongPressTimer);
+    setAfterLongPressTimer = undefined;
+  }
+
+  setAfterLongPressStart = undefined;
+}
+
+function clearPointerSetAfterLongPress(event: PointerEvent) {
+  if (
+    setAfterLongPressStart?.kind !== "pointer" ||
+    event.pointerId !== setAfterLongPressStart.pointerId
+  ) {
+    return;
+  }
+
+  clearSetAfterLongPress();
+}
+
+function clearTouchSetAfterLongPress(event: TouchEvent) {
+  if (setAfterLongPressStart?.kind !== "touch") return;
+
+  for (const touch of Array.from(event.changedTouches)) {
+    if (touch.identifier === setAfterLongPressStart.identifier) {
+      clearSetAfterLongPress();
+      return;
+    }
+  }
+}
+
+function commitSetAfterLongPress(impressionId: string) {
+  setAfterLongPressTimer = undefined;
+  setAfterLongPressStart = undefined;
+  suppressResultClickImpressionId.value = impressionId;
+  void handleStar(impressionId);
+}
+
+function startSetAfterLongPress(event: PointerEvent, impressionId: string) {
+  suppressResultClickImpressionId.value = null;
+
+  if (
+    event.pointerType !== "touch" ||
+    renovation.value?.afterImpressionId === impressionId
+  ) {
+    return;
+  }
+
+  clearSetAfterLongPress();
+  setAfterLongPressStart = {
+    kind: "pointer",
+    impressionId,
+    pointerId: event.pointerId,
+    clientX: event.clientX,
+    clientY: event.clientY,
+  };
+
+  setAfterLongPressTimer = window.setTimeout(() => {
+    commitSetAfterLongPress(impressionId);
+  }, SET_AFTER_LONG_PRESS_MS);
+}
+
+function moveSetAfterLongPress(event: PointerEvent) {
+  if (
+    event.pointerType !== "touch" ||
+    setAfterLongPressStart?.kind !== "pointer" ||
+    event.pointerId !== setAfterLongPressStart.pointerId
+  ) {
+    return;
+  }
+
+  const distance = Math.hypot(
+    event.clientX - setAfterLongPressStart.clientX,
+    event.clientY - setAfterLongPressStart.clientY,
+  );
+
+  if (distance > SET_AFTER_LONG_PRESS_MOVE_TOLERANCE_PX) {
+    clearSetAfterLongPress();
+  }
+}
+
+function startTouchSetAfterLongPress(event: TouchEvent, impressionId: string) {
+  suppressResultClickImpressionId.value = null;
+
+  if (
+    event.touches.length !== 1 ||
+    renovation.value?.afterImpressionId === impressionId
+  ) {
+    return;
+  }
+
+  const touch = event.changedTouches[0];
+  if (!touch) return;
+
+  clearSetAfterLongPress();
+  setAfterLongPressStart = {
+    kind: "touch",
+    impressionId,
+    identifier: touch.identifier,
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+  };
+
+  setAfterLongPressTimer = window.setTimeout(() => {
+    commitSetAfterLongPress(impressionId);
+  }, SET_AFTER_LONG_PRESS_MS);
+}
+
+function moveTouchSetAfterLongPress(event: TouchEvent) {
+  if (setAfterLongPressStart?.kind !== "touch") return;
+
+  const touchIdentifier = setAfterLongPressStart.identifier;
+  const activeTouch = Array.from(event.touches).find(
+    (touch) => touch.identifier === touchIdentifier,
+  );
+  if (!activeTouch) return;
+
+  const distance = Math.hypot(
+    activeTouch.clientX - setAfterLongPressStart.clientX,
+    activeTouch.clientY - setAfterLongPressStart.clientY,
+  );
+
+  if (distance > SET_AFTER_LONG_PRESS_MOVE_TOLERANCE_PX) {
+    clearSetAfterLongPress();
+  }
+}
+
+function handleResultImageClick(event: MouseEvent, impressionId: string) {
+  if (suppressResultClickImpressionId.value === impressionId) {
+    event.preventDefault();
+    event.stopPropagation();
+    suppressResultClickImpressionId.value = null;
+    return;
+  }
+
+  void navigateToNewImpression(impressionId);
 }
 
 async function handleDeleteRenovation() {
@@ -178,7 +344,7 @@ onMounted(() => {
       style="
         max-width: 800px;
         margin: 0 auto;
-        padding-top: var(--app-bar-clearance);
+        padding: var(--app-bar-clearance) 0 0;
       "
     >
       <div v-if="loading" class="center-align large-padding">
@@ -186,26 +352,20 @@ onMounted(() => {
         <p>Loading...</p>
       </div>
 
-      <div v-else>
+      <div v-else class="detail-photo-feed">
         <!-- Original "before" image -->
         <article
           v-if="renovation?.originalImagePath"
-          class="round no-padding small-elevate"
-          style="cursor: pointer; margin-bottom: 1rem"
+          class="photo-item"
           @click="navigateToNewImpression('original')"
         >
-          <div style="position: relative">
+          <div class="photo-frame">
             <StorageImage
               :path="renovation.originalImagePath"
               :fallback-url="renovation.originalImageUrl"
               alt="Original"
-              class="responsive"
+              class="responsive photo-image"
             />
-            <span
-              class="chip small"
-              style="position: absolute; bottom: 0.5rem; left: 0.5rem"
-              >Original</span
-            >
           </div>
         </article>
 
@@ -213,10 +373,22 @@ onMounted(() => {
         <article
           v-for="impression in impressions"
           :key="impression.id"
-          class="round no-padding small-elevate"
-          style="margin-bottom: 1rem"
+          class="photo-item impression-item"
         >
-          <div style="position: relative">
+          <div
+            class="photo-frame"
+            @pointerdown="startSetAfterLongPress($event, impression.id)"
+            @pointermove="moveSetAfterLongPress"
+            @pointerup="clearPointerSetAfterLongPress"
+            @pointercancel="clearPointerSetAfterLongPress"
+            @pointerleave="clearPointerSetAfterLongPress"
+            @touchstart="startTouchSetAfterLongPress($event, impression.id)"
+            @touchmove="moveTouchSetAfterLongPress"
+            @touchend="clearTouchSetAfterLongPress"
+            @touchcancel="clearTouchSetAfterLongPress"
+            @contextmenu.prevent
+            @click="handleResultImageClick($event, impression.id)"
+          >
             <!-- Completed: show result image -->
             <template
               v-if="
@@ -228,101 +400,50 @@ onMounted(() => {
                 :path="impression.resultImagePath"
                 :fallback-url="impression.resultImageUrl"
                 alt="Result"
-                class="responsive"
-                style="display: block; cursor: pointer"
-                @click="navigateToNewImpression(impression.id)"
+                class="responsive photo-image"
               />
             </template>
             <!-- Processing -->
             <template v-else-if="impression.status === 'processing'">
-              <div
-                class="center-align medium-padding"
-                style="min-height: 150px"
-              >
+              <div class="center-align medium-padding photo-status">
                 <progress class="circle"></progress>
                 <p>Processing...</p>
               </div>
             </template>
             <!-- Failed -->
             <template v-else-if="impression.status === 'failed'">
-              <div
-                class="center-align medium-padding error-text"
-                style="min-height: 150px"
-              >
+              <div class="center-align medium-padding error-text photo-status">
                 <p>Failed: {{ impression.error }}</p>
               </div>
             </template>
             <!-- Pending -->
             <template v-else>
-              <div
-                class="center-align medium-padding"
-                style="min-height: 150px"
-              >
+              <div class="center-align medium-padding photo-status">
                 <p>Pending...</p>
               </div>
             </template>
 
-            <!-- Star toggle (top-right) -->
-            <button
-              v-if="impression.status === 'completed'"
-              class="transparent circle absolute-btn-star"
-              :class="{
-                starred: renovation?.afterImpressionId === impression.id,
-              }"
-              @click.stop="handleStar(impression.id)"
-              title="Set as after image"
-              aria-label="Set as after image"
-            >
-              <i aria-hidden="true">{{
-                renovation?.afterImpressionId === impression.id
-                  ? "star"
-                  : "star_border"
-              }}</i>
-            </button>
+            <template v-if="impression.status === 'completed'">
+              <span
+                v-if="renovation?.afterImpressionId === impression.id"
+                class="circle absolute-star-indicator starred"
+                role="img"
+                aria-label="After image"
+                data-testid="after-image-star"
+              >
+                <i aria-hidden="true">star</i>
+              </span>
 
-            <!-- More menu (top-left) -->
-            <div
-              class="absolute-btn-more"
-              style="position: relative"
-              @click.stop
-            >
               <button
-                class="transparent circle"
-                style="background: rgba(0, 0, 0, 0.5) !important; color: #fff"
-                data-testid="impression-more-menu"
-                aria-label="Impression menu"
-                @click="
-                  openImpressionMenuId =
-                    openImpressionMenuId === impression.id
-                      ? null
-                      : impression.id
-                "
+                v-else
+                class="transparent circle absolute-btn-star"
+                @click.stop="handleStar(impression.id)"
+                title="Set as after image"
+                aria-label="Set as after image"
               >
-                <i aria-hidden="true">more_vert</i>
+                <i aria-hidden="true">star_border</i>
               </button>
-              <menu
-                v-if="openImpressionMenuId === impression.id"
-                class="active no-wrap"
-                style="left: 0; right: auto"
-              >
-                <li>
-                  <a
-                    href="#"
-                    @click.prevent="
-                      openImpressionMenuId = null;
-                      handleDeleteImpression(impression.id);
-                    "
-                  >
-                    <i aria-hidden="true">delete</i>
-                    <span>Delete</span>
-                  </a>
-                </li>
-              </menu>
-            </div>
-          </div>
-
-          <div class="padding">
-            <p class="small-text">{{ impression.prompt }}</p>
+            </template>
           </div>
         </article>
       </div>
@@ -338,21 +459,112 @@ onMounted(() => {
   min-height: 100dvh;
 }
 
-.absolute-btn-star {
+.detail-photo-feed {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  align-items: start;
+}
+
+.photo-item {
+  display: block;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  line-height: 0;
+}
+
+.photo-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 0 !important;
+}
+
+.photo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+  border-radius: 0 !important;
+  overflow: hidden;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+:deep(.photo-image img) {
+  width: 100%;
+  height: 100%;
+  border-radius: 0 !important;
+  cursor: zoom-in;
+  object-fit: cover;
+}
+
+.photo-status {
+  min-height: 150px;
+}
+
+.absolute-btn-star,
+.absolute-star-indicator {
   position: absolute;
   top: 0.25rem;
   right: 0.25rem;
+  z-index: 2;
   background: rgba(0, 0, 0, 0.5) !important;
-  color: #fff;
 }
 
-.absolute-btn-star.starred i {
-  color: #f1c40f;
+.absolute-btn-star {
+  color: #fff !important;
 }
 
-.absolute-btn-more {
-  position: absolute;
-  top: 0.25rem;
-  left: 0.25rem;
+.absolute-star-indicator {
+  color: #f1c40f !important;
+}
+
+.absolute-btn-star i,
+.absolute-star-indicator i {
+  color: #f1c40f !important;
+}
+
+.absolute-btn-star i {
+  font-variation-settings: "FILL" 0;
+}
+
+.absolute-star-indicator i {
+  font-variation-settings: "FILL" 1;
+}
+
+.absolute-star-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  pointer-events: none;
+}
+
+.absolute-btn-star {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--speed2);
+}
+
+.impression-item:hover .absolute-btn-star,
+.impression-item:focus-within .absolute-btn-star,
+.photo-frame:hover .absolute-btn-star,
+.photo-frame:focus-within .absolute-btn-star {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .absolute-btn-star {
+    display: none;
+  }
 }
 </style>

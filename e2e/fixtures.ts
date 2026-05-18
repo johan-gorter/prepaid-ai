@@ -51,7 +51,7 @@ export const test = base.extend<TestFixtures>({
 
       // Navigate to renovations — the router guard will now see the authenticated user.
       await page.goto("/renovations");
-      await page.waitForSelector("text=My Renovations");
+      await page.getByRole("heading", { name: "Renovations" }).waitFor();
 
       try {
         await use(page);
