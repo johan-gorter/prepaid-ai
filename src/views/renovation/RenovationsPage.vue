@@ -170,8 +170,15 @@ watch(
       padding-top: var(--app-bar-clearance);
     "
   >
-    <nav>
-      <h1 class="max">My Renovations</h1>
+    <nav v-if="!currentUser" class="guest-renovations-auth">
+      <router-link
+        :to="{ path: '/login', query: { redirect: '/renovations' } }"
+        class="transparent button small-round guest-renovations-link"
+        data-testid="renovations-sign-in"
+      >
+        <i aria-hidden="true">login</i>
+        <span>Log in to see your renovations</span>
+      </router-link>
     </nav>
 
     <div v-if="renovationsLoading" class="center-align medium-padding">
@@ -186,16 +193,6 @@ watch(
     <div v-else class="card-grid">
       <div>
         <NewRenovationCard />
-      </div>
-      <div v-if="!currentUser">
-        <router-link
-          :to="{ path: '/login', query: { redirect: '/renovations' } }"
-          class="button responsive small-round guest-renovations-cta"
-          data-testid="renovations-sign-in"
-        >
-          <i aria-hidden="true">login</i>
-          <span>Log in to see your renovations</span>
-        </router-link>
       </div>
       <div v-for="renovation in renovations" :key="renovation.id">
         <article
@@ -231,12 +228,12 @@ watch(
   text-align: center;
 }
 
-.guest-renovations-cta {
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  white-space: normal;
+.guest-renovations-auth {
+  justify-content: flex-start;
+  margin: -0.25rem 0 1rem;
+}
+
+.guest-renovations-link {
+  color: var(--primary);
 }
 </style>
