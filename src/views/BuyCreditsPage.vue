@@ -17,7 +17,7 @@ const router = useRouter();
 const { currentUser } = useAuth();
 
 const PRESETS = [50, 200, 500] as const;
-const MIN_CUSTOM = 10;
+const MIN_CUSTOM = 50;
 const MAX_CUSTOM = 10000;
 const DEFAULT_CUSTOM = 1000;
 

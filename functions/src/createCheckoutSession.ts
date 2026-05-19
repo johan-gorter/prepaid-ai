@@ -7,7 +7,7 @@ import { FUNCTIONS_REGION } from "./region.js";
 import { getStripeBackend, getStripeClient } from "./stripe.js";
 import { isAllowedOrigin } from "./utils.js";
 
-const MIN_CREDITS = 10;
+const MIN_CREDITS = 50;
 const MAX_CREDITS = 10_000;
 
 function validateRedirectUrl(url: unknown, name: string): string {
@@ -105,6 +105,10 @@ export const createCheckoutSession = onCall(
           quantity: 1,
         },
       ],
+      adaptive_pricing: { enabled: false },
+      payment_intent_data: {
+        statement_descriptor_suffix: ` +${credits}`,
+      },
       success_url: validatedSuccessUrl,
       cancel_url: validatedCancelUrl,
     });
