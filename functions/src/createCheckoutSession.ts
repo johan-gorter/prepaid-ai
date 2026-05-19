@@ -107,7 +107,7 @@ export const createCheckoutSession = onCall(
       ],
       adaptive_pricing: { enabled: false },
       payment_intent_data: {
-        statement_descriptor_suffix: ` +${credits}`,
+        statement_descriptor_suffix: `+${credits}c`,
       },
       success_url: validatedSuccessUrl,
       cancel_url: validatedCancelUrl,
