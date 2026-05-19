@@ -9,9 +9,9 @@ test.describe("Buy Credits Page", () => {
     authenticatedPage: page,
   }) => {
     await page.goto("/buy-credits?min=5&max=15&redirect=/chat");
-    await expect(page.getByTestId("buy-credits-preset-50")).toBeVisible();
+    await expect(page.getByTestId("buy-credits-preset-75")).toBeVisible();
     await expect(page.getByTestId("buy-credits-preset-200")).toBeVisible();
-    await expect(page.getByTestId("buy-credits-preset-500")).toBeVisible();
+    await expect(page.getByTestId("buy-credits-preset-750")).toBeVisible();
     await expect(page.getByTestId("buy-credits-custom-input")).toHaveValue(
       "1000",
     );
@@ -31,12 +31,12 @@ test.describe("Buy Credits Page", () => {
     authenticatedPage: page,
   }) => {
     await page.goto("/buy-credits?min=5&max=15&redirect=/chat");
-    await page.getByTestId("buy-credits-preset-50").click();
+    await page.getByTestId("buy-credits-preset-75").click();
     await page.waitForURL("/chat");
 
-    // Balance went from the seeded baseline up by 50.
+    // Balance went from the seeded baseline up by 75.
     await page.goto("/balance");
-    await expect(page.getByTestId("balance-amount")).toContainText("150");
+    await expect(page.getByTestId("balance-amount")).toContainText("175");
   });
 
   test("rejects out-of-range custom amounts", async ({

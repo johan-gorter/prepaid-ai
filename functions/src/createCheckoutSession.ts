@@ -7,7 +7,7 @@ import { FUNCTIONS_REGION } from "./region.js";
 import { getStripeBackend, getStripeClient } from "./stripe.js";
 import { isAllowedOrigin } from "./utils.js";
 
-const MIN_CREDITS = 50;
+const MIN_CREDITS = 75;
 const MAX_CREDITS = 10_000;
 
 function validateRedirectUrl(url: unknown, name: string): string {

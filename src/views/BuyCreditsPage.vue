@@ -16,8 +16,8 @@ const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
 
-const PRESETS = [50, 200, 500] as const;
-const MIN_CUSTOM = 50;
+const PRESETS = [75, 200, 500] as const;
+const MIN_CUSTOM = 75;
 const MAX_CUSTOM = 10000;
 const DEFAULT_CUSTOM = 1000;
 
