@@ -9,7 +9,7 @@ const sessionId = route.query.session_id as string | undefined;
 <template>
   <header class="fixed">
     <nav>
-      <router-link to="/main" class="breadcrumb-root">payasyougo</router-link>
+      <router-link to="/" class="breadcrumb-root">payasyougo</router-link>
       <span class="breadcrumb-sep">&gt;</span>
       <router-link to="/balance" class="breadcrumb-root">Balance</router-link>
       <span class="breadcrumb-sep">&gt;</span>

@@ -46,7 +46,7 @@ const redirectTo = computed(() => {
   ) {
     return candidate;
   }
-  return "/main";
+  return "/";
 });
 
 /**

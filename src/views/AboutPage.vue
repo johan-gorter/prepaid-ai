@@ -68,7 +68,7 @@ const { currentUser } = useAuth();
     </p>
 
     <div style="padding-top: 1rem">
-      <router-link :to="currentUser ? '/main' : '/login'" class="button">
+      <router-link :to="currentUser ? '/' : '/login'" class="button">
         <i>arrow_back</i>
         <span>Back</span>
       </router-link>

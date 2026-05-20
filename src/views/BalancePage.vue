@@ -74,7 +74,7 @@ const { balance, transactions, loading } = useBalance();
       </table>
 
       <div class="center-align" style="padding: 1.5rem 0">
-        <router-link to="/main" class="button">
+        <router-link to="/" class="button">
           <i>arrow_back</i>
           <span>Back to Main</span>
         </router-link>

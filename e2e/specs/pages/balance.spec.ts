@@ -36,6 +36,6 @@ test.describe("Balance Page", () => {
   }) => {
     await page.goto("/balance");
     await page.getByRole("link", { name: "Back to Main" }).click();
-    await page.waitForURL("/main");
+    await page.waitForURL("/");
   });
 });

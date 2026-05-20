@@ -113,7 +113,7 @@ async function handleDeleteAccount() {
     </article>
 
     <div style="padding-top: 1rem">
-      <router-link to="/main" class="button">
+      <router-link to="/" class="button">
         <i>arrow_back</i>
         <span>Back to Main</span>
       </router-link>

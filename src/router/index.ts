@@ -1,18 +1,27 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, START_LOCATION } from "vue-router";
 import { getCurrentUser } from "../composables/useAuth";
+import { idbGetFast } from "../composables/useIdbStorage";
+
+// Pages the user can be resumed to on a cold app start. Keyed by the value
+// each page writes to the "lastPage" IndexedDB key in its onMounted hook.
+const RESUME_ROUTES: Record<string, string> = {
+  renovations: "/renovations",
+  chat: "/chat",
+};
 
 const routes = [
   {
     path: "/",
     name: "home",
-    component: () => import("../views/HomePage.vue"),
+    component: () => import("../views/MainPage.vue"),
     meta: { requiresAuth: false },
   },
   {
+    // Legacy home URL. The app now serves MainPage on "/"; keep this as a
+    // redirect so old bookmarks and PWA shortcuts still resolve. Arriving via
+    // this redirect deliberately does NOT trigger the cold-start resume.
     path: "/main",
-    name: "main",
-    component: () => import("../views/MainPage.vue"),
-    meta: { requiresAuth: false },
+    redirect: "/",
   },
   {
     path: "/renovations",
@@ -99,7 +108,7 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   const currentUser = await getCurrentUser();
 
   if (to.meta.requiresAuth && !currentUser) {
@@ -109,6 +118,17 @@ router.beforeEach(async (to) => {
   // Redirect authenticated users away from login page
   if (to.name === "login" && currentUser) {
     return { name: "home" };
+  }
+
+  // Resume the last visited page on a cold app start (PWA/browser launch or a
+  // refresh) that lands directly on "/". Explicit navigation to the home route
+  // from within the app, or via the legacy "/main" redirect, keeps the user on
+  // MainPage. The lookup is time-bounded, so a stalled IndexedDB read can never
+  // strand the app on a redirect — it falls through to MainPage.
+  if (to.name === "home" && from === START_LOCATION && !to.redirectedFrom) {
+    const lastPage = await idbGetFast<string>("lastPage");
+    const target = lastPage ? RESUME_ROUTES[lastPage] : undefined;
+    if (target) return target;
   }
 });
 

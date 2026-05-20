@@ -40,7 +40,7 @@ withDefaults(
     title?: string;
     homeRoute?: string;
   }>(),
-  { homeRoute: "/main" },
+  { homeRoute: "/" },
 );
 </script>
 

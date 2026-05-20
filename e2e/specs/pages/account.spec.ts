@@ -54,7 +54,7 @@ test.describe("Account Page", () => {
 
     await page.getByRole("link", { name: "Back to Main" }).click();
 
-    await page.waitForURL("/main");
-    await expect(page).toHaveURL("/main");
+    await page.waitForURL("/");
+    await expect(page).toHaveURL("/");
   });
 });
