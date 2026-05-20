@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Login Page", () => {
-  test("shows login form with all providers", async ({ page }) => {
+  test("shows login form with enabled providers", async ({ page }) => {
     await page.goto("/login");
 
     await expect(page.getByText("payasyougo.app")).toBeVisible();
@@ -13,9 +13,11 @@ test.describe("Login Page", () => {
     await expect(
       page.getByRole("button", { name: /Sign in with Microsoft/ }),
     ).toBeVisible();
+    // Apple sign-in is temporarily disabled until Apple credentials are
+    // configured — the button is commented out in LoginPage.vue.
     await expect(
       page.getByRole("button", { name: /Sign in with Apple/ }),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 
   test("redirects to login when accessing protected route unauthenticated", async ({
