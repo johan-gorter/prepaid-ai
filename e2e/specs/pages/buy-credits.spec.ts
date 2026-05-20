@@ -11,7 +11,7 @@ test.describe("Buy Credits Page", () => {
     await page.goto("/buy-credits?min=5&max=15&redirect=/chat");
     await expect(page.getByTestId("buy-credits-preset-75")).toBeVisible();
     await expect(page.getByTestId("buy-credits-preset-200")).toBeVisible();
-    await expect(page.getByTestId("buy-credits-preset-750")).toBeVisible();
+    await expect(page.getByTestId("buy-credits-preset-500")).toBeVisible();
     await expect(page.getByTestId("buy-credits-custom-input")).toHaveValue(
       "1000",
     );
