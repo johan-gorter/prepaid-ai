@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { firebaseApp } from "../firebase";
@@ -9,11 +10,14 @@ const router = useRouter();
 
 const isEmulatorMode = import.meta.env.VITE_USE_EMULATORS === "true";
 
+const errorMessage = ref<string | null>(null);
+
 // Dev login credentials — matches the user created by `npm run emulators:seed`
 const DEV_EMAIL = "dev@prepaid.test";
 const DEV_PASSWORD = "dev-password";
 
 async function handleSignIn(provider: "google" | "microsoft" | "apple") {
+  errorMessage.value = null;
   try {
     if (provider === "google") await signInWithGoogle();
     else if (provider === "microsoft") await signInWithMicrosoft();
@@ -24,6 +28,23 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
     router.push(redirect);
   } catch (err) {
     console.error("Sign-in error:", err);
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? (err as { code: string }).code
+        : "";
+    if (code === "auth/account-exists-with-different-credential") {
+      errorMessage.value =
+        "An account already exists with this email address using a different " +
+        "sign-in method. Please sign in with the method you used originally.";
+    } else if (
+      code === "auth/popup-closed-by-user" ||
+      code === "auth/cancelled-popup-request"
+    ) {
+      // User dismissed the popup themselves — no need to alarm them.
+      errorMessage.value = null;
+    } else {
+      errorMessage.value = "Sign-in failed. Please try again.";
+    }
   }
 }
 
@@ -80,7 +101,11 @@ async function handleDevLogin() {
         <span class="bold" aria-hidden="true">M</span>
         <span>Sign in with Microsoft</span>
       </button>
-      <div class="small-space"></div>
+      <!-- Apple sign-in temporarily disabled until the Apple Developer
+           credentials are configured (Services ID + signing key). The
+           provider plumbing (useAuth.signInWithApple, Terraform idp config)
+           is still in place — just re-enable this button when ready. -->
+      <!-- <div class="small-space"></div>
       <button
         class="responsive border"
         @click="handleSignIn('apple')"
@@ -89,7 +114,17 @@ async function handleDevLogin() {
       >
         <span class="bold" aria-hidden="true">A</span>
         <span>Sign in with Apple</span>
-      </button>
+      </button> -->
+
+      <p
+        v-if="errorMessage"
+        class="error-text center-align small-text"
+        style="margin-top: 1rem"
+        role="alert"
+        data-testid="login-error"
+      >
+        {{ errorMessage }}
+      </p>
 
       <p class="center-align small-text" style="margin-top: 1rem">
         By signing in, you agree to our

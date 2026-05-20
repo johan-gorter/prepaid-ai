@@ -54,18 +54,18 @@ In this mode the app uses real Firebase services and the emulator-only dev login
 
 This is the hosted preview environment deployed to the `prepaid-ai-sandbox` Firebase project. It uses real Firebase services and real Stripe (test mode keys).
 
+**Sandbox is deployed manually from a developer machine — it is _not_ part of CI.** Only dev (push to `main`) and production (push to `release`) deploy automatically. For the full step-by-step manual deploy procedure, see [sandbox-deployment.md](sandbox-deployment.md).
+
 Source of truth:
 
-- `.github/workflows/ci.yml`
+- `docs/sandbox-deployment.md` (the manual deploy steps)
 - `.firebaserc`
 
-How it works today:
+How it works:
 
-- CI runs `npx vite build`
-- The workflow injects the `*_SANDBOX` Firebase variables directly into the build step
-- The workflow does not set `VITE_USE_EMULATORS`
-- The resulting frontend bundle is emitted to `dist/`
-- CI deploys with `firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-sandbox`
+- A developer builds the frontend locally with the sandbox `VITE_FIREBASE_*` config (pulled from `node scripts/tf.mjs sandbox output`) into `dist/`
+- The build does not set `VITE_USE_EMULATORS`
+- The developer deploys with `firebase deploy --only hosting,functions,firestore:rules,storage --project prepaid-ai-sandbox`
 
 Result:
 
