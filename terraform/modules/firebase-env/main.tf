@@ -19,6 +19,9 @@ locals {
     "firebaseextensions.googleapis.com",
     "identitytoolkit.googleapis.com",
     "aiplatform.googleapis.com",
+    # Required by v2 scheduled functions (onSchedule), e.g. expireCreditTransfers.
+    # firebase deploy creates a Cloud Scheduler job that publishes to Pub/Sub.
+    "cloudscheduler.googleapis.com",
   ]
 }
 
@@ -488,6 +491,9 @@ locals {
     "roles/run.admin",
     "roles/artifactregistry.admin",
     "roles/firebaseauth.admin",
+    # Lets the deployer create/update the Cloud Scheduler job that backs
+    # v2 onSchedule functions (expireCreditTransfers).
+    "roles/cloudscheduler.admin",
   ]
 }
 
