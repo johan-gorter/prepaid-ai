@@ -19,6 +19,15 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Notifications — read-only from client (written by Cloud Functions).
+      // Responding to a notification (dismiss/accept/decline) goes through the
+      // notificationResponse callable, so clients can never forge or accept a
+      // gift to mint credits.
+      match /notifications/{notificationId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       match /renovations/{renovationId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
 
@@ -26,6 +35,15 @@ service cloud.firestore {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
       }
+    }
+
+    // Credit transfers — escrow records for gifted credits. Fully
+    // server-managed: clients never read or write them directly (the recipient
+    // learns of a gift via their notifications subcollection, and both parties
+    // see the effect in their own balanceTransactions). Keeping these closed
+    // also means a sender can't enumerate by reading transfer docs.
+    match /creditTransfers/{transferId} {
+      allow read, write: if false;
     }
 
     // Feedback — authenticated users can create; only the author can read/delete

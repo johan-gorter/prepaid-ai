@@ -8,7 +8,10 @@ export type TransactionReasonKey =
   | "image_generation"
   | "chat_message"
   | "credit_purchase"
-  | "admin_adjustment";
+  | "admin_adjustment"
+  | "credit_transfer_sent"
+  | "credit_transfer_received"
+  | "credit_transfer_refunded";
 
 /**
  * Deduct credits from a user's balance inside a Firestore transaction.

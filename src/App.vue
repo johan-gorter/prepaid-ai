@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import NotificationModal from "./components/NotificationModal.vue";
 import { useKeyboardInset } from "./composables/useKeyboardInset";
 
 useKeyboardInset();
@@ -6,4 +7,5 @@ useKeyboardInset();
 
 <template>
   <router-view />
+  <NotificationModal />
 </template>

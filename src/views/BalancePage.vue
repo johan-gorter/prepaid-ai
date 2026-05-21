@@ -30,11 +30,22 @@ const { balance, transactions, loading } = useBalance();
         <p class="small" style="opacity: 0.6">Current balance</p>
       </div>
 
-      <!-- Buy credits -->
-      <div style="margin-bottom: 1.5rem">
+      <!-- Buy / send credits -->
+      <div
+        style="
+          margin-bottom: 1.5rem;
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        "
+      >
         <router-link to="/buy-credits" class="button">
           <i>add_card</i>
           <span>Buy credits</span>
+        </router-link>
+        <router-link to="/send-credits" class="button border">
+          <i>redeem</i>
+          <span>Send credits</span>
         </router-link>
       </div>
 

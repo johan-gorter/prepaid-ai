@@ -48,6 +48,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: "/send-credits",
+    name: "send-credits",
+    component: () => import("../views/SendCreditsPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/chat",
     name: "chat",
     component: () => import("../views/PrivateChatPage.vue"),
