@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
@@ -11,6 +12,7 @@ import {
 } from "../composables/useChat";
 import { idbGet, idbSet } from "../composables/useIdbStorage";
 
+const { t } = useI18n();
 const router = useRouter();
 const { currentUser } = useAuth();
 const { balance, waitForLoad: waitForBalance } = useBalance();
@@ -227,7 +229,7 @@ function autoGrow() {
 
 function downloadConversation() {
   const lines = messages.value.map((m) => {
-    const role = m.role === "user" ? "You" : "AI";
+    const role = m.role === "user" ? t("chat.you") : t("chat.ai");
     return `${role}:\n${m.text}`;
   });
   const content = lines.join("\n\n");
@@ -249,7 +251,7 @@ function continueChat() {
 </script>
 
 <template>
-  <AppBar title="Chat" />
+  <AppBar :title="$t('chat.title')" />
 
   <main class="chat-page">
     <!-- Chat messages -->
@@ -261,8 +263,8 @@ function continueChat() {
         data-testid="chat-empty-state"
       >
         <i class="extra" style="font-size: 3rem">chat</i>
-        <p>Start a private conversation with AI.</p>
-        <p class="small">Conversations are stored only on this device.</p>
+        <p>{{ $t("chat.emptyTitle") }}</p>
+        <p class="small">{{ $t("chat.emptyHint") }}</p>
       </div>
 
       <div v-for="(msg, i) in messages" :key="i" class="chat-message">
@@ -283,7 +285,9 @@ function continueChat() {
             }}</span>
             <i v-else class="chat-avatar model-avatar">smart_toy</i>
             <span class="bold">{{
-              msg.role === "user" ? currentUser?.displayName || "You" : "AI"
+              msg.role === "user"
+                ? currentUser?.displayName || $t("chat.you")
+                : $t("chat.ai")
             }}</span>
           </div>
           <div class="chat-text" style="white-space: pre-wrap">
@@ -313,7 +317,7 @@ function continueChat() {
     >
       <button @click="stop" data-testid="chat-stop">
         <i>stop</i>
-        <span>Stop</span>
+        <span>{{ $t("chat.stop") }}</span>
       </button>
     </div>
 
@@ -328,11 +332,11 @@ function continueChat() {
         data-testid="chat-download"
       >
         <i>download</i>
-        <span>Download</span>
+        <span>{{ $t("chat.download") }}</span>
       </button>
       <button @click="continueChat" data-testid="chat-continue">
         <i>chat</i>
-        <span>Continue Chat</span>
+        <span>{{ $t("chat.continueChat") }}</span>
       </button>
     </div>
 
@@ -349,7 +353,7 @@ function continueChat() {
               ref="chatInputEl"
               v-model="userInput"
               rows="1"
-              placeholder="Paste text from documents and type questions"
+              :placeholder="$t('chat.inputPlaceholder')"
               autofocus
               @keydown="handleKeydown"
               @focus="revealChatInput"
@@ -360,7 +364,7 @@ function continueChat() {
           <button
             class="circle transparent"
             :disabled="!userInput.trim()"
-            title="Send (Ctrl+Enter)"
+            :title="$t('chat.sendAria')"
             @click="handleSend"
             data-testid="chat-send"
           >
@@ -371,10 +375,11 @@ function continueChat() {
         <!-- Cost & limit bar -->
         <div class="chat-cost-bar">
           <span class="cost-label" data-testid="chat-estimate">
-            Estimated cost: {{ estimatedCost }} <span class="coin">🪙</span>
+            {{ $t("chat.estimatedCost") }} {{ estimatedCost }}
+            <span class="coin">🪙</span>
           </span>
           <span class="cost-label">
-            Limit:
+            {{ $t("chat.limit") }}
             <input
               v-model.number="maxCredits"
               type="number"
@@ -387,7 +392,7 @@ function continueChat() {
           <button
             v-if="messages.length > 0"
             class="circle small transparent"
-            title="Download conversation"
+            :title="$t('chat.downloadConvAria')"
             @click="downloadConversation"
             data-testid="chat-download-input"
           >

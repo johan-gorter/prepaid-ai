@@ -48,23 +48,23 @@ async function submitFeedback() {
       padding-bottom: 2rem;
     "
   >
-    <p>
-      Use the best AI tools
-      <strong class="primary-text">without a monthly fee</strong>. Pay only for
-      what you use.
-    </p>
+    <i18n-t keypath="main.tagline" tag="p">
+      <template #highlight>
+        <strong class="primary-text">{{ $t("main.taglineHighlight") }}</strong>
+      </template>
+    </i18n-t>
 
     <!-- AI Impressions card -->
     <article class="border medium-text">
       <div class="card-media">
         <img
           src="/assets/renovation-small.png"
-          alt="Renovation preview"
+          :alt="$t('main.renovationImageAlt')"
           class="round card-thumb"
         />
-        <h6 class="bold no-margin card-title">AI Renovation Previews</h6>
+        <h6 class="bold no-margin card-title">{{ $t("main.renovationTitle") }}</h6>
         <p class="card-desc">
-          Imagine your rooms and exterior with AI-generated artist impressions.
+          {{ $t("main.renovationDesc") }}
         </p>
       </div>
       <router-link
@@ -72,7 +72,7 @@ async function submitFeedback() {
         class="button responsive small-round card-cta"
         style="margin-top: 4px"
       >
-        <span>VISUALIZE NOW</span>
+        <span>{{ $t("main.visualizeNow") }}</span>
         <i>photo_camera</i>
       </router-link>
     </article>
@@ -81,14 +81,13 @@ async function submitFeedback() {
     <article class="border medium-text" style="margin-top: 1rem">
       <div class="card-media">
         <i class="extra primary-text">verified_user</i>
-        <h6 class="bold no-margin card-title">Private Chat</h6>
+        <h6 class="bold no-margin card-title">{{ $t("main.chatTitle") }}</h6>
         <p class="card-desc">
-          Chat privately with a powerful AI. Great for explaining legal,
-          medical, or technical documents.
+          {{ $t("main.chatDesc") }}
         </p>
       </div>
       <router-link to="/chat" class="button responsive small-round card-cta">
-        <span>CHAT SECURELY</span>
+        <span>{{ $t("main.chatSecurely") }}</span>
         <i>public</i>
       </router-link>
     </article>
@@ -97,29 +96,28 @@ async function submitFeedback() {
     <nav class="center-align wrap" style="margin-top: 1.5rem">
       <router-link to="/balance" class="transparent button small-round">
         <i>savings</i>
-        <span>Check Credits</span>
+        <span>{{ $t("main.checkCredits") }}</span>
       </router-link>
       <router-link to="/about" class="transparent button small-round">
         <i>gavel</i>
-        <span>View Usage Terms</span>
+        <span>{{ $t("main.viewUsageTerms") }}</span>
       </router-link>
     </nav>
 
     <!-- Feedback card -->
     <article class="border medium-text" style="margin-top: 1.5rem">
-      <h6 class="bold">We'd love your feedback.</h6>
+      <h6 class="bold">{{ $t("main.feedbackTitle") }}</h6>
       <p>
-        What features would you like to see next? Let us know what you'd find
-        most useful.
+        {{ $t("main.feedbackPrompt") }}
       </p>
       <div v-if="feedbackSent" class="medium-padding">
-        <p><i class="small">check_circle</i> Thanks for your feedback!</p>
+        <p><i class="small">check_circle</i> {{ $t("main.feedbackThanks") }}</p>
       </div>
       <div v-else>
         <div class="field textarea border">
           <textarea
             v-model="feedbackMessage"
-            placeholder="Tell us what you'd like to see..."
+            :placeholder="$t('main.feedbackPlaceholder')"
             rows="3"
             data-testid="feedback-input"
             style="background-color: var(--surface-container-lowest)"
@@ -133,7 +131,7 @@ async function submitFeedback() {
           style="margin-top: 8px"
         >
           <i>send</i>
-          <span>SEND FEEDBACK</span>
+          <span>{{ $t("main.sendFeedback") }}</span>
         </button>
       </div>
     </article>

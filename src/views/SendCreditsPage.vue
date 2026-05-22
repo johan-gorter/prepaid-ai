@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { httpsCallable } from "firebase/functions";
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import AppBar from "../components/AppBar.vue";
 import { useBalance } from "../composables/useBalance";
 import { functions } from "../firebase";
 
+const { t } = useI18n();
 const { balance } = useBalance();
 
 const email = ref("");
@@ -40,7 +42,7 @@ async function onSend() {
     sent.value = true;
   } catch (err) {
     errorMessage.value =
-      err instanceof Error ? err.message : "Failed to send credits";
+      err instanceof Error ? err.message : t("sendCredits.errorGeneric");
   } finally {
     sending.value = false;
   }
@@ -48,7 +50,7 @@ async function onSend() {
 </script>
 
 <template>
-  <AppBar title="Send credits" />
+  <AppBar :title="$t('sendCredits.title')" />
 
   <main
     class="responsive"
@@ -63,27 +65,30 @@ async function onSend() {
       <i class="extra" style="font-size: 3rem; color: var(--primary)"
         >redeem</i
       >
-      <h5>Gift on its way</h5>
-      <p style="opacity: 0.7; max-width: 28rem; margin: 0 auto">
-        If <strong>{{ email.trim() }}</strong> has an account they'll be asked
-        to accept the {{ amount }} credits. The credits are reserved until they
-        accept, and return to your balance automatically if they don't accept
-        within 24 hours.
-      </p>
+      <h5>{{ $t("sendCredits.giftOnWay") }}</h5>
+      <i18n-t
+        keypath="sendCredits.giftOnWayDetail"
+        tag="p"
+        style="opacity: 0.7; max-width: 28rem; margin: 0 auto"
+      >
+        <template #email><strong>{{ email.trim() }}</strong></template>
+        <template #amount>{{ amount }}</template>
+      </i18n-t>
       <div style="padding-top: 1.5rem">
         <router-link to="/balance" class="button">
           <i>arrow_back</i>
-          <span>Back to Balance</span>
+          <span>{{ $t("common.backToBalance") }}</span>
         </router-link>
       </div>
     </div>
 
     <!-- Form -->
     <form v-else style="padding-top: 2rem" @submit.prevent="onSend">
-      <p style="opacity: 0.7">
-        Send credits from your balance to someone by their email address. You
-        currently have <strong>{{ balance }} credits</strong>.
-      </p>
+      <i18n-t keypath="sendCredits.formIntro" tag="p" style="opacity: 0.7">
+        <template #balance>
+          <strong>{{ $t("sendCredits.balanceCredits", { count: balance }) }}</strong>
+        </template>
+      </i18n-t>
 
       <div class="field label border round" style="margin-top: 1.5rem">
         <input
@@ -93,7 +98,7 @@ async function onSend() {
           data-testid="send-email"
           required
         />
-        <label>Recipient email</label>
+        <label>{{ $t("sendCredits.recipientEmail") }}</label>
       </div>
 
       <div class="field label border round">
@@ -106,7 +111,7 @@ async function onSend() {
           data-testid="send-amount"
           required
         />
-        <label>Amount (credits)</label>
+        <label>{{ $t("sendCredits.amountLabel") }}</label>
       </div>
 
       <p
@@ -120,11 +125,11 @@ async function onSend() {
 
       <nav style="margin-top: 1rem">
         <router-link to="/balance" class="button border">
-          <span>Cancel</span>
+          <span>{{ $t("common.cancel") }}</span>
         </router-link>
         <button type="submit" :disabled="!canSend" data-testid="send-submit">
           <i aria-hidden="true">send</i>
-          <span>{{ sending ? "Sending…" : "Send gift" }}</span>
+          <span>{{ sending ? $t("sendCredits.sending") : $t("sendCredits.sendGift") }}</span>
         </button>
       </nav>
     </form>

@@ -43,8 +43,8 @@ async function onCopy() {
 
 <template>
   <dialog :class="{ active: open }" data-testid="share-dialog">
-    <h5>Share impression</h5>
-    <p>Anyone with this link can view this result image.</p>
+    <h5>{{ $t("share.title") }}</h5>
+    <p>{{ $t("share.description") }}</p>
     <div class="field border round">
       <input
         ref="inputRef"
@@ -56,10 +56,10 @@ async function onCopy() {
       />
     </div>
     <nav>
-      <button class="border" @click="emit('close')">Close</button>
+      <button class="border" @click="emit('close')">{{ $t("share.close") }}</button>
       <button @click="onCopy" data-testid="share-copy">
         <i aria-hidden="true">{{ copied ? "check" : "content_copy" }}</i>
-        <span>{{ copied ? "Copied" : "Copy" }}</span>
+        <span>{{ copied ? $t("share.copied") : $t("share.copy") }}</span>
       </button>
     </nav>
   </dialog>

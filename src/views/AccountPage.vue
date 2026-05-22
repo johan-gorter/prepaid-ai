@@ -2,12 +2,14 @@
 import { deleteUser } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 import { onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 import { getLastActivity } from "../composables/useLastActivity";
 import { functions } from "../firebase";
 
+const { t } = useI18n();
 const router = useRouter();
 const { currentUser } = useAuth();
 
@@ -39,14 +41,14 @@ async function handleDeleteAccount() {
     router.replace("/login");
   } catch (err: unknown) {
     deleteError.value =
-      err instanceof Error ? err.message : "Failed to delete account";
+      err instanceof Error ? err.message : t("account.deleteFailed");
     deleting.value = false;
   }
 }
 </script>
 
 <template>
-  <AppBar title="Account" />
+  <AppBar :title="$t('account.title')" />
 
   <main
     class="responsive"
@@ -56,21 +58,19 @@ async function handleDeleteAccount() {
       padding-top: var(--app-bar-clearance);
     "
   >
-    <h4>Account</h4>
+    <h4>{{ $t("account.title") }}</h4>
 
     <article class="border small-padding">
-      <h6>Last Activity</h6>
+      <h6>{{ $t("account.lastActivity") }}</h6>
       <p v-if="lastActivity">{{ lastActivity }}</p>
-      <p v-else class="secondary-text">No activity recorded yet.</p>
+      <p v-else class="secondary-text">{{ $t("account.noActivity") }}</p>
     </article>
 
-    <h5 style="margin-top: 2rem">Danger Zone</h5>
+    <h5 style="margin-top: 2rem">{{ $t("account.dangerZone") }}</h5>
     <article class="border small-padding">
-      <h6>Delete Account</h6>
+      <h6>{{ $t("account.deleteAccount") }}</h6>
       <p>
-        Permanently delete your account and all associated data, including all
-        renovations, impressions, and uploaded images. This action cannot be
-        undone.
+        {{ $t("account.deleteDescription") }}
       </p>
 
       <div v-if="deleteError" class="small-padding">
@@ -80,14 +80,14 @@ async function handleDeleteAccount() {
       <div v-if="!showDeleteConfirm">
         <button class="error" @click="showDeleteConfirm = true">
           <i>delete_forever</i>
-          <span>Delete my account</span>
+          <span>{{ $t("account.deleteButton") }}</span>
         </button>
       </div>
 
       <div v-else>
         <p>
-          <strong>Are you sure?</strong> This will permanently delete
-          everything.
+          <strong>{{ $t("account.areYouSure") }}</strong>
+          {{ $t("account.areYouSureDetail") }}
         </p>
         <div class="row">
           <button
@@ -98,7 +98,7 @@ async function handleDeleteAccount() {
             <progress v-if="deleting" class="circle small"></progress>
             <i v-else>delete_forever</i>
             <span>{{
-              deleting ? "Deleting..." : "Yes, delete everything"
+              deleting ? $t("account.deleting") : $t("account.confirmDelete")
             }}</span>
           </button>
           <button
@@ -106,7 +106,7 @@ async function handleDeleteAccount() {
             :disabled="deleting"
             @click="showDeleteConfirm = false"
           >
-            <span>Cancel</span>
+            <span>{{ $t("common.cancel") }}</span>
           </button>
         </div>
       </div>
@@ -115,7 +115,7 @@ async function handleDeleteAccount() {
     <div style="padding-top: 1rem">
       <router-link to="/" class="button">
         <i>arrow_back</i>
-        <span>Back to Main</span>
+        <span>{{ $t("common.backToMain") }}</span>
       </router-link>
     </div>
   </main>

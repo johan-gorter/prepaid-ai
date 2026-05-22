@@ -160,7 +160,7 @@ watch(
 </script>
 
 <template>
-  <AppBar title="Renovations" />
+  <AppBar :title="$t('renovations.title')" />
 
   <main
     class="responsive"
@@ -177,17 +177,17 @@ watch(
         data-testid="renovations-sign-in"
       >
         <i aria-hidden="true">login</i>
-        <span>Log in to see your renovations</span>
+        <span>{{ $t("renovations.signInPrompt") }}</span>
       </router-link>
     </nav>
 
     <div v-if="renovationsLoading" class="center-align medium-padding">
       <progress class="circle"></progress>
-      <p>Loading renovations...</p>
+      <p>{{ $t("renovations.loading") }}</p>
     </div>
 
     <div v-else-if="error" class="center-align medium-padding">
-      <p class="error-text">Error loading renovations: {{ error }}</p>
+      <p class="error-text">{{ $t("renovations.errorLoading", { error }) }}</p>
     </div>
 
     <div v-else class="renovation-grid">

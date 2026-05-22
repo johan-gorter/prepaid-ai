@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { firebaseApp } from "../firebase";
 
+const { t } = useI18n();
 const { signInWithGoogle, signInWithMicrosoft, signInWithApple, loading } =
   useAuth();
 const router = useRouter();
@@ -33,9 +35,7 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
         ? (err as { code: string }).code
         : "";
     if (code === "auth/account-exists-with-different-credential") {
-      errorMessage.value =
-        "An account already exists with this email address using a different " +
-        "sign-in method. Please sign in with the method you used originally.";
+      errorMessage.value = t("login.errorAccountExists");
     } else if (
       code === "auth/popup-closed-by-user" ||
       code === "auth/cancelled-popup-request"
@@ -43,7 +43,7 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
       // User dismissed the popup themselves — no need to alarm them.
       errorMessage.value = null;
     } else {
-      errorMessage.value = "Sign-in failed. Please try again.";
+      errorMessage.value = t("login.errorGeneric");
     }
   }
 }
@@ -62,9 +62,7 @@ async function handleDevLogin() {
     router.push(redirect);
   } catch (err) {
     console.error("Dev login failed:", err);
-    alert(
-      `Dev login failed.\n\nMake sure you have run:\n  npm run emulators:seed`,
-    );
+    alert(t("login.devLoginFailed"));
   }
 }
 </script>
@@ -77,7 +75,7 @@ async function handleDevLogin() {
     <article class="large-elevate border">
       <div class="center-align">
         <h4>payasyougo.app</h4>
-        <p class="small-text">Reimagine your space with AI</p>
+        <p class="small-text">{{ $t("login.tagline") }}</p>
       </div>
 
       <div class="space"></div>
@@ -86,20 +84,20 @@ async function handleDevLogin() {
         class="responsive border"
         @click="handleSignIn('google')"
         :disabled="loading"
-        aria-label="Sign in with Google"
+        :aria-label="$t('login.withGoogle')"
       >
         <span class="bold" aria-hidden="true">G</span>
-        <span>Sign in with Google</span>
+        <span>{{ $t("login.withGoogle") }}</span>
       </button>
       <div class="small-space"></div>
       <button
         class="responsive border"
         @click="handleSignIn('microsoft')"
         :disabled="loading"
-        aria-label="Sign in with Microsoft"
+        :aria-label="$t('login.withMicrosoft')"
       >
         <span class="bold" aria-hidden="true">M</span>
-        <span>Sign in with Microsoft</span>
+        <span>{{ $t("login.withMicrosoft") }}</span>
       </button>
       <!-- Apple sign-in temporarily disabled until the Apple Developer
            credentials are configured (Services ID + signing key). The
@@ -126,21 +124,27 @@ async function handleDevLogin() {
         {{ errorMessage }}
       </p>
 
-      <p class="center-align small-text" style="margin-top: 1rem">
-        By signing in, you agree to our
-        <router-link to="/about">Terms of Service</router-link>.
-      </p>
+      <i18n-t
+        keypath="login.termsPrefix"
+        tag="p"
+        class="center-align small-text"
+        style="margin-top: 1rem"
+      >
+        <template #terms>
+          <router-link to="/about">{{ $t("login.termsLink") }}</router-link>
+        </template>
+      </i18n-t>
 
       <!-- Dev login panel — only rendered when running with emulators -->
       <template v-if="isEmulatorMode">
         <div class="divider" style="margin-top: 1.5rem"></div>
-        <p class="center-align small-text">Dev / Emulator mode</p>
-        <p class="center-align small-text">
-          Run <code>npm run emulators:seed</code> once to create this user.
-        </p>
+        <p class="center-align small-text">{{ $t("login.devMode") }}</p>
+        <i18n-t keypath="login.devSeedHint" tag="p" class="center-align small-text">
+          <template #command><code>npm run emulators:seed</code></template>
+        </i18n-t>
         <button class="responsive amber-container" @click="handleDevLogin">
           <i aria-hidden="true">bolt</i>
-          <span>Dev Login ({{ DEV_EMAIL }})</span>
+          <span>{{ $t("login.devLogin", { email: DEV_EMAIL }) }}</span>
         </button>
       </template>
     </article>

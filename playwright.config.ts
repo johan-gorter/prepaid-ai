@@ -18,6 +18,10 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:5174",
     trace: "on-first-retry",
+    // Pin the browser locale so language auto-detection is deterministic and
+    // the existing English text assertions stay green. Tests that exercise
+    // Dutch detection create their own context with `locale: "nl-NL"`.
+    locale: "en-US",
     screenshot: "only-on-failure",
   },
 

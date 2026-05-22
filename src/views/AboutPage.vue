@@ -6,7 +6,7 @@ const { currentUser } = useAuth();
 </script>
 
 <template>
-  <AppBar title="About" />
+  <AppBar :title="$t('about.breadcrumb')" />
 
   <main
     class="responsive"
@@ -16,61 +16,40 @@ const { currentUser } = useAuth();
       padding-top: var(--app-bar-clearance);
     "
   >
-    <h4>About payasyougo.app</h4>
-    <p>
-      payasyougo.app helps you visualize renovation ideas by combining your
-      photos with AI-powered image editing. Upload a photo of your space,
-      highlight the area you want to change, describe your vision, and receive
-      an AI-generated preview of the result.
-    </p>
+    <h4>{{ $t("about.title") }}</h4>
+    <p>{{ $t("about.intro") }}</p>
 
-    <h5>Acceptable Use</h5>
-    <p>
-      You are responsible for the images you upload. Uploaded images
-      <strong>must not</strong> contain:
-    </p>
+    <h5>{{ $t("about.acceptableUseTitle") }}</h5>
+    <i18n-t keypath="about.acceptableUseIntro" tag="p">
+      <template #mustNot><strong>{{ $t("about.mustNot") }}</strong></template>
+    </i18n-t>
     <ul>
-      <li>Harmful, hateful, violent, or otherwise objectionable content</li>
-      <li>Personal or private information (PII) of any individual</li>
-      <li>Recognizable persons without their explicit consent</li>
-      <li>Readable license plates or other identifying markers</li>
+      <li>{{ $t("about.acceptableUseItem1") }}</li>
+      <li>{{ $t("about.acceptableUseItem2") }}</li>
+      <li>{{ $t("about.acceptableUseItem3") }}</li>
+      <li>{{ $t("about.acceptableUseItem4") }}</li>
     </ul>
-    <p>
-      We reserve the right to remove any content that violates these guidelines
-      without prior notice.
-    </p>
+    <p>{{ $t("about.acceptableUseOutro") }}</p>
 
-    <h5>Data Retention</h5>
-    <p>
-      Uploaded images and generated results will be retained for a minimum of
-      <strong>12 months</strong> and a maximum of <strong>24 months</strong>
-      from the date of upload. After the retention period, images may be
-      permanently deleted. You can delete your images at any time from the
-      renovation detail page, or delete your entire account from the
-      <router-link to="/account">Account</router-link> page.
-    </p>
+    <h5>{{ $t("about.dataRetentionTitle") }}</h5>
+    <i18n-t keypath="about.dataRetention" tag="p">
+      <template #min><strong>{{ $t("about.dataRetentionMin") }}</strong></template>
+      <template #max><strong>{{ $t("about.dataRetentionMax") }}</strong></template>
+      <template #account>
+        <router-link to="/account">{{ $t("common.account") }}</router-link>
+      </template>
+    </i18n-t>
 
-    <h5>Privacy</h5>
-    <p>
-      We collect only the information necessary to provide the service: your
-      authentication identity (via Google, Microsoft, or Apple sign-in) and the
-      images and prompts you submit. We do not sell or share your data with
-      third parties. Image processing is performed by Google's Gemini AI
-      service.
-    </p>
+    <h5>{{ $t("about.privacyTitle") }}</h5>
+    <p>{{ $t("about.privacy") }}</p>
 
-    <h5>Terms of Service</h5>
-    <p>
-      By using payasyougo.app, you agree to these terms. The service is provided
-      "as is" without warranty of any kind. We may modify or discontinue the
-      service at any time. Continued use after changes constitutes acceptance of
-      the updated terms.
-    </p>
+    <h5>{{ $t("about.termsTitle") }}</h5>
+    <p>{{ $t("about.terms") }}</p>
 
     <div style="padding-top: 1rem">
       <router-link :to="currentUser ? '/' : '/login'" class="button">
         <i>arrow_back</i>
-        <span>Back</span>
+        <span>{{ $t("common.back") }}</span>
       </router-link>
     </div>
   </main>

@@ -17,7 +17,7 @@ const { current, responding, respond } = useNotifications();
   >
     <!-- Plain message -->
     <template v-if="current.type === 'message'">
-      <h5>Notification</h5>
+      <h5>{{ $t("notification.title") }}</h5>
       <p data-testid="notification-text">{{ current.text }}</p>
       <nav class="right-align">
         <button
@@ -26,18 +26,20 @@ const { current, responding, respond } = useNotifications();
           @click="respond(current.id, 'dismiss')"
         >
           <i aria-hidden="true">check</i>
-          <span>Dismiss</span>
+          <span>{{ $t("notification.dismiss") }}</span>
         </button>
       </nav>
     </template>
 
     <!-- Credits gift -->
     <template v-else-if="current.type === 'credits-gift'">
-      <h5>You received a gift!</h5>
-      <p data-testid="notification-gift">
-        <strong>{{ current.senderName }}</strong> sent you
-        <strong>{{ current.amount }} credits</strong>.
-      </p>
+      <h5>{{ $t("notification.giftTitle") }}</h5>
+      <i18n-t keypath="notification.giftBody" tag="p" data-testid="notification-gift">
+        <template #sender><strong>{{ current.senderName }}</strong></template>
+        <template #amount>
+          <strong>{{ $t("notification.giftAmount", { count: current.amount }) }}</strong>
+        </template>
+      </i18n-t>
       <nav>
         <button
           class="border"
@@ -46,7 +48,7 @@ const { current, responding, respond } = useNotifications();
           @click="respond(current.id, 'decline')"
         >
           <i aria-hidden="true">close</i>
-          <span>Decline</span>
+          <span>{{ $t("notification.decline") }}</span>
         </button>
         <button
           :disabled="responding"
@@ -54,7 +56,7 @@ const { current, responding, respond } = useNotifications();
           @click="respond(current.id, 'accept')"
         >
           <i aria-hidden="true">redeem</i>
-          <span>Accept</span>
+          <span>{{ $t("notification.accept") }}</span>
         </button>
       </nav>
     </template>
