@@ -64,6 +64,11 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
   inset: 0 0 auto 0;
   z-index: 12;
   grid-template-columns: minmax(0, 1fr);
+  /* Drop Beer CSS's default `header { padding: 0 1rem }`. The horizontal inset
+     is owned by the inner <nav> instead (see below) so the logo lines up with
+     page content. Keeping it here would combine with nav centering to offset
+     the logo from `main`'s content edge. */
+  padding-inline: 0;
 }
 
 /* Constrain fixed header/footer nav content to match main content width.
@@ -78,6 +83,11 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
   max-width: 800px;
   margin: 0 auto;
   min-width: 0;
+  /* Mirror Beer CSS's `main { --_padding: 0.5rem; padding: var(--_padding) }`.
+     The nav is now the same box as `main` — identical max-width, identical
+     centering, identical horizontal inset — so the logo's left edge tracks the
+     page content's left edge at every viewport width. */
+  padding-inline: 0.5rem;
 }
 
 /* Headings in body content must wrap rather than push the layout wider than
@@ -90,10 +100,6 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
 /* Tighten the AppBar at narrow widths so the logo, title, balance and
    user-menu all fit within a 320px viewport. */
 @media (max-width: 599px) {
-  #app header.fixed {
-    padding-inline: 0.5rem;
-  }
-
   #app header.fixed > nav {
     gap: 0.5rem;
   }
