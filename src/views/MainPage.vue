@@ -49,9 +49,9 @@ async function submitFeedback() {
     "
   >
     <p>
-      Hello, here you can benefit from premium AI applications
-      <strong>without any ongoing subscription</strong>. We are a friendly and
-      fair platform allowing everyone to benefit from AI.
+      Use the best AI tools
+      <strong class="primary-text">without a monthly fee</strong>. Pay only for
+      what you use.
     </p>
 
     <!-- AI Impressions card -->
@@ -62,9 +62,9 @@ async function submitFeedback() {
           alt="Renovation preview"
           class="round card-thumb"
         />
-        <h6 class="bold no-margin card-title">AI Impressions for renovations</h6>
+        <h6 class="bold no-margin card-title">AI Renovation Previews</h6>
         <p class="card-desc">
-          Reimagine your living spaces with AI-generated artist impressions.
+          Imagine your rooms and exterior with AI-generated artist impressions.
         </p>
       </div>
       <router-link
@@ -83,9 +83,8 @@ async function submitFeedback() {
         <i class="extra primary-text">verified_user</i>
         <h6 class="bold no-margin card-title">Private Chat</h6>
         <p class="card-desc">
-          Have a private conversation with a powerful AI model (Gemini Pro).
-          For example, you can use this to explain technical, legal or medical
-          documents.
+          Chat privately with a powerful AI. Great for explaining legal,
+          medical, or technical documents.
         </p>
       </div>
       <router-link to="/chat" class="button responsive small-round amber">
