@@ -48,7 +48,7 @@ async function submitFeedback() {
       padding-bottom: 2rem;
     "
   >
-    <i18n-t keypath="main.tagline" tag="p">
+    <i18n-t keypath="main.tagline" tag="p" class="large-text">
       <template #highlight>
         <strong class="primary-text">{{ $t("main.taglineHighlight") }}</strong>
       </template>
