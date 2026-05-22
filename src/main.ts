@@ -4,7 +4,9 @@ import { createPinia } from "pinia";
 import { registerSW } from "virtual:pwa-register";
 import { createApp } from "vue";
 import App from "./App.vue";
+import "./composables/useLocale"; // boot locale detection + persistence
 import "./firebase"; // ensure Firebase is initialized
+import { i18n } from "./i18n";
 import router from "./router";
 import "./style.css";
 
@@ -16,6 +18,7 @@ void ui("theme", "#9a25ae");
 const app = createApp(App);
 
 app.use(createPinia());
+app.use(i18n);
 app.use(router);
 
 app.mount("#app");

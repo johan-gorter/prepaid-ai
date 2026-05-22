@@ -18,6 +18,7 @@
     "playwright.config.ts",
     "playwright-ct.config.ts",
     "playwright-pwa.config.ts",
+    "playwright/index.ts",
     "e2e/**/*.ts",
     "ct/**/*.ts"
   ]

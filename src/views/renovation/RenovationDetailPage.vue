@@ -303,12 +303,12 @@ onMounted(() => {
 
 <template>
   <div class="page-layout">
-    <AppBar title="Renovation Details">
+    <AppBar :title="$t('renovationDetail.title')">
       <div style="position: relative; flex-shrink: 0">
         <button
           class="transparent circle"
           @click="showRenovationMenu = !showRenovationMenu"
-          aria-label="Renovation menu"
+          :aria-label="$t('renovationDetail.menuAriaLabel')"
         >
           <i aria-hidden="true">more_vert</i>
         </button>
@@ -321,7 +321,7 @@ onMounted(() => {
               "
             >
               <i aria-hidden="true">delete</i>
-              <span>Delete renovation</span>
+              <span>{{ $t("renovationDetail.deleteRenovation") }}</span>
             </a>
           </li>
         </menu>
@@ -330,11 +330,15 @@ onMounted(() => {
 
     <!-- Delete confirmation dialog -->
     <dialog :class="{ active: showDeleteDialog }">
-      <h5>Delete Renovation</h5>
-      <p>Delete this renovation and all its impressions?</p>
+      <h5>{{ $t("renovationDetail.deleteTitle") }}</h5>
+      <p>{{ $t("renovationDetail.deleteConfirm") }}</p>
       <nav>
-        <button class="border" @click="showDeleteDialog = false">Cancel</button>
-        <button class="error" @click="handleDeleteRenovation">Delete</button>
+        <button class="border" @click="showDeleteDialog = false">
+          {{ $t("common.cancel") }}
+        </button>
+        <button class="error" @click="handleDeleteRenovation">
+          {{ $t("common.delete") }}
+        </button>
       </nav>
     </dialog>
 
@@ -349,7 +353,7 @@ onMounted(() => {
     >
       <div v-if="loading" class="center-align large-padding">
         <progress class="circle"></progress>
-        <p>Loading...</p>
+        <p>{{ $t("renovationDetail.loading") }}</p>
       </div>
 
       <div v-else class="detail-photo-feed">
@@ -407,19 +411,19 @@ onMounted(() => {
             <template v-else-if="impression.status === 'processing'">
               <div class="center-align medium-padding photo-status">
                 <progress class="circle"></progress>
-                <p>Processing...</p>
+                <p>{{ $t("renovationDetail.processing") }}</p>
               </div>
             </template>
             <!-- Failed -->
             <template v-else-if="impression.status === 'failed'">
               <div class="center-align medium-padding error-text photo-status">
-                <p>Failed: {{ impression.error }}</p>
+                <p>{{ $t("renovationDetail.failed", { error: impression.error }) }}</p>
               </div>
             </template>
             <!-- Pending -->
             <template v-else>
               <div class="center-align medium-padding photo-status">
-                <p>Pending...</p>
+                <p>{{ $t("renovationDetail.pending") }}</p>
               </div>
             </template>
 
@@ -428,7 +432,7 @@ onMounted(() => {
                 v-if="renovation?.afterImpressionId === impression.id"
                 class="circle absolute-star-indicator starred"
                 role="img"
-                aria-label="After image"
+                :aria-label="$t('renovationDetail.afterImage')"
                 data-testid="after-image-star"
               >
                 <i aria-hidden="true">star</i>
@@ -438,8 +442,8 @@ onMounted(() => {
                 v-else
                 class="transparent circle absolute-btn-star"
                 @click.stop="handleStar(impression.id)"
-                title="Set as after image"
-                aria-label="Set as after image"
+                :title="$t('renovationDetail.setAfterImage')"
+                :aria-label="$t('renovationDetail.setAfterImage')"
               >
                 <i aria-hidden="true">star_border</i>
               </button>

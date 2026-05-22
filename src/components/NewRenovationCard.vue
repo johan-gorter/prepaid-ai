@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import {
   clearImpressionDraft,
@@ -8,6 +9,7 @@ import {
   setUncroppedSource,
 } from "../composables/useImpressionStore";
 
+const { t } = useI18n();
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
 const pasteError = ref<string | null>(null);
@@ -45,9 +47,9 @@ async function onPasteImage() {
         return;
       }
     }
-    pasteError.value = "No image found on clipboard";
+    pasteError.value = t("newRenovation.noImageClipboard");
   } catch {
-    pasteError.value = "Could not access clipboard";
+    pasteError.value = t("newRenovation.clipboardError");
   }
 }
 </script>
@@ -58,15 +60,15 @@ async function onPasteImage() {
     data-testid="new-renovation-card"
   >
     <i class="extra" aria-hidden="true">photo_camera</i>
-    <h5>New Renovation</h5>
+    <h5>{{ $t("newRenovation.title") }}</h5>
     <nav class="vertical">
       <button class="small-round" @click="router.push('/photo')">
         <i aria-hidden="true">photo_camera</i>
-        <span>Take Photo</span>
+        <span>{{ $t("newRenovation.takePhoto") }}</span>
       </button>
       <button class="small-round" @click="fileInput?.click()">
         <i aria-hidden="true">upload</i>
-        <span>Upload Image</span>
+        <span>{{ $t("newRenovation.uploadImage") }}</span>
       </button>
       <button
         class="small-round"
@@ -74,7 +76,7 @@ async function onPasteImage() {
         @click="onPasteImage"
       >
         <i aria-hidden="true">content_paste</i>
-        <span>Paste Image</span>
+        <span>{{ $t("newRenovation.pasteImage") }}</span>
       </button>
     </nav>
     <p v-if="pasteError" class="error-text small-text">{{ pasteError }}</p>

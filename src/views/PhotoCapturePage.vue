@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import StickyFooter from "../components/StickyFooter.vue";
@@ -9,6 +10,7 @@ import {
   setImpressionSource,
 } from "../composables/useImpressionStore";
 
+const { t } = useI18n();
 const router = useRouter();
 
 const CAPTURE_SIZE = 1024;
@@ -33,8 +35,7 @@ onMounted(async () => {
       };
     }
   } catch {
-    errorMessage.value =
-      "Camera access denied or unavailable. Please allow camera access and try again.";
+    errorMessage.value = t("photoCapture.cameraError");
   }
 });
 
@@ -87,7 +88,7 @@ function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <AppBar title="Take Photo" />
+    <AppBar :title="$t('photoCapture.title')" />
 
     <main
       class="responsive"
@@ -104,7 +105,7 @@ function handleCancel() {
       </div>
       <template v-else>
         <p class="center-align small-text">
-          Position your subject inside the square, then tap Capture.
+          {{ $t("photoCapture.positionHint") }}
         </p>
         <div class="camera-wrapper">
           <video
@@ -122,17 +123,17 @@ function handleCancel() {
     <StickyFooter>
       <button class="max border small-round" @click="handleCancel">
         <i aria-hidden="true">close</i>
-        <span>Cancel</span>
+        <span>{{ $t("common.cancel") }}</span>
       </button>
       <div class="small-space"></div>
       <button
         class="max small-round"
         :disabled="!cameraReady"
         @click="handleCapture"
-        aria-label="Capture photo"
+        :aria-label="$t('photoCapture.capturePhotoAria')"
       >
         <i aria-hidden="true">camera</i>
-        <span>Capture</span>
+        <span>{{ $t("photoCapture.capture") }}</span>
       </button>
     </StickyFooter>
   </div>

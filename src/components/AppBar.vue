@@ -26,14 +26,19 @@
       </template>
 
       <slot />
+      <LanguageMenu v-if="!isAuthenticated" />
       <UserMenu />
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
+import { useAuth } from "../composables/useAuth";
+import LanguageMenu from "./LanguageMenu.vue";
 import Logo from "./Logo.vue";
 import UserMenu from "./UserMenu.vue";
+
+const { isAuthenticated } = useAuth();
 
 withDefaults(
   defineProps<{

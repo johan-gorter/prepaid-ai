@@ -47,16 +47,8 @@ export type TransactionReasonKey =
   | "credit_transfer_received"
   | "credit_transfer_refunded";
 
-/** Translations for balance transaction reason keys. */
-export const TRANSACTION_REASONS: Record<TransactionReasonKey, string> = {
-  image_generation: "Image generation",
-  chat_message: "Chat message",
-  credit_purchase: "Credit purchase",
-  admin_adjustment: "Admin adjustment",
-  credit_transfer_sent: "Credit gift sent",
-  credit_transfer_received: "Credit gift received",
-  credit_transfer_refunded: "Credit gift refunded",
-};
+// Human-readable labels for these reason keys live in the i18n catalogs under
+// `balance.reason.*` (keyed by the same strings) so they can be localized.
 
 /** Types of in-app notifications surfaced as a modal popup. */
 export type NotificationType = "message" | "credits-gift";

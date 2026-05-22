@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { httpsCallable } from "firebase/functions";
 import { computed, onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
@@ -14,6 +15,7 @@ import { functions } from "../firebase";
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const { currentUser } = useAuth();
 
 const PRESETS = [75, 200, 500] as const;
@@ -69,9 +71,9 @@ const costMessage = computed(() => {
   const loUsd = creditsToUsd(lo).toFixed(2);
   const hiUsd = creditsToUsd(hi).toFixed(2);
   if (lo === hi) {
-    return `This operation costs ${lo} credits ($${loUsd}). You must buy credits in order to proceed.`;
+    return t("buyCredits.costExact", { credits: lo, usd: loUsd });
   }
-  return `This operation costs between ${lo} and ${hi} credits ($${loUsd} – $${hiUsd}). You must buy credits in order to proceed.`;
+  return t("buyCredits.costRange", { lo, hi, loUsd, hiUsd });
 });
 
 const customAmountValid = computed(
@@ -166,7 +168,7 @@ async function runCheckout(credits: number, redirect: string) {
     window.location.href = result.data.url;
   } catch (err) {
     errorMessage.value =
-      err instanceof Error ? err.message : "Failed to start checkout";
+      err instanceof Error ? err.message : t("buyCredits.errorGeneric");
     // Drop the saved intent so a returning user isn't trapped in an
     // auto-fire loop replaying the same failure on every /buy-credits
     // visit. They can pick an amount again to retry.
@@ -199,7 +201,7 @@ function buyCustom() {
 </script>
 
 <template>
-  <AppBar title="Buy Credits" />
+  <AppBar :title="$t('buyCredits.title')" />
 
   <main
     class="responsive"
@@ -211,7 +213,7 @@ function buyCustom() {
   >
     <div class="center-align" style="padding: 1.5rem 0 1rem">
       <i class="extra primary-text" style="font-size: 3rem">savings</i>
-      <h4>Buy credits</h4>
+      <h4>{{ $t("buyCredits.title") }}</h4>
     </div>
 
     <article
@@ -230,7 +232,7 @@ function buyCustom() {
       {{ errorMessage }}
     </p>
 
-    <h6>Choose an amount</h6>
+    <h6>{{ $t("buyCredits.chooseAmount") }}</h6>
     <div class="preset-grid">
       <button
         v-for="preset in PRESETS"
@@ -241,12 +243,12 @@ function buyCustom() {
         @click="startCheckout(preset)"
       >
         <span class="bold">{{ preset }}</span>
-        <span class="small-text">credits</span>
+        <span class="small-text">{{ $t("buyCredits.creditsLabel") }}</span>
         <span class="small-text">${{ creditsToUsd(preset).toFixed(2) }}</span>
       </button>
     </div>
 
-    <h6 style="margin-top: 1.5rem">Or pick a custom amount</h6>
+    <h6 style="margin-top: 1.5rem">{{ $t("buyCredits.customAmountTitle") }}</h6>
     <div class="custom-row">
       <div class="field border round" style="flex: 1; margin: 0">
         <input
@@ -256,7 +258,7 @@ function buyCustom() {
           :max="MAX_CUSTOM"
           step="1"
           data-testid="buy-credits-custom-input"
-          aria-label="Custom credit amount"
+          :aria-label="$t('buyCredits.customAmountAria')"
         />
       </div>
       <button
@@ -266,20 +268,21 @@ function buyCustom() {
         @click="buyCustom"
       >
         <i aria-hidden="true">shopping_cart</i>
-        <span
-          >Buy {{ customAmount }} credits (${{
-            customAmountValid ? creditsToUsd(customAmount).toFixed(2) : "—"
-          }})</span
-        >
+        <span>{{
+          $t("buyCredits.buyAmount", {
+            credits: customAmount,
+            usd: customAmountValid ? creditsToUsd(customAmount).toFixed(2) : "—",
+          })
+        }}</span>
       </button>
     </div>
     <p class="small-text" style="opacity: 0.7; margin-top: 0.25rem">
-      Between {{ effectiveMinCustom }} and {{ MAX_CUSTOM }} credits.
+      {{ $t("buyCredits.betweenHint", { min: effectiveMinCustom, max: MAX_CUSTOM }) }}
     </p>
 
     <div v-if="isProcessing" class="center-align" style="padding-top: 1.5rem">
       <progress class="circle"></progress>
-      <p>Starting checkout...</p>
+      <p>{{ $t("buyCredits.startingCheckout") }}</p>
     </div>
   </main>
 </template>

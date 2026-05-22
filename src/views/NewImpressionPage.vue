@@ -2,6 +2,7 @@
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import MaskingCanvas from "../components/MaskingCanvas.vue";
@@ -32,6 +33,7 @@ type Source = "photo" | "crop" | "original" | "impression" | "share";
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const { currentUser } = useAuth();
 const { balance, waitForLoad: waitForBalance } = useBalance();
 const {
@@ -78,10 +80,10 @@ const sharePending = ref(false);
 const shareError = ref<string | null>(null);
 
 const headerTitle = computed(() => {
-  if (stage.value === "prompt") return "Describe Change";
-  if (stage.value === "processing") return "Processing";
-  if (stage.value === "preview") return "Impression";
-  return "Mark Area";
+  if (stage.value === "prompt") return t("newImpression.titleDescribe");
+  if (stage.value === "processing") return t("newImpression.titleProcessing");
+  if (stage.value === "preview") return t("newImpression.titleImpression");
+  return t("newImpression.titleMark");
 });
 
 const canGenerate = computed(() => prompt.value.trim().length > 0);
@@ -164,8 +166,7 @@ async function initFromRoute(): Promise<void> {
     }
     const share = await fetchShare(token);
     if (!share) {
-      shareError.value =
-        "This share link is no longer available. The owner may have deleted the impression.";
+      shareError.value = t("newImpression.shareLinkUnavailable");
       return;
     }
     await Promise.all([
@@ -179,8 +180,7 @@ async function initFromRoute(): Promise<void> {
       if (!res.ok) throw new Error(`status ${res.status}`);
       blob = await res.blob();
     } catch {
-      shareError.value =
-        "This shared image could not be loaded. The owner may have deleted it.";
+      shareError.value = t("newImpression.shareImageUnavailable");
       return;
     }
     await setImpressionSource(blob);
@@ -202,7 +202,7 @@ async function initFromRoute(): Promise<void> {
     blob = await fetchAndCacheSource(source);
   }
   if (!blob) {
-    errorMessage.value = "Source image is missing.";
+    errorMessage.value = t("newImpression.sourceMissing");
     return;
   }
 
@@ -358,7 +358,7 @@ async function onTrash() {
     }
   } else if (source === "original") {
     if (!renovationParam.value) return;
-    if (!confirm("Delete this renovation and all its impressions?")) return;
+    if (!confirm(t("newImpression.deleteRenovationConfirm"))) return;
     try {
       await deleteRenovation(renovationParam.value);
     } catch {
@@ -402,7 +402,8 @@ function waitForCompletion(
           unsub();
           reject(
             new Error(
-              (data.error as string | undefined) ?? "Processing failed",
+              (data.error as string | undefined) ??
+                t("newImpression.processingFailed"),
             ),
           );
         }
@@ -421,7 +422,7 @@ async function onGenerate() {
   if (generateInFlight) return;
   if (!canGenerate.value) return;
   if (!maskingRef.value) {
-    errorMessage.value = "Mask not ready.";
+    errorMessage.value = t("newImpression.maskNotReady");
     return;
   }
   generateInFlight = true;
@@ -523,7 +524,8 @@ async function onGenerate() {
         },
       });
     } catch (err) {
-      errorMessage.value = err instanceof Error ? err.message : "Unknown error";
+      errorMessage.value =
+        err instanceof Error ? err.message : t("newImpression.unknownError");
       stage.value = "prompt";
     }
   } finally {
@@ -559,7 +561,7 @@ async function onShare() {
     shareDialogOpen.value = true;
   } catch (err) {
     errorMessage.value =
-      err instanceof Error ? err.message : "Failed to create share link";
+      err instanceof Error ? err.message : t("newImpression.failedShareLink");
   } finally {
     sharePending.value = false;
   }
@@ -580,18 +582,16 @@ async function onShare() {
         data-testid="share-error"
       >
         <i class="extra" aria-hidden="true">link_off</i>
-        <h5>Share unavailable</h5>
+        <h5>{{ $t("newImpression.shareUnavailableTitle") }}</h5>
         <p>{{ shareError }}</p>
         <a class="button" href="/" data-testid="share-error-home">
           <i aria-hidden="true">home</i>
-          <span>Go to home</span>
+          <span>{{ $t("newImpression.goHome") }}</span>
         </a>
       </article>
 
       <div v-if="!shareError" class="step-hint">
-        <span v-if="stage === 'mask'"
-          >Paint the area you want to change (shown in red)</span
-        >
+        <span v-if="stage === 'mask'">{{ $t("newImpression.paintHint") }}</span>
       </div>
 
       <div
@@ -623,7 +623,7 @@ async function onShare() {
         <!-- Processing overlay -->
         <div v-show="stage === 'processing'" class="processing-overlay">
           <progress class="circle"></progress>
-          <p>Creating your impression...</p>
+          <p>{{ $t("newImpression.creating") }}</p>
         </div>
       </div>
 
@@ -638,7 +638,7 @@ async function onShare() {
             @focus="revealPromptInput"
             @input="growPromptInput"
           ></textarea>
-          <label for="prompt-input">What should change in the red area?</label>
+          <label for="prompt-input">{{ $t("newImpression.promptLabel") }}</label>
         </div>
       </div>
 
@@ -648,7 +648,7 @@ async function onShare() {
         @click="clearMaskEverywhere"
       >
         <i aria-hidden="true">delete_sweep</i>
-        <span>Clear Mask</span>
+        <span>{{ $t("newImpression.clearMask") }}</span>
       </button>
 
       <p v-if="errorMessage" class="error-text center-align">
@@ -661,10 +661,10 @@ async function onShare() {
       <button
         class="max small-round"
         @click="onBack"
-        aria-label="Renovation Details"
+        :aria-label="$t('newImpression.renovationDetails')"
       >
         <i aria-hidden="true">timeline</i>
-        <span>Renovation Details</span>
+        <span>{{ $t("newImpression.renovationDetails") }}</span>
       </button>
       <button
         v-if="showShareButton"
@@ -672,10 +672,10 @@ async function onShare() {
         :disabled="sharePending"
         data-testid="share-button"
         @click="onShare"
-        aria-label="Share"
+        :aria-label="$t('newImpression.share')"
       >
         <i aria-hidden="true">share</i>
-        <span>Share</span>
+        <span>{{ $t("newImpression.share") }}</span>
       </button>
       <button
         v-if="showTrashButton"
@@ -683,15 +683,15 @@ async function onShare() {
         @click="onTrash"
       >
         <i aria-hidden="true">delete</i>
-        <span>Trash</span>
+        <span>{{ $t("newImpression.trash") }}</span>
       </button>
       <button
         class="max small-round"
         @click="onNextChange"
-        aria-label="Next Change"
+        :aria-label="$t('newImpression.nextChange')"
       >
         <i aria-hidden="true">edit</i>
-        <span>Next Change</span>
+        <span>{{ $t("newImpression.nextChange") }}</span>
       </button>
     </StickyFooter>
 
@@ -709,15 +709,15 @@ async function onShare() {
         @click="onRetake"
       >
         <i aria-hidden="true">photo_camera</i>
-        <span>Retake</span>
+        <span>{{ $t("newImpression.retake") }}</span>
       </button>
       <button class="max small-round error" @click="onTrash">
         <i aria-hidden="true">delete</i>
-        <span>Trash</span>
+        <span>{{ $t("newImpression.trash") }}</span>
       </button>
       <button class="max small-round" @click="onMaskNext">
         <i aria-hidden="true">arrow_forward</i>
-        <span>Next</span>
+        <span>{{ $t("newImpression.next") }}</span>
       </button>
     </StickyFooter>
 
@@ -725,7 +725,7 @@ async function onShare() {
     <StickyFooter v-if="stage === 'prompt'">
       <button class="max border small-round" @click="onPromptBack">
         <i aria-hidden="true">arrow_back</i>
-        <span>Back</span>
+        <span>{{ $t("newImpression.back") }}</span>
       </button>
       <div class="small-space"></div>
       <button
@@ -734,7 +734,7 @@ async function onShare() {
         @click="onGenerate"
       >
         <i aria-hidden="true">auto_awesome</i>
-        <span>Generate</span>
+        <span>{{ $t("newImpression.generate") }}</span>
       </button>
     </StickyFooter>
   </div>

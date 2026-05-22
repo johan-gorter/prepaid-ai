@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import StickyFooter from "../components/StickyFooter.vue";
@@ -11,6 +12,7 @@ import {
   setImpressionSource,
 } from "../composables/useImpressionStore";
 
+const { t } = useI18n();
 const router = useRouter();
 
 const CANVAS_SIZE = 1024;
@@ -41,7 +43,7 @@ let objectUrl: string | null = null;
 onMounted(async () => {
   const blob = await getUncroppedSource();
   if (!blob) {
-    errorMessage.value = "No image to crop. Please go back and try again.";
+    errorMessage.value = t("crop.noImage");
     return;
   }
 
@@ -291,7 +293,7 @@ async function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <AppBar title="Crop &amp; Scale" />
+    <AppBar :title="$t('crop.title')" />
 
     <main
       class="responsive"
@@ -307,12 +309,12 @@ async function handleCancel() {
         <p>{{ errorMessage }}</p>
         <button class="small-round" @click="handleCancel">
           <i aria-hidden="true">arrow_back</i>
-          <span>Back</span>
+          <span>{{ $t("common.back") }}</span>
         </button>
       </div>
       <template v-else>
         <p class="center-align small-text">
-          Drag to reposition. Use zoom controls or scroll to resize.
+          {{ $t("crop.dragHint") }}
         </p>
         <div ref="wrapperRef" class="canvas-wrapper" @wheel.prevent="onWheel">
           <canvas
@@ -328,14 +330,14 @@ async function handleCancel() {
           <button
             class="transparent circle"
             @click="zoomOut"
-            aria-label="Zoom out"
+            :aria-label="$t('crop.zoomOut')"
           >
             <i aria-hidden="true">remove</i>
           </button>
           <button
             class="transparent circle"
             @click="zoomIn"
-            aria-label="Zoom in"
+            :aria-label="$t('crop.zoomIn')"
           >
             <i aria-hidden="true">add</i>
           </button>
@@ -346,7 +348,7 @@ async function handleCancel() {
     <StickyFooter v-if="!errorMessage">
       <button class="max border small-round" @click="handleCancel">
         <i aria-hidden="true">close</i>
-        <span>Cancel</span>
+        <span>{{ $t("common.cancel") }}</span>
       </button>
       <div class="small-space"></div>
       <button
@@ -355,7 +357,7 @@ async function handleCancel() {
         @click="handleConfirm"
       >
         <i aria-hidden="true">check</i>
-        <span>Use Image</span>
+        <span>{{ $t("crop.useImage") }}</span>
       </button>
     </StickyFooter>
   </div>

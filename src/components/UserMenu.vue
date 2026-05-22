@@ -4,12 +4,14 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 import { useBalance } from "../composables/useBalance";
 import { useColorScheme } from "../composables/useColorScheme";
+import LanguageDialog from "./LanguageDialog.vue";
 
 const { currentUser, signOut } = useAuth();
 const { balance } = useBalance();
 const { colorScheme, setColorScheme } = useColorScheme();
 const router = useRouter();
 const route = useRoute();
+const showLanguageDialog = ref(false);
 
 const signInRedirect = computed(() => route.fullPath);
 
@@ -60,6 +62,11 @@ function toggleScheme() {
   setColorScheme(isDark.value ? "light" : "dark");
   showMenu.value = false;
 }
+
+function openLanguageDialog() {
+  showMenu.value = false;
+  showLanguageDialog.value = true;
+}
 </script>
 
 <template>
@@ -71,7 +78,7 @@ function toggleScheme() {
     style="flex-shrink: 0"
   >
     <i aria-hidden="true">login</i>
-    <span>Sign in</span>
+    <span>{{ $t("common.signIn") }}</span>
   </router-link>
   <div
     v-else
@@ -98,7 +105,7 @@ function toggleScheme() {
     <div style="position: relative" data-user-menu>
       <button
         class="transparent circle"
-        aria-label="User menu"
+        :aria-label="$t('userMenu.menuAriaLabel')"
         @click="showMenu = !showMenu"
       >
         <i>account_circle</i>
@@ -115,7 +122,16 @@ function toggleScheme() {
         <li>
           <a @click="toggleScheme">
             <i>{{ isDark ? "light_mode" : "dark_mode" }}</i>
-            <span>Switch to {{ isDark ? "light" : "dark" }}</span>
+            <span>{{
+              isDark ? $t("userMenu.switchToLight") : $t("userMenu.switchToDark")
+            }}</span>
+          </a>
+        </li>
+        <li class="divider"></li>
+        <li>
+          <a data-testid="usermenu-switch-language" @click="openLanguageDialog">
+            <i>translate</i>
+            <span>{{ $t("language.switch") }}</span>
           </a>
         </li>
         <li class="divider"></li>
@@ -127,16 +143,22 @@ function toggleScheme() {
             "
           >
             <i>manage_accounts</i>
-            <span>Account</span>
+            <span>{{ $t("common.account") }}</span>
           </a>
         </li>
         <li>
           <a @click="handleSignOut">
             <i>logout</i>
-            <span>Sign out</span>
+            <span>{{ $t("common.signOut") }}</span>
           </a>
         </li>
       </menu>
     </div>
   </div>
+
+  <LanguageDialog
+    v-if="currentUser"
+    :open="showLanguageDialog"
+    @close="showLanguageDialog = false"
+  />
 </template>
