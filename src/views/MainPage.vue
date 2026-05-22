@@ -55,14 +55,19 @@ async function submitFeedback() {
     </i18n-t>
 
     <!-- AI Impressions card -->
-    <article class="border medium-text">
+    <article class="border medium-text" data-testid="renovations-card">
       <div class="card-media">
         <img
           src="/assets/renovation-small.png"
           :alt="$t('main.renovationImageAlt')"
           class="round card-thumb"
         />
-        <h6 class="bold no-margin card-title">{{ $t("main.renovationTitle") }}</h6>
+        <h6
+          class="bold no-margin card-title"
+          data-testid="renovations-card-heading"
+        >
+          {{ $t("main.renovationTitle") }}
+        </h6>
         <p class="card-desc">
           {{ $t("main.renovationDesc") }}
         </p>
