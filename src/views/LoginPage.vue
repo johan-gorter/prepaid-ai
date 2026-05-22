@@ -74,7 +74,7 @@ async function handleDevLogin() {
     class="responsive"
     style="max-width: 400px; margin: 0 auto; padding-top: 15vh"
   >
-    <article class="round large-elevate">
+    <article class="large-elevate border">
       <div class="center-align">
         <h4>payasyougo.app</h4>
         <p class="small-text">Reimagine your space with AI</p>

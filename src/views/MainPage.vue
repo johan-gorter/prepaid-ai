@@ -55,7 +55,7 @@ async function submitFeedback() {
     </p>
 
     <!-- AI Impressions card -->
-    <article class="round small-elevate">
+    <article class="small-elevate border">
       <nav style="align-items: start">
         <img
           src="/assets/renovation-small.png"
@@ -83,7 +83,7 @@ async function submitFeedback() {
     </article>
 
     <!-- Private Chat card -->
-    <article class="round small-elevate" style="margin-top: 1rem">
+    <article class="small-elevate border" style="margin-top: 1rem">
       <nav style="align-items: start">
         <i class="extra primary-text">verified_user</i>
         <div class="max">
@@ -115,7 +115,7 @@ async function submitFeedback() {
 
     <!-- Feedback card -->
     <article
-      class="round border"
+      class="border"
       style="margin-top: 1.5rem; border-left: 4px solid var(--amber)"
     >
       <h5><strong>We'd love your feedback.</strong></h5>

@@ -58,14 +58,14 @@ async function handleDeleteAccount() {
   >
     <h4>Account</h4>
 
-    <article class="border round small-padding">
+    <article class="border small-padding">
       <h6>Last Activity</h6>
       <p v-if="lastActivity">{{ lastActivity }}</p>
       <p v-else class="secondary-text">No activity recorded yet.</p>
     </article>
 
     <h5 style="margin-top: 2rem">Danger Zone</h5>
-    <article class="border round small-padding">
+    <article class="border small-padding">
       <h6>Delete Account</h6>
       <p>
         Permanently delete your account and all associated data, including all

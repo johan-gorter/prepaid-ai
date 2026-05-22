@@ -216,7 +216,7 @@ function buyCustom() {
 
     <article
       v-if="costMessage"
-      class="round border"
+      class="border"
       style="
         margin-bottom: 1.5rem;
         border-left: 4px solid var(--primary, #006b3e);

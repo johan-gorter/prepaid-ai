@@ -576,7 +576,7 @@ async function onShare() {
     >
       <article
         v-if="shareError"
-        class="border round large-padding center-align share-error-card"
+        class="border large-padding center-align share-error-card"
         data-testid="share-error"
       >
         <i class="extra" aria-hidden="true">link_off</i>
