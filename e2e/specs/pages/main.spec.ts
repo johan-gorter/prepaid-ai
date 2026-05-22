@@ -9,9 +9,7 @@ test.describe("Main Page", () => {
     await page.goto("/main");
     await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
-    await expect(
-      page.getByRole("heading", { name: "AI Impressions for renovations" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("renovations-card-heading")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Private Chat" }),
     ).toBeVisible();
