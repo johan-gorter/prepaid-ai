@@ -55,23 +55,18 @@ async function submitFeedback() {
     </p>
 
     <!-- AI Impressions card -->
-    <article class="small-elevate border">
-      <nav style="align-items: start">
+    <article class="small-elevate border medium-text">
+      <div class="card-media">
         <img
           src="/assets/renovation-small.png"
           alt="Renovation preview"
-          class="round"
-          style="width: 96px; height: 96px; object-fit: cover"
+          class="round card-thumb"
         />
-        <div class="max">
-          <h5>AI Impressions for renovations</h5>
-          <p>
-            Reimagine your living spaces with AI-generated artist impressions.
-            Upload a photo, mark the area you want to change, describe your
-            vision, and see it come to life.
-          </p>
-        </div>
-      </nav>
+        <h6 class="bold no-margin card-title">AI Impressions for renovations</h6>
+        <p class="card-desc">
+          Reimagine your living spaces with AI-generated artist impressions.
+        </p>
+      </div>
       <router-link
         to="/renovations"
         class="button responsive small-round"
@@ -83,18 +78,16 @@ async function submitFeedback() {
     </article>
 
     <!-- Private Chat card -->
-    <article class="small-elevate border" style="margin-top: 1rem">
-      <nav style="align-items: start">
+    <article class="small-elevate border medium-text" style="margin-top: 1rem">
+      <div class="card-media">
         <i class="extra primary-text">verified_user</i>
-        <div class="max">
-          <h5>Private Chat</h5>
-          <p>
-            Have a private conversation with a powerful AI model (Gemini Pro).
-            For example, you can use this to explain technical, legal or medical
-            documents.
-          </p>
-        </div>
-      </nav>
+        <h6 class="bold no-margin card-title">Private Chat</h6>
+        <p class="card-desc">
+          Have a private conversation with a powerful AI model (Gemini Pro).
+          For example, you can use this to explain technical, legal or medical
+          documents.
+        </p>
+      </div>
       <router-link to="/chat" class="button responsive small-round amber">
         <span>CHAT SECURELY</span>
         <i>public</i>
@@ -115,10 +108,10 @@ async function submitFeedback() {
 
     <!-- Feedback card -->
     <article
-      class="border"
+      class="border medium-text"
       style="margin-top: 1.5rem; border-left: 4px solid var(--amber)"
     >
-      <h5><strong>We'd love your feedback.</strong></h5>
+      <h6 class="bold no-margin">We'd love your feedback.</h6>
       <p>
         What features would you like to see next? Let us know what you'd find
         most useful.
@@ -152,3 +145,53 @@ async function submitFeedback() {
     </article>
   </main>
 </template>
+
+<style scoped>
+/* Media card layout: thumbnail/icon in column 1, heading beside it, paragraph
+   beside it too. The image spans both rows so heading + paragraph sit to its
+   right (matches the wider-viewport design). */
+.card-media {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
+  align-items: start;
+  grid-template-areas:
+    "media title"
+    "media desc";
+}
+
+.card-media > :first-child {
+  grid-area: media;
+}
+
+.card-media > .card-title {
+  grid-area: title;
+}
+
+.card-media > .card-desc {
+  grid-area: desc;
+}
+
+.card-media > img.card-thumb {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+}
+
+/* Below 360px the side-by-side text column gets too narrow and the cards grow
+   very tall. Shrink the thumbnail and drop the paragraph to a full-width row
+   under the image, keeping only the heading beside the image. */
+@media (max-width: 359px) {
+  .card-media {
+    grid-template-areas:
+      "media title"
+      "desc desc";
+  }
+
+  .card-media > img.card-thumb {
+    width: 64px;
+    height: 64px;
+  }
+}
+</style>

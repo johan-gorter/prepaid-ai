@@ -7,6 +7,10 @@
 :root {
   --app-bar-clearance: 4.5rem;
   --kb-inset: 0px;
+  /* Reuse the Roboto Flex webfont we already load (index.html) as the app-wide
+     beer-css typeface. Naming the variable family keeps the Flex `wdth` axis
+     available for condensed treatments (e.g. footer buttons). */
+  --font: "Roboto Flex", sans-serif;
 }
 
 html {
