@@ -55,14 +55,14 @@ async function submitFeedback() {
     </p>
 
     <!-- AI Impressions card -->
-    <article class="border medium-text">
+    <article class="border medium-text" data-testid="renovations-card">
       <div class="card-media">
         <img
           src="/assets/renovation-small.png"
           alt="Renovation preview"
           class="round card-thumb"
         />
-        <h6 class="bold no-margin card-title">AI Renovation Previews</h6>
+        <h6 class="bold no-margin card-title" data-testid="renovations-card-heading">AI Renovation Previews</h6>
         <p class="card-desc">
           Imagine your rooms and exterior with AI-generated artist impressions.
         </p>

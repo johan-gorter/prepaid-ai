@@ -11,7 +11,8 @@ const NARROW_WIDTH = 320;
 const pagesToCheck: Array<{
   path: string;
   description: string;
-  ready: string;
+  ready?: string;
+  readyTestId?: string;
 }> = [
   {
     path: "/renovations",
@@ -21,7 +22,7 @@ const pagesToCheck: Array<{
   {
     path: "/main",
     description: "main landing",
-    ready: "AI Impressions for renovations",
+    readyTestId: "renovations-card-heading",
   },
   { path: "/balance", description: "balance", ready: "Recent transactions" },
   { path: "/account", description: "account", ready: "Last Activity" },
@@ -38,14 +39,17 @@ test.describe("Narrow viewport (320px)", () => {
     await page.setViewportSize({ width: NARROW_WIDTH, height: 700 });
   });
 
-  for (const { path, description, ready } of pagesToCheck) {
+  for (const { path, description, ready, readyTestId } of pagesToCheck) {
     test(`${description} does not horizontally scroll`, async ({
       authenticatedPage: page,
     }) => {
       await page.goto(path);
       // Wait for an anchor element on the page so layout has actually rendered.
       // Avoid `networkidle` — Firestore long-polls keep the network busy.
-      await page.getByText(ready).first().waitFor({ state: "visible" });
+      const readyLocator = readyTestId
+        ? page.getByTestId(readyTestId)
+        : page.getByText(ready!);
+      await readyLocator.first().waitFor({ state: "visible" });
       const overflow = await page.evaluate(() => {
         const root = document.documentElement;
         const offenders: Array<{
