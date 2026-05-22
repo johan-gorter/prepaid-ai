@@ -60,6 +60,7 @@ withDefaults(
   margin: 0;
   flex-shrink: 0;
   min-width: 0;
+  overflow: visible;
 }
 
 .app-bar-sep {
@@ -71,5 +72,9 @@ withDefaults(
 
 .app-bar-title {
   min-width: 0;
+}
+
+header {
+  border-bottom: 1px solid var(--outline-variant);
 }
 </style>

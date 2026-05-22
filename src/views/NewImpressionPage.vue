@@ -9,7 +9,6 @@ import ShareDialog from "../components/ShareDialog.vue";
 import StickyFooter from "../components/StickyFooter.vue";
 import { useAuth } from "../composables/useAuth";
 import { useBalance } from "../composables/useBalance";
-import { createOrGetShareToken, fetchShare } from "../composables/useShare";
 import {
   clearImpressionDraft,
   clearImpressionMask,
@@ -23,6 +22,7 @@ import {
   type ImpressionDraft,
 } from "../composables/useImpressionStore";
 import { useRenovations } from "../composables/useRenovations";
+import { createOrGetShareToken, fetchShare } from "../composables/useShare";
 import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { IMPRESSION_CREDITS } from "../credits";
 import { db, storage } from "../firebase";
