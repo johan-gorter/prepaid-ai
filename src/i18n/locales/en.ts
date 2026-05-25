@@ -28,25 +28,26 @@ const en = {
     switchToDark: "Switch to dark",
   },
   main: {
-    tagline: "Use the best AI tools {highlight}. Pay only for what you use.",
-    taglineHighlight: "without a monthly fee",
-    renovationTitle: "AI Renovation Previews",
+    tagline:
+      "Use the smartest AI tools {highlight}. Simply pay only for what you actually use.",
+    taglineHighlight: "without a monthly subscription",
+    renovationTitle: "Sketch your renovation",
     renovationDesc:
-      "Imagine your rooms and exterior with AI-generated artist impressions.",
+      "A quick touch-up or a major makeover? See the final result in seconds.",
     renovationImageAlt: "Renovation preview",
-    visualizeNow: "VISUALIZE NOW",
-    chatTitle: "Private Chat",
+    visualizeNow: "TEST YOUR IDEA",
+    chatTitle: "Secure Private Chat",
     chatDesc:
-      "Chat privately with a powerful AI. Great for explaining legal, medical, or technical documents.",
-    chatSecurely: "CHAT SECURELY",
+      "Complex contract or tricky document? Let our assistant explain it to you instantly in plain language. Your data remains 100% private.",
+    chatSecurely: "START CHATTING",
     checkCredits: "Check Credits",
     viewUsageTerms: "View Usage Terms",
-    feedbackTitle: "We'd love your feedback.",
+    feedbackTitle: "Share your thoughts",
     feedbackPrompt:
-      "What features would you like to see next? Let us know what you'd find most useful.",
+      "Which feature or AI tool are you missing? Let us know what would make this app even more useful to you.",
     feedbackThanks: "Thanks for your feedback!",
-    feedbackPlaceholder: "Tell us what you'd like to see...",
-    sendFeedback: "SEND FEEDBACK",
+    feedbackPlaceholder: "Tell us about your idea...",
+    sendFeedback: "SHARE YOUR IDEA",
   },
   login: {
     tagline: "Reimagine your space with AI",

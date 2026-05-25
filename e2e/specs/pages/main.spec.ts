@@ -11,7 +11,7 @@ test.describe("Main Page", () => {
 
     await expect(page.getByTestId("renovations-card-heading")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Private Chat" }),
+      page.getByRole("heading", { name: "Secure Private Chat" }),
     ).toBeVisible();
   });
 
@@ -21,11 +21,11 @@ test.describe("Main Page", () => {
     await page.goto("/main");
     await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
-    const renovationsLink = page.getByRole("link", { name: "VISUALIZE NOW" });
+    const renovationsLink = page.getByRole("link", { name: "TEST YOUR IDEA" });
     await expect(renovationsLink).toBeVisible();
     await expect(renovationsLink).toHaveAttribute("href", "/renovations");
 
-    const chatLink = page.getByRole("link", { name: "CHAT SECURELY" });
+    const chatLink = page.getByRole("link", { name: "START CHATTING" });
     await expect(chatLink).toBeVisible();
     await expect(chatLink).toHaveAttribute("href", "/chat");
   });

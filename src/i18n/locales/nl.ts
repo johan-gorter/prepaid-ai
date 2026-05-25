@@ -29,25 +29,26 @@ const nl: MessageSchema = {
     switchToDark: "Naar donker thema",
   },
   main: {
-    tagline: "Gebruik de beste AI-tools {highlight}. Betaal alleen voor wat je gebruikt.",
+    tagline:
+      "Gebruik de slimste AI-tools {highlight}. Je betaalt simpelweg alleen voor wat je écht gebruikt.",
     taglineHighlight: "zonder maandelijks abonnement",
-    renovationTitle: "AI-renovatievoorbeelden",
+    renovationTitle: "Schets je verbouwing",
     renovationDesc:
-      "Zie je kamers en gevel voor je met door AI gegenereerde impressies.",
+      "Een kleine opknapbeurt of een grote verbouwing? Zie in een paar seconden het eindresultaat.",
     renovationImageAlt: "Renovatievoorbeeld",
-    visualizeNow: "NU VISUALISEREN",
-    chatTitle: "Privéchat",
+    visualizeNow: "TEST JE IDEE",
+    chatTitle: "Veilige Privéchat",
     chatDesc:
-      "Chat privé met een krachtige AI. Ideaal om juridische, medische of technische documenten uit te leggen.",
-    chatSecurely: "VEILIG CHATTEN",
+      "Ingewikkeld contract of lastig document? Laat onze assistent het direct in duidelijke taal aan je uitleggen. Jouw gegevens blijven 100% privé.",
+    chatSecurely: "START EEN GESPREK",
     checkCredits: "Credits bekijken",
     viewUsageTerms: "Gebruiksvoorwaarden",
-    feedbackTitle: "We horen graag je feedback.",
+    feedbackTitle: "Denk met ons mee",
     feedbackPrompt:
-      "Welke functies zou je hierna willen zien? Laat ons weten wat je het handigst zou vinden.",
+      "Welke functie of AI-tool mis je nog? Laat ons weten wat deze app nóg handiger voor je zou maken.",
     feedbackThanks: "Bedankt voor je feedback!",
-    feedbackPlaceholder: "Vertel ons wat je graag zou willen zien...",
-    sendFeedback: "FEEDBACK VERSTUREN",
+    feedbackPlaceholder: "Vertel ons over jouw idee...",
+    sendFeedback: "DEEL JOUW IDEE",
   },
   login: {
     tagline: "Geef je ruimte opnieuw vorm met AI",
