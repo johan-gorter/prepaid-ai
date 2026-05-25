@@ -164,6 +164,7 @@ const en = {
     titleProcessing: "Processing",
     titleImpression: "Impression",
     titleMark: "Mark Area",
+    titleChoose: "What should happen?",
     shareUnavailableTitle: "Share unavailable",
     shareLinkUnavailable:
       "This share link is no longer available. The owner may have deleted the impression.",
@@ -188,6 +189,14 @@ const en = {
     unknownError: "Unknown error",
     failedShareLink: "Failed to create share link",
     deleteRenovationConfirm: "Delete this renovation and all its impressions?",
+    chooseRemove: "Remove",
+    chooseRemoveCost: "{credits} 🪙",
+    choosePaint: "Paint 🚧",
+    chooseOther: "Other",
+    paintInDevTitle: "Coming soon",
+    paintInDevBody:
+      'This feature is still in development. For now, use the "Other" option with the description: paint this piece {colorName}.',
+    paintInDevColorNameLabel: "colorName",
   },
   renovations: {
     title: "Renovations",

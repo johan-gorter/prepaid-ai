@@ -340,7 +340,11 @@ const CHECKER_CELL = 10;
 // Opaque magenta, a color that almost never appears in natural scenes.
 const CHECKER_COLOR = "rgb(255, 0, 255)";
 
-function getCompositeBlob(): Promise<Blob> {
+// `solid` switches the AI-facing composite from a magenta checkerboard
+// (the default, used by the free-prompt "Anders" flow) to a solid magenta
+// fill. The remove flow uses the solid variant so Gemini sees a clean
+// "magenta stain" and is asked to inpaint over it.
+function getCompositeBlob(solid = false): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (!sourceImage || !maskCanvas) {
       reject(new Error("Canvas not initialized"));
@@ -358,31 +362,36 @@ function getCompositeBlob(): Promise<Blob> {
     }
     ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 2) Build a magenta-checkerboard layer, sized to the image region.
-    const checker = document.createElement("canvas");
-    checker.width = CANVAS_SIZE;
-    checker.height = CANVAS_SIZE;
-    const checkerCtx = checker.getContext("2d");
-    if (!checkerCtx) {
-      reject(new Error("Checker context unavailable"));
+    // 2) Build a magenta layer (checkerboard or solid), sized to the image
+    // region.
+    const overlay = document.createElement("canvas");
+    overlay.width = CANVAS_SIZE;
+    overlay.height = CANVAS_SIZE;
+    const overlayCtx = overlay.getContext("2d");
+    if (!overlayCtx) {
+      reject(new Error("Overlay context unavailable"));
       return;
     }
-    checkerCtx.fillStyle = CHECKER_COLOR;
-    for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
-      for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
-        const cellX = Math.floor(x / CHECKER_CELL);
-        const cellY = Math.floor(y / CHECKER_CELL);
-        if ((cellX + cellY) % 2 === 0) {
-          checkerCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
+    overlayCtx.fillStyle = CHECKER_COLOR;
+    if (solid) {
+      overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    } else {
+      for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
+        for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
+          const cellX = Math.floor(x / CHECKER_CELL);
+          const cellY = Math.floor(y / CHECKER_CELL);
+          if ((cellX + cellY) % 2 === 0) {
+            overlayCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
+          }
         }
       }
     }
 
-    // 3) Clip the checkerboard to the mask shape: keep pattern pixels only
+    // 3) Clip the overlay to the mask shape: keep pattern pixels only
     // where the user painted. destination-in keeps existing pixels only
     // where the incoming drawing is opaque.
-    checkerCtx.globalCompositeOperation = "destination-in";
-    checkerCtx.drawImage(
+    overlayCtx.globalCompositeOperation = "destination-in";
+    overlayCtx.drawImage(
       maskCanvas,
       PADDING,
       PADDING,
@@ -394,8 +403,8 @@ function getCompositeBlob(): Promise<Blob> {
       CANVAS_SIZE,
     );
 
-    // 4) Overlay the masked checkerboard onto the source image.
-    ctx.drawImage(checker, 0, 0);
+    // 4) Overlay the masked overlay onto the source image.
+    ctx.drawImage(overlay, 0, 0);
 
     c.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),

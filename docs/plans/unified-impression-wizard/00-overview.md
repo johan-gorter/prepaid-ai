@@ -31,15 +31,32 @@ the source image from IndexedDB and resumes at the first stage.
                        │   (mask stage first)                   │
                        └──────────────────┬─────────────────────┘
                                           │
+                                          ▼
+                                    MASK stage
+                                (draw on overlay)
+                                          │
+                                          ▼
+                              CHOOSE-ACTION stage
+                          (Verwijderen / Schilder / Anders)
+                                          │
                   ┌───────────────────────┼─────────────────────────────┐
                   │                       │                             │
                   ▼                       ▼                             ▼
-              MASK stage           PROMPT stage                PROCESSING stage
-        (draw on overlay)    (textarea on top half)          (cloud function runs)
-                                                             on completion:
-                                                             IDB[impressionSource]=result blob
-                                                             redirect ?source=impression&...
-                                                             stage = preview
+        Verwijderen 🪙              Anders                    Schilder 🚧
+        (auto-prompt +              (free-form prompt)        (modal: in development;
+         solid magenta;                    │                   use Anders instead)
+         skip prompt)                      ▼
+                  │                  PROMPT stage
+                  │             (textarea on top half)
+                  │                       │
+                  └───────────┬───────────┘
+                              ▼
+                       PROCESSING stage
+                      (cloud function runs)
+                      on completion:
+                      IDB[impressionSource]=result blob
+                      redirect ?source=impression&...
+                      stage = preview
 
   /renovation/:id  (timeline)
    ├── click Original   → /new-impression?source=original&renovation=:id

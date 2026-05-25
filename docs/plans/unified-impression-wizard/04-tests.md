@@ -21,7 +21,14 @@ Update to:
 1. Set the file on `[data-testid="camera-input"]` (same),
 2. wait for `URL = /new-impression?source=photo`,
 3. assert mask helper text — same selector,
-4. (rest unchanged).
+4. draw a stroke,
+5. click `Next`, then click `[data-testid="choose-other"]` on the
+   choose-action stage, then fill `data-testid="prompt"`.
+
+The choose-action stage is the intermediate "Wat moet er gebeuren?" /
+"What should happen?" picker between mask and prompt. The dedicated
+`chooseFreePrompt(page)` helper encapsulates the Other click so existing
+tests only have to add a single line after `Next`.
 
 `createRenovationAndWaitForResult` (lines 78–96):
 

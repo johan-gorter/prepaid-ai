@@ -28,8 +28,14 @@ import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { IMPRESSION_CREDITS } from "../credits";
 import { db, storage } from "../firebase";
 
-type Stage = "preview" | "mask" | "prompt" | "processing";
+type Stage = "preview" | "mask" | "choose-action" | "prompt" | "processing";
 type Source = "photo" | "crop" | "original" | "impression" | "share";
+
+// Hard-coded prompt for the "Verwijderen" (remove) action. Paired with a
+// solid magenta composite so Gemini sees a clean "stain" and inpaints the
+// area instead of trying to interpret a free-form user prompt.
+const REMOVE_PROMPT =
+  "remove the magenta stains. There a clear clean empty piece of the photo there.";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,6 +54,11 @@ const sourceObjectUrl = ref<string | null>(null);
 const prompt = ref("");
 const errorMessage = ref<string | null>(null);
 const initialMask = ref<Blob | null>(null);
+// True for the "Verwijderen" flow — switches the composite from a magenta
+// checkerboard to a solid magenta fill. Persisted via the draft so the
+// buy-credits / sign-in detour preserves the intent.
+const useSolidMask = ref(false);
+const showPaintInDevDialog = ref(false);
 let restoredDraftKey: string | null = null;
 // Synchronous re-entry guard for onGenerate. Awaiting the balance load
 // before flipping stage→"processing" otherwise allows two rapid clicks
@@ -83,8 +94,20 @@ const headerTitle = computed(() => {
   if (stage.value === "prompt") return t("newImpression.titleDescribe");
   if (stage.value === "processing") return t("newImpression.titleProcessing");
   if (stage.value === "preview") return t("newImpression.titleImpression");
+  if (stage.value === "choose-action") return t("newImpression.titleChoose");
   return t("newImpression.titleMark");
 });
+
+const removeCostLabel = computed(() =>
+  t("newImpression.chooseRemoveCost", { credits: IMPRESSION_CREDITS }),
+);
+
+// Vue templates can't embed `{` inside `{{ }}` (the lexer reads it as a
+// nested interpolation), so build the literal "{colorName}" placeholder via
+// a computed and inject it into the i18n-t slot.
+const paintInDevColorNamePlaceholder = computed(
+  () => `{${t("newImpression.paintInDevColorNameLabel")}}`,
+);
 
 const canGenerate = computed(() => prompt.value.trim().length > 0);
 
@@ -145,6 +168,8 @@ async function initFromRoute(): Promise<void> {
   shareError.value = null;
   prompt.value = "";
   initialMask.value = null;
+  useSolidMask.value = false;
+  showPaintInDevDialog.value = false;
   restoredDraftKey = null;
   revokeSourceUrl();
 
@@ -217,6 +242,7 @@ async function initFromRoute(): Promise<void> {
     (draft.impression ?? null) === impressionParam.value;
   if (matches && draft) {
     prompt.value = draft.prompt;
+    useSolidMask.value = draft.solidMask === true;
     initialMask.value = await getImpressionMask();
     restoredDraftKey = draftKey();
   }
@@ -237,6 +263,7 @@ async function persistDraft(): Promise<void> {
     source: sourceParam.value,
     renovation: renovationParam.value,
     impression: impressionParam.value,
+    solidMask: useSolidMask.value,
   };
   await setImpressionDraft(draft);
   restoredDraftKey = draftKey();
@@ -249,6 +276,7 @@ async function persistDraft(): Promise<void> {
 async function clearPersistedDraft(): Promise<void> {
   await Promise.all([clearImpressionDraft(), clearImpressionMask()]);
   restoredDraftKey = null;
+  useSolidMask.value = false;
 }
 
 watch(prompt, async (val) => {
@@ -260,6 +288,7 @@ watch(prompt, async (val) => {
       source: sourceParam.value,
       renovation: renovationParam.value,
       impression: impressionParam.value,
+      solidMask: useSolidMask.value,
     });
   }
 });
@@ -314,15 +343,39 @@ async function clearMaskEverywhere() {
 
 async function onNextChange() {
   await clearMaskEverywhere();
+  useSolidMask.value = false;
+  prompt.value = "";
   stage.value = "mask";
 }
 
 function onMaskNext() {
+  stage.value = "choose-action";
+}
+
+function onChooseBack() {
+  stage.value = "mask";
+}
+
+async function onChooseRemove() {
+  prompt.value = REMOVE_PROMPT;
+  useSolidMask.value = true;
+  await onGenerate();
+}
+
+function onChoosePaint() {
+  showPaintInDevDialog.value = true;
+}
+
+function onChooseOther() {
+  // Clear any leftover state from a previous Verwijderen attempt so the
+  // user gets the standard checkerboard + free-prompt flow.
+  useSolidMask.value = false;
+  if (prompt.value === REMOVE_PROMPT) prompt.value = "";
   stage.value = "prompt";
 }
 
 function onPromptBack() {
-  stage.value = "mask";
+  stage.value = "choose-action";
 }
 
 async function onRetake() {
@@ -495,7 +548,9 @@ async function onGenerate() {
       }
 
       const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
-      const compositeBlob = await maskingRef.value.getCompositeBlob();
+      const compositeBlob = await maskingRef.value.getCompositeBlob(
+        useSolidMask.value,
+      );
       await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
       const newImpressionId = await createImpression(renovationId!, {
@@ -526,7 +581,9 @@ async function onGenerate() {
     } catch (err) {
       errorMessage.value =
         err instanceof Error ? err.message : t("newImpression.unknownError");
-      stage.value = "prompt";
+      // For the Verwijderen flow the prompt screen is intentionally skipped,
+      // so fall back to the choose-action screen on failure instead.
+      stage.value = useSolidMask.value ? "choose-action" : "prompt";
     }
   } finally {
     generateInFlight = false;
@@ -642,6 +699,38 @@ async function onShare() {
         </div>
       </div>
 
+      <div
+        v-if="stage === 'choose-action'"
+        class="choose-action-grid"
+        data-testid="choose-action"
+      >
+        <button
+          class="small-round choose-action-button"
+          data-testid="choose-remove"
+          @click="onChooseRemove"
+        >
+          <i aria-hidden="true">delete_sweep</i>
+          <span>{{ $t("newImpression.chooseRemove") }}</span>
+          <span class="choose-action-cost">{{ removeCostLabel }}</span>
+        </button>
+        <button
+          class="small-round choose-action-button"
+          data-testid="choose-paint"
+          @click="onChoosePaint"
+        >
+          <i aria-hidden="true">format_paint</i>
+          <span>{{ $t("newImpression.choosePaint") }}</span>
+        </button>
+        <button
+          class="small-round choose-action-button"
+          data-testid="choose-other"
+          @click="onChooseOther"
+        >
+          <i aria-hidden="true">tune</i>
+          <span>{{ $t("newImpression.chooseOther") }}</span>
+        </button>
+      </div>
+
       <button
         v-if="stage === 'mask'"
         class="transparent small-round center-block"
@@ -721,6 +810,14 @@ async function onShare() {
       </button>
     </StickyFooter>
 
+    <!-- Choose-action stage footer: Back -->
+    <StickyFooter v-if="stage === 'choose-action'">
+      <button class="max border small-round" @click="onChooseBack">
+        <i aria-hidden="true">arrow_back</i>
+        <span>{{ $t("newImpression.back") }}</span>
+      </button>
+    </StickyFooter>
+
     <!-- Prompt stage footer: Back | Generate -->
     <StickyFooter v-if="stage === 'prompt'">
       <button class="max border small-round" @click="onPromptBack">
@@ -737,6 +834,40 @@ async function onShare() {
         <span>{{ $t("newImpression.generate") }}</span>
       </button>
     </StickyFooter>
+
+    <!-- Paint feature is under construction — explain how to use Anders
+         (Other) with a colour name instead. -->
+    <div
+      v-if="showPaintInDevDialog"
+      class="overlay active"
+      data-testid="paint-in-dev-overlay"
+      @click="showPaintInDevDialog = false"
+    />
+    <dialog
+      :class="{ active: showPaintInDevDialog }"
+      data-testid="paint-in-dev-dialog"
+      v-if="showPaintInDevDialog"
+    >
+      <h5>{{ $t("newImpression.paintInDevTitle") }}</h5>
+      <i18n-t
+        keypath="newImpression.paintInDevBody"
+        tag="p"
+        data-testid="paint-in-dev-body"
+      >
+        <template #colorName>
+          <em>{{ paintInDevColorNamePlaceholder }}</em>
+        </template>
+      </i18n-t>
+      <nav class="right-align">
+        <button
+          data-testid="paint-in-dev-close"
+          @click="showPaintInDevDialog = false"
+        >
+          <i aria-hidden="true">check</i>
+          <span>{{ $t("common.close") }}</span>
+        </button>
+      </nav>
+    </dialog>
   </div>
 </template>
 
@@ -801,6 +932,27 @@ async function onShare() {
 .center-block {
   display: block;
   margin: 0.5rem auto 0;
+}
+
+.choose-action-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 544px;
+  margin: 1rem auto 0;
+  padding: 0 0.5rem;
+}
+
+.choose-action-button {
+  width: 100%;
+  padding: 1rem;
+  justify-content: center;
+}
+
+.choose-action-cost {
+  margin-left: 0.5rem;
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .result-marker {

@@ -1,6 +1,7 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
 import {
+  chooseFreePrompt,
   createRenovationAndWaitForResult,
   drawMaskStroke,
 } from "../../helpers/renovation";
@@ -196,8 +197,9 @@ test.describe("Renovation Details Page", () => {
       // Draw mask
       await drawMaskStroke(page);
 
-      // Go to prompt
+      // Go through choose-action → prompt
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
       await promptInput.fill("second change");
@@ -277,8 +279,9 @@ test.describe("Renovation Details Page", () => {
       // Draw mask stroke
       await drawMaskStroke(page);
 
-      // Advance to prompt step
+      // Advance through choose-action → prompt step
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
       await promptInput.fill("chained from result");

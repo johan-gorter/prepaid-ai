@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
 import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import {
+  chooseFreePrompt,
   createGrayPng,
   createRenovationAndWaitForResult,
   fillNewRenovationForm,
@@ -87,8 +88,12 @@ test.describe("New Renovation Page", () => {
           .setInputFiles(grayPngPath);
         await page.waitForURL("/new-impression?source=photo");
 
-        // Advance to prompt
+        // Advance to choose-action stage
         await page.getByRole("button", { name: "Next" }).click();
+        await expect(page.getByTestId("choose-action")).toBeVisible();
+
+        // Pick Other → prompt stage
+        await chooseFreePrompt(page);
         await expect(
           page.getByText("What should change in the red area?"),
         ).toBeVisible();
@@ -290,6 +295,7 @@ test.describe("New Renovation Page", () => {
         }
 
         await page.getByRole("button", { name: "Next" }).click();
+        await chooseFreePrompt(page);
         const promptInput = page.getByTestId("prompt");
         await expect(promptInput).toBeVisible();
         await promptInput.fill("second attempt");
@@ -351,6 +357,7 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
         await page.mouse.up();
 
         await page.getByRole("button", { name: "Next" }).click();
+        await chooseFreePrompt(page);
         const promptInput = page.getByTestId("prompt");
         await baseExpect(promptInput).toBeVisible();
         await promptInput.fill(promptText);
