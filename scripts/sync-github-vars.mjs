@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const terraformDir = resolve(__dirname, "..", "terraform");
 
-const ENVS = ["dev", "production"];
+const ENVS = ["sandbox", "dev", "production"];
 
 function usage() {
   console.error("Usage: node scripts/sync-github-vars.mjs <env>");
