@@ -123,19 +123,40 @@ back exits the wizard.
 ## Stage transitions (state machine)
 
 ```
-preview ──[paint stroke OR Next Change pressed]──▶ mask
-mask    ──[Next pressed]                         ─▶ prompt
-prompt  ──[Back pressed]                         ─▶ mask
-prompt  ──[Generate pressed]                     ─▶ processing
-processing ──[completion]                        ─▶ (router.replace, page remounts in preview)
-processing ──[failure]                           ─▶ prompt   (with error)
-preview ──[Trash pressed]   ─▶ navigate away (see decision 6)
-preview ──[Back pressed]    ─▶ navigate away (renovations list, or timeline if a renovation exists)
-mask    ──[Trash pressed]   ─▶ navigate away
+preview        ──[paint stroke OR Next Change pressed]──▶ mask
+mask           ──[Next pressed]                         ─▶ choose-action
+choose-action  ──[Back pressed]                         ─▶ mask
+choose-action  ──[Other pressed]                        ─▶ prompt
+choose-action  ──[Remove pressed]                       ─▶ processing
+                                                          (auto-prompt + solid magenta composite)
+choose-action  ──[Paint pressed]                        ─▶ (modal opens; stage unchanged)
+prompt         ──[Back pressed]                         ─▶ choose-action
+prompt         ──[Generate pressed]                     ─▶ processing
+processing     ──[completion]                           ─▶ (router.replace, page remounts in preview)
+processing     ──[failure, free-prompt flow]            ─▶ prompt          (with error)
+processing     ──[failure, remove flow]                 ─▶ choose-action   (with error)
+preview        ──[Trash pressed]   ─▶ navigate away (see decision 6)
+preview        ──[Back pressed]    ─▶ navigate away (renovations list, or timeline if a renovation exists)
+mask           ──[Trash pressed]   ─▶ navigate away
 ```
 
 There is no Back button in `preview`; the header arrow handles "exit".
-There is no Back from `mask` — Back only exists in `prompt` (per E2E).
+There is no Back from `mask` — the Mask footer has [Retake?] | Trash | Next.
+
+### Choose-action stage
+
+The choose-action stage is an intermediate picker between mask and prompt
+with three buttons:
+
+| Button | Effect |
+|---|---|
+| **Verwijderen (Remove) — {credits} 🪙** | Sets the prompt to a hard-coded "remove the magenta stains" instruction, flips the composite to a **solid magenta fill** (no checkerboard), and jumps straight to `processing` — the prompt screen is skipped. |
+| **Schilder (Paint) 🚧** | Opens a "Coming soon" modal explaining how to use the Other flow with a colour name. Stage does not change; the modal can be dismissed with Close. |
+| **Anders (Other)** | Falls through to the free-prompt screen with the standard magenta checkerboard composite. |
+
+The "solid vs checkerboard" choice is tracked in component state
+(`useSolidMask`) and persisted in `ImpressionDraft.solidMask` so a
+buy-credits / sign-in detour preserves the Remove intent.
 
 ## Header back-button targets
 

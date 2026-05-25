@@ -1,6 +1,7 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
 import {
+  chooseFreePrompt,
   createRenovationAndWaitForResult,
   drawMaskStroke,
 } from "../../helpers/renovation";
@@ -108,8 +109,9 @@ test.describe("New Impression Page", () => {
       // Draw mask
       await drawMaskStroke(page);
 
-      // Go to prompt stage
+      // Go to prompt stage via choose-action → Other
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
       await promptInput.fill("second change in chain");
@@ -200,6 +202,7 @@ test.describe("New Impression Page", () => {
 
       await drawMaskStroke(page);
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("chained impression");
       await page.getByRole("button", { name: "Generate" }).click();
 
@@ -237,6 +240,7 @@ test.describe("New Impression Page", () => {
 
       await drawMaskStroke(page);
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("second change");
       await page.getByRole("button", { name: "Generate" }).click();
 
@@ -252,6 +256,7 @@ test.describe("New Impression Page", () => {
 
       await drawMaskStroke(page);
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("third change");
       await page.getByRole("button", { name: "Generate" }).click();
 
@@ -263,7 +268,7 @@ test.describe("New Impression Page", () => {
     }
   });
 
-  test("step navigation: back from prompt returns to mask", async ({
+  test("step navigation: back from prompt returns to choose-action, then to mask", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -277,16 +282,93 @@ test.describe("New Impression Page", () => {
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
 
-      // Advance to prompt stage
+      // Advance to choose-action stage
       await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.getByTestId("choose-action")).toBeVisible();
+
+      // Pick Other → prompt stage
+      await chooseFreePrompt(page);
       await expect(page.getByTestId("prompt")).toBeVisible();
 
-      // Back to mask
+      // Back from prompt → choose-action
+      await page.getByRole("button", { name: "Back", exact: true }).click();
+      await expect(page.getByTestId("choose-action")).toBeVisible();
+
+      // Back from choose-action → mask
       await page.getByRole("button", { name: "Back", exact: true }).click();
       await expect(
         page.getByText("Paint the area you want to change"),
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
+    } finally {
+      rmSync(grayPngPath, { force: true });
+    }
+  });
+
+  test("choose-action: Verwijderen runs generate without showing the prompt screen", async ({
+    authenticatedPage: page,
+  }) => {
+    test.slow(); // Cloud Function round-trip for the second impression
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "base for remove flow",
+    );
+
+    try {
+      // Chain a second impression via Next Change → mask → choose-action.
+      await page.getByRole("button", { name: "Next Change" }).click();
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible();
+
+      await drawMaskStroke(page);
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.getByTestId("choose-action")).toBeVisible();
+
+      // Click Remove — should skip the prompt screen and go straight to
+      // processing, then land on the preview stage with a result image.
+      await page.getByTestId("choose-remove").click();
+      await expect(page.getByTestId("prompt")).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "Renovation Details" }),
+      ).toBeVisible();
+      await expect(page.getByAltText("Result")).toBeVisible({
+        timeout: 45_000,
+      });
+    } finally {
+      rmSync(grayPngPath, { force: true });
+    }
+  });
+
+  test("choose-action: Schilder opens the in-development modal", async ({
+    authenticatedPage: page,
+  }) => {
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "base for paint modal",
+    );
+
+    try {
+      await page.getByRole("button", { name: "Next Change" }).click();
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible();
+
+      await drawMaskStroke(page);
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.getByTestId("choose-action")).toBeVisible();
+
+      // Click Paint — modal opens, prompt screen does not appear.
+      await page.getByTestId("choose-paint").click();
+      const dialog = page.getByTestId("paint-in-dev-dialog");
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toContainText("Coming soon");
+      await expect(page.getByTestId("prompt")).toHaveCount(0);
+
+      // Close the modal → still on choose-action stage.
+      await page.getByTestId("paint-in-dev-close").click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByTestId("choose-action")).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }

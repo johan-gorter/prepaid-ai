@@ -165,6 +165,7 @@ const nl: MessageSchema = {
     titleProcessing: "Bezig met verwerken",
     titleImpression: "Impressie",
     titleMark: "Gebied markeren",
+    titleChoose: "Wat moet er gebeuren?",
     shareUnavailableTitle: "Delen niet beschikbaar",
     shareLinkUnavailable:
       "Deze deellink is niet meer beschikbaar. De eigenaar heeft de impressie mogelijk verwijderd.",
@@ -189,6 +190,14 @@ const nl: MessageSchema = {
     unknownError: "Onbekende fout",
     failedShareLink: "Deellink aanmaken mislukt",
     deleteRenovationConfirm: "Deze renovatie en alle bijbehorende impressies verwijderen?",
+    chooseRemove: "Verwijderen",
+    chooseRemoveCost: "{credits} 🪙",
+    choosePaint: "Schilder 🚧",
+    chooseOther: "Anders",
+    paintInDevTitle: "Binnenkort beschikbaar",
+    paintInDevBody:
+      'Deze functie is nog in ontwikkeling. Gebruik voor nu de "Anders"-optie met als beschrijving: schilder dit stuk {colorName}.',
+    paintInDevColorNameLabel: "kleurnaam",
   },
   renovations: {
     title: "Renovaties",

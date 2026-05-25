@@ -1,6 +1,6 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
-import { createGrayPng } from "../../helpers/renovation";
+import { chooseFreePrompt, createGrayPng } from "../../helpers/renovation";
 
 // Run only on chromium — this integration test uses shared emulator state
 // and cannot safely run in parallel across multiple browser projects.
@@ -49,8 +49,9 @@ test.describe("Impression processing", () => {
         await page.mouse.up();
       }
 
-      // 3. Advance to prompt step and enter description
+      // 3. Advance to choose-action, pick Other → prompt step, enter description
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
       await promptInput.fill(promptText);

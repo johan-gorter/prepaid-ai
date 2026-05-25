@@ -9,6 +9,7 @@ import {
 } from "../../helpers/auth";
 import { EMULATOR_URLS, PROJECT_ID } from "../../helpers/emulator-config";
 import {
+  chooseFreePrompt,
   createRenovationAndWaitForResult,
   drawMaskStroke,
 } from "../../helpers/renovation";
@@ -144,6 +145,7 @@ test.describe("Share impression", () => {
         // Paint a mask, advance to prompt, type, hit Generate
         await drawMaskStroke(anonPage);
         await anonPage.getByRole("button", { name: "Next" }).click();
+        await chooseFreePrompt(anonPage);
         await anonPage.getByTestId("prompt").fill("my own change");
         await anonPage.getByRole("button", { name: "Generate" }).click();
 
@@ -319,6 +321,7 @@ test.describe("Share impression", () => {
         ).toBeVisible();
         await drawMaskStroke(recipientPage);
         await recipientPage.getByRole("button", { name: "Next" }).click();
+        await chooseFreePrompt(recipientPage);
         await recipientPage
           .getByTestId("prompt")
           .fill("recipient remix from share");

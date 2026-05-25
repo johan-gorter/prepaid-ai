@@ -23,12 +23,13 @@ export async function createGrayPng(): Promise<string> {
  * Navigate through the streamlined New Renovation flow up to (but not
  * including) the Generate step.
  *
- * Flow: Renovations card (camera input) → Mask → Prompt
+ * Flow: Renovations card (camera input) → Mask → Choose action → Prompt
  *
  * Sets a file on the camera input, which stashes it in IndexedDB and
  * navigates directly to the mask stage of the unified wizard
- * (/new-impression?source=photo). Then draws a mask stroke and advances
- * to the prompt stage with the given text filled in.
+ * (/new-impression?source=photo). Then draws a mask stroke, picks the
+ * "Other" choice on the action picker, and advances to the prompt stage
+ * with the given text filled in.
  *
  * Assumes the page is at /renovations with the NewRenovationCard visible.
  *
@@ -59,13 +60,24 @@ export async function fillNewRenovationForm(
     await page.mouse.up();
   }
 
-  // Advance to prompt stage
+  // Mask stage → choose-action stage → prompt stage
   await page.getByRole("button", { name: "Next" }).click();
+  await chooseFreePrompt(page);
   const promptInput = page.getByTestId("prompt");
   await expect(promptInput).toBeVisible();
   await promptInput.fill(promptText);
 
   return grayPngPath;
+}
+
+/**
+ * Click the "Other" button on the choose-action stage to land on the
+ * free-prompt screen with the standard magenta checkerboard composite.
+ */
+export async function chooseFreePrompt(page: Page): Promise<void> {
+  const otherButton = page.getByTestId("choose-other");
+  await expect(otherButton).toBeVisible();
+  await otherButton.click();
 }
 
 /**

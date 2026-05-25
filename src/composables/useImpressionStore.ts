@@ -33,6 +33,11 @@ export interface ImpressionDraft {
   source?: string;
   renovation?: string | null;
   impression?: string | null;
+  // True when the wizard was driving the "Verwijderen" action, so the
+  // composite must use a solid magenta fill instead of the checkerboard
+  // pattern. Persisted so a buy-credits / sign-in detour preserves the
+  // intent.
+  solidMask?: boolean;
 }
 
 export const setImpressionDraft = (d: ImpressionDraft) => idbSet(KEY_DRAFT, d);

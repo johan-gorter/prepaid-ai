@@ -9,6 +9,7 @@ import {
   signInTestUser,
 } from "../helpers/auth";
 import { EMULATOR_URLS } from "../helpers/emulator-config";
+import { chooseFreePrompt } from "../helpers/renovation";
 
 async function signInOnPage(
   page: import("@playwright/test").Page,
@@ -240,8 +241,9 @@ test.describe("PWA Requirements", () => {
         await page.mouse.up();
       }
 
-      // Advance to prompt stage
+      // Advance through choose-action → prompt stage
       await page.getByRole("button", { name: "Next" }).click();
+      await chooseFreePrompt(page);
       const promptInput = page.getByTestId("prompt");
       await expect(promptInput).toBeVisible();
       await promptInput.fill("verify cached image survives refresh");
