@@ -647,7 +647,10 @@ async function onShare() {
         </a>
       </article>
 
-      <div v-if="!shareError" class="step-hint">
+      <div
+        v-if="!shareError && stage !== 'choose-action'"
+        class="step-hint"
+      >
         <span v-if="stage === 'mask'">{{ $t("newImpression.paintHint") }}</span>
       </div>
 
@@ -657,6 +660,7 @@ async function onShare() {
         :class="{
           'inert-canvas': stage === 'processing',
           'canvas-area--collapsed': stage === 'prompt',
+          'canvas-area--hidden': stage === 'choose-action',
         }"
         @pointerdown="onCanvasArea"
       >
@@ -940,19 +944,29 @@ async function onShare() {
   gap: 0.75rem;
   max-width: 544px;
   margin: 1rem auto 0;
-  padding: 0 0.5rem;
+  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
+/* Beer CSS buttons default to `box-sizing: content-box`, so `width: 100%` +
+   padding overflows the parent on narrow viewports. Force border-box here so
+   the buttons fit within the grid's content area on mobile. */
 .choose-action-button {
   width: 100%;
   padding: 1rem;
   justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .choose-action-cost {
   margin-left: 0.5rem;
   font-weight: 600;
   opacity: 0.9;
+}
+
+.canvas-area--hidden {
+  display: none;
 }
 
 .result-marker {
