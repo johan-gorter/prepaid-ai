@@ -103,28 +103,57 @@ export async function geminiProcess(
   backend: "google-ai" | "vertex",
   imageBuffer: Buffer,
   prompt: string,
+  referenceBuffer?: Buffer,
 ): Promise<Buffer> {
   const GoogleGenAI = await loadGenAI();
   const ai = createGenAI(GoogleGenAI, backend);
 
-  const editPrompt =
-    `Apply the prompt below to the magenta checkered area. ` +
-    `Do not include the checkered area in the output.\n\n${prompt}`;
+  // Parts are read in order, so the prompt refers to "first"/"second" image
+  // and the inlineData parts are pushed in that same order.
+  const requestParts: Array<Record<string, unknown>> = [];
+  if (referenceBuffer) {
+    requestParts.push({
+      text:
+        `The first image is a room with a magenta checkered area marking ` +
+        `where to apply paint. The second image shows the same room with the ` +
+        `target paint colour applied across the entire image as a colour and ` +
+        `material reference. Repaint ONLY the magenta checkered area so it ` +
+        `matches the colour and finish in the second image, preserving the ` +
+        `room's existing lighting, shadows, perspective and surface texture. ` +
+        `Do not include the checkered pattern in the output.\n\n${prompt}`,
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: imageBuffer.toString("base64"),
+      },
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: referenceBuffer.toString("base64"),
+      },
+    });
+  } else {
+    requestParts.push({
+      text:
+        `Apply the prompt below to the magenta checkered area. ` +
+        `Do not include the checkered area in the output.\n\n${prompt}`,
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: imageBuffer.toString("base64"),
+      },
+    });
+  }
 
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,
     contents: [
       {
         role: "user",
-        parts: [
-          { text: editPrompt },
-          {
-            inlineData: {
-              mimeType: "image/webp",
-              data: imageBuffer.toString("base64"),
-            },
-          },
-        ],
+        parts: requestParts,
       },
     ],
     config: {

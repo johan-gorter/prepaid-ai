@@ -340,12 +340,12 @@ test.describe("New Impression Page", () => {
     }
   });
 
-  test("choose-action: Schilder opens the in-development modal", async ({
+  test("choose-action: Schilder opens the paint step; Back returns to choose-action", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
-      "base for paint modal",
+      "base for paint back",
     );
 
     try {
@@ -358,17 +358,57 @@ test.describe("New Impression Page", () => {
       await page.getByRole("button", { name: "Next" }).click();
       await expect(page.getByTestId("choose-action")).toBeVisible();
 
-      // Click Paint — modal opens, prompt screen does not appear.
+      // Click Paint — paint step appears, prompt screen does not.
       await page.getByTestId("choose-paint").click();
-      const dialog = page.getByTestId("paint-in-dev-dialog");
-      await expect(dialog).toBeVisible();
-      await expect(dialog).toContainText("Coming soon");
+      await expect(page.getByTestId("paint-step")).toBeVisible();
+      await expect(page.getByTestId("paint-standard")).toBeVisible();
       await expect(page.getByTestId("prompt")).toHaveCount(0);
 
-      // Close the modal → still on choose-action stage.
-      await page.getByTestId("paint-in-dev-close").click();
-      await expect(dialog).toHaveCount(0);
+      // Custom tab reveals the inline colour picker.
+      await page.getByTestId("paint-tab-custom").click();
+      await expect(page.getByTestId("paint-color")).toBeVisible();
+
+      // Back → choose-action stage.
+      await page.getByRole("button", { name: "Back" }).click();
       await expect(page.getByTestId("choose-action")).toBeVisible();
+    } finally {
+      rmSync(grayPngPath, { force: true });
+    }
+  });
+
+  test("choose-action: Schilder picks a colour and generates without the prompt screen", async ({
+    authenticatedPage: page,
+  }) => {
+    test.slow(); // Cloud Function round-trip for the second impression
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "base for paint flow",
+    );
+
+    try {
+      await page.getByRole("button", { name: "Next Change" }).click();
+      await expect(
+        page.getByText("Paint the area you want to change"),
+      ).toBeVisible();
+
+      await drawMaskStroke(page);
+      await page.getByRole("button", { name: "Next" }).click();
+      await expect(page.getByTestId("choose-action")).toBeVisible();
+
+      // Open the paint step, pick a curated RAL swatch, then Generate.
+      await page.getByTestId("choose-paint").click();
+      await expect(page.getByTestId("paint-step")).toBeVisible();
+      await page.getByTestId("paint-swatch-#213529").click();
+      await page.getByTestId("paint-generate").click();
+
+      // Skips the prompt screen, processes, lands on preview with a result.
+      await expect(page.getByTestId("prompt")).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "Renovation Details" }),
+      ).toBeVisible();
+      await expect(page.getByAltText("Result")).toBeVisible({
+        timeout: 45_000,
+      });
     } finally {
       rmSync(grayPngPath, { force: true });
     }

@@ -38,6 +38,10 @@ export interface ImpressionDraft {
   // pattern. Persisted so a buy-credits / sign-in detour preserves the
   // intent.
   solidMask?: boolean;
+  // Set when the wizard is driving the "Schilder" (paint) action — the
+  // chosen "#RRGGBB" colour. Presence implies paint mode. Persisted so a
+  // buy-credits / sign-in detour preserves the chosen colour.
+  paintColor?: string;
 }
 
 export const setImpressionDraft = (d: ImpressionDraft) => idbSet(KEY_DRAFT, d);

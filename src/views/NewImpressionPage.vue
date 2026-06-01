@@ -28,7 +28,13 @@ import { resolveStorageUrl } from "../composables/useStorageUrl";
 import { IMPRESSION_CREDITS } from "../credits";
 import { db, storage } from "../firebase";
 
-type Stage = "preview" | "mask" | "choose-action" | "prompt" | "processing";
+type Stage =
+  | "preview"
+  | "mask"
+  | "choose-action"
+  | "paint"
+  | "prompt"
+  | "processing";
 type Source = "photo" | "crop" | "original" | "impression" | "share";
 
 // Hard-coded prompt for the "Verwijderen" (remove) action. Paired with a
@@ -36,6 +42,20 @@ type Source = "photo" | "crop" | "original" | "impression" | "share";
 // area instead of trying to interpret a free-form user prompt.
 const REMOVE_PROMPT =
   "remove the magenta stains. There a clear clean empty piece of the photo there.";
+
+// Curated RAL swatches offered in the paint dialog (4 light + 4 dark),
+// plus a free colour picker. Values are the standard RAL approximations.
+const PAINT_PRESETS: { name: string; hex: string }[] = [
+  { name: "RAL 9010", hex: "#F4F4F0" },
+  { name: "RAL 9001", hex: "#EAE6CA" },
+  { name: "RAL 1013", hex: "#E3D9C6" },
+  { name: "RAL 7035", hex: "#C5C7C4" },
+  { name: "RAL 7016", hex: "#383E42" },
+  { name: "RAL 9005", hex: "#0A0A0A" },
+  { name: "RAL 5004", hex: "#18171C" },
+  { name: "RAL 6009", hex: "#213529" },
+];
+const DEFAULT_PAINT_COLOR = PAINT_PRESETS[0]!.hex;
 
 const route = useRoute();
 const router = useRouter();
@@ -58,7 +78,12 @@ const initialMask = ref<Blob | null>(null);
 // checkerboard to a solid magenta fill. Persisted via the draft so the
 // buy-credits / sign-in detour preserves the intent.
 const useSolidMask = ref(false);
-const showPaintInDevDialog = ref(false);
+// Paint flow: true once the user has confirmed a colour in the paint dialog,
+// switching onGenerate to write `mode: "paint"` + the chosen colour so the
+// Cloud Function builds a colour reference image for Gemini.
+const usePaintMode = ref(false);
+const paintColor = ref(DEFAULT_PAINT_COLOR);
+const paintTab = ref<"standard" | "custom">("standard");
 let restoredDraftKey: string | null = null;
 // Synchronous re-entry guard for onGenerate. Awaiting the balance load
 // before flipping stage→"processing" otherwise allows two rapid clicks
@@ -95,18 +120,12 @@ const headerTitle = computed(() => {
   if (stage.value === "processing") return t("newImpression.titleProcessing");
   if (stage.value === "preview") return t("newImpression.titleImpression");
   if (stage.value === "choose-action") return t("newImpression.titleChoose");
+  if (stage.value === "paint") return t("newImpression.titlePaint");
   return t("newImpression.titleMark");
 });
 
 const removeCostLabel = computed(() =>
   t("newImpression.chooseRemoveCost", { credits: IMPRESSION_CREDITS }),
-);
-
-// Vue templates can't embed `{` inside `{{ }}` (the lexer reads it as a
-// nested interpolation), so build the literal "{colorName}" placeholder via
-// a computed and inject it into the i18n-t slot.
-const paintInDevColorNamePlaceholder = computed(
-  () => `{${t("newImpression.paintInDevColorNameLabel")}}`,
 );
 
 const canGenerate = computed(() => prompt.value.trim().length > 0);
@@ -169,7 +188,9 @@ async function initFromRoute(): Promise<void> {
   prompt.value = "";
   initialMask.value = null;
   useSolidMask.value = false;
-  showPaintInDevDialog.value = false;
+  usePaintMode.value = false;
+  paintColor.value = DEFAULT_PAINT_COLOR;
+  paintTab.value = "standard";
   restoredDraftKey = null;
   revokeSourceUrl();
 
@@ -243,6 +264,10 @@ async function initFromRoute(): Promise<void> {
   if (matches && draft) {
     prompt.value = draft.prompt;
     useSolidMask.value = draft.solidMask === true;
+    if (draft.paintColor) {
+      usePaintMode.value = true;
+      paintColor.value = draft.paintColor;
+    }
     initialMask.value = await getImpressionMask();
     restoredDraftKey = draftKey();
   }
@@ -250,7 +275,13 @@ async function initFromRoute(): Promise<void> {
   sourceObjectUrl.value = URL.createObjectURL(blob);
 
   if (matches && draft) {
-    stage.value = prompt.value || initialMask.value ? "prompt" : "mask";
+    // Resume the paint step (with the chosen colour) after a buy-credits /
+    // sign-in detour, rather than dropping into the free-prompt screen.
+    if (usePaintMode.value) {
+      stage.value = "paint";
+    } else {
+      stage.value = prompt.value || initialMask.value ? "prompt" : "mask";
+    }
   } else {
     stage.value =
       source === "original" || source === "impression" ? "preview" : "mask";
@@ -264,6 +295,7 @@ async function persistDraft(): Promise<void> {
     renovation: renovationParam.value,
     impression: impressionParam.value,
     solidMask: useSolidMask.value,
+    paintColor: usePaintMode.value ? paintColor.value : undefined,
   };
   await setImpressionDraft(draft);
   restoredDraftKey = draftKey();
@@ -277,6 +309,7 @@ async function clearPersistedDraft(): Promise<void> {
   await Promise.all([clearImpressionDraft(), clearImpressionMask()]);
   restoredDraftKey = null;
   useSolidMask.value = false;
+  usePaintMode.value = false;
 }
 
 watch(prompt, async (val) => {
@@ -289,6 +322,7 @@ watch(prompt, async (val) => {
       renovation: renovationParam.value,
       impression: impressionParam.value,
       solidMask: useSolidMask.value,
+      paintColor: usePaintMode.value ? paintColor.value : undefined,
     });
   }
 });
@@ -344,6 +378,7 @@ async function clearMaskEverywhere() {
 async function onNextChange() {
   await clearMaskEverywhere();
   useSolidMask.value = false;
+  usePaintMode.value = false;
   prompt.value = "";
   stage.value = "mask";
 }
@@ -359,17 +394,37 @@ function onChooseBack() {
 async function onChooseRemove() {
   prompt.value = REMOVE_PROMPT;
   useSolidMask.value = true;
+  usePaintMode.value = false;
   await onGenerate();
 }
 
 function onChoosePaint() {
-  showPaintInDevDialog.value = true;
+  paintTab.value = "standard";
+  stage.value = "paint";
+}
+
+function selectPaintColor(hex: string) {
+  paintColor.value = hex;
+}
+
+function onPaintBack() {
+  usePaintMode.value = false;
+  stage.value = "choose-action";
+}
+
+async function onPaintGenerate() {
+  usePaintMode.value = true;
+  useSolidMask.value = false;
+  // Non-empty prompt satisfies canGenerate and gives the timeline a label.
+  prompt.value = t("newImpression.paintPrompt", { color: paintColor.value });
+  await onGenerate();
 }
 
 function onChooseOther() {
-  // Clear any leftover state from a previous Verwijderen attempt so the
-  // user gets the standard checkerboard + free-prompt flow.
+  // Clear any leftover state from a previous Verwijderen / Schilder attempt so
+  // the user gets the standard checkerboard + free-prompt flow.
   useSolidMask.value = false;
+  usePaintMode.value = false;
   if (prompt.value === REMOVE_PROMPT) prompt.value = "";
   stage.value = "prompt";
 }
@@ -557,6 +612,9 @@ async function onGenerate() {
         sourceImagePath,
         compositeImagePath,
         prompt: prompt.value.trim(),
+        ...(usePaintMode.value
+          ? { paintColor: paintColor.value, mode: "paint" }
+          : {}),
       });
 
       const resultPath = await waitForCompletion(
@@ -581,9 +639,14 @@ async function onGenerate() {
     } catch (err) {
       errorMessage.value =
         err instanceof Error ? err.message : t("newImpression.unknownError");
-      // For the Verwijderen flow the prompt screen is intentionally skipped,
-      // so fall back to the choose-action screen on failure instead.
-      stage.value = useSolidMask.value ? "choose-action" : "prompt";
+      // The Verwijderen and Schilder flows skip the free-prompt screen, so on
+      // failure fall back to their own step instead: paint returns to the
+      // colour picker (keeping the selection), remove to choose-action.
+      stage.value = usePaintMode.value
+        ? "paint"
+        : useSolidMask.value
+          ? "choose-action"
+          : "prompt";
     }
   } finally {
     generateInFlight = false;
@@ -648,7 +711,7 @@ async function onShare() {
       </article>
 
       <div
-        v-if="!shareError && stage !== 'choose-action'"
+        v-if="!shareError && stage !== 'choose-action' && stage !== 'paint'"
         class="step-hint"
       >
         <span v-if="stage === 'mask'">{{ $t("newImpression.paintHint") }}</span>
@@ -660,7 +723,7 @@ async function onShare() {
         :class="{
           'inert-canvas': stage === 'processing',
           'canvas-area--collapsed': stage === 'prompt',
-          'canvas-area--hidden': stage === 'choose-action',
+          'canvas-area--hidden': stage === 'choose-action' || stage === 'paint',
         }"
         @pointerdown="onCanvasArea"
       >
@@ -733,6 +796,62 @@ async function onShare() {
           <i aria-hidden="true">tune</i>
           <span>{{ $t("newImpression.chooseOther") }}</span>
         </button>
+      </div>
+
+      <div v-if="stage === 'paint'" class="paint-step" data-testid="paint-step">
+        <div class="tabs">
+          <a
+            :class="{ active: paintTab === 'standard' }"
+            data-testid="paint-tab-standard"
+            @click="paintTab = 'standard'"
+          >
+            <i aria-hidden="true">palette</i>
+            <span>{{ $t("newImpression.paintTabStandard") }}</span>
+          </a>
+          <a
+            :class="{ active: paintTab === 'custom' }"
+            data-testid="paint-tab-custom"
+            @click="paintTab = 'custom'"
+          >
+            <i aria-hidden="true">colorize</i>
+            <span>{{ $t("newImpression.paintTabCustom") }}</span>
+          </a>
+        </div>
+
+        <div
+          v-if="paintTab === 'standard'"
+          class="paint-swatch-grid"
+          data-testid="paint-standard"
+        >
+          <button
+            v-for="preset in PAINT_PRESETS"
+            :key="preset.hex"
+            type="button"
+            class="paint-swatch"
+            :class="{ 'paint-swatch--active': paintColor === preset.hex }"
+            :style="{ backgroundColor: preset.hex }"
+            :title="preset.name"
+            :aria-label="preset.name"
+            :aria-pressed="paintColor === preset.hex"
+            :data-testid="`paint-swatch-${preset.hex}`"
+            @click="selectPaintColor(preset.hex)"
+          ></button>
+        </div>
+
+        <div
+          v-else
+          class="paint-custom"
+          data-testid="paint-custom"
+        >
+          <input
+            type="color"
+            v-model="paintColor"
+            class="paint-color-input"
+            data-testid="paint-color"
+            :aria-label="$t('newImpression.paintColorLabel')"
+          />
+          <span class="paint-hex">{{ paintColor.toUpperCase() }}</span>
+        </div>
       </div>
 
       <button
@@ -822,6 +941,23 @@ async function onShare() {
       </button>
     </StickyFooter>
 
+    <!-- Paint stage footer: Back | Generate -->
+    <StickyFooter v-if="stage === 'paint'">
+      <button class="max border small-round" @click="onPaintBack">
+        <i aria-hidden="true">arrow_back</i>
+        <span>{{ $t("newImpression.back") }}</span>
+      </button>
+      <div class="small-space"></div>
+      <button
+        class="max small-round"
+        data-testid="paint-generate"
+        @click="onPaintGenerate"
+      >
+        <i aria-hidden="true">auto_awesome</i>
+        <span>{{ $t("newImpression.generate") }}</span>
+      </button>
+    </StickyFooter>
+
     <!-- Prompt stage footer: Back | Generate -->
     <StickyFooter v-if="stage === 'prompt'">
       <button class="max border small-round" @click="onPromptBack">
@@ -839,39 +975,6 @@ async function onShare() {
       </button>
     </StickyFooter>
 
-    <!-- Paint feature is under construction — explain how to use Anders
-         (Other) with a colour name instead. -->
-    <div
-      v-if="showPaintInDevDialog"
-      class="overlay active"
-      data-testid="paint-in-dev-overlay"
-      @click="showPaintInDevDialog = false"
-    />
-    <dialog
-      :class="{ active: showPaintInDevDialog }"
-      data-testid="paint-in-dev-dialog"
-      v-if="showPaintInDevDialog"
-    >
-      <h5>{{ $t("newImpression.paintInDevTitle") }}</h5>
-      <i18n-t
-        keypath="newImpression.paintInDevBody"
-        tag="p"
-        data-testid="paint-in-dev-body"
-      >
-        <template #colorName>
-          <em>{{ paintInDevColorNamePlaceholder }}</em>
-        </template>
-      </i18n-t>
-      <nav class="right-align">
-        <button
-          data-testid="paint-in-dev-close"
-          @click="showPaintInDevDialog = false"
-        >
-          <i aria-hidden="true">check</i>
-          <span>{{ $t("common.close") }}</span>
-        </button>
-      </nav>
-    </dialog>
   </div>
 </template>
 
@@ -1012,5 +1115,60 @@ async function onShare() {
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
+}
+
+.paint-step {
+  max-width: 544px;
+  margin: 1rem auto 0;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.paint-step .tabs {
+  margin-bottom: 1rem;
+}
+
+.paint-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.paint-swatch {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  border: 2px solid var(--outline, rgba(0, 0, 0, 0.2));
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.paint-swatch--active {
+  border-color: var(--primary, #6750a4);
+  box-shadow: 0 0 0 2px var(--primary, #6750a4);
+}
+
+.paint-custom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.paint-color-input {
+  width: 100%;
+  max-width: 240px;
+  height: 8rem;
+  padding: 0;
+  border: 1px solid var(--outline, rgba(0, 0, 0, 0.2));
+  border-radius: 0.75rem;
+  background: none;
+  cursor: pointer;
+}
+
+.paint-hex {
+  font-family: monospace;
+  font-size: 1.1rem;
 }
 </style>

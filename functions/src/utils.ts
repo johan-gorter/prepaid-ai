@@ -8,6 +8,14 @@ export function storagePathFromUrl(url: string): string {
 }
 
 /**
+ * Parse a "#RRGGBB" (or "RRGGBB") hex colour into 0-255 RGB channels.
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const n = parseInt(hex.replace(/^#/, ""), 16);
+  return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
+}
+
+/**
  * CORS — derived from GCLOUD_PROJECT (the Firebase project ID, set
  * automatically by Cloud Functions) plus any extra entries in the
  * ALLOWED_ORIGINS env var (comma-separated, used for custom domains).
