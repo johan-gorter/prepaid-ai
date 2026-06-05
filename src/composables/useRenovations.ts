@@ -87,6 +87,8 @@ export function useRenovations() {
       prompt: string;
       maskImagePath?: string;
       compositeImagePath?: string;
+      paintColor?: string;
+      mode?: string;
     },
   ): Promise<string> {
     if (!currentUser.value) throw new Error("Not authenticated");
@@ -110,6 +112,12 @@ export function useRenovations() {
     }
     if (data.compositeImagePath) {
       docData.compositeImagePath = data.compositeImagePath;
+    }
+    if (data.paintColor) {
+      docData.paintColor = data.paintColor;
+    }
+    if (data.mode) {
+      docData.mode = data.mode;
     }
     const docRef = await addDoc(impressionsRef, docData);
 

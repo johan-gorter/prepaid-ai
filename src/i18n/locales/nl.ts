@@ -166,6 +166,7 @@ const nl: MessageSchema = {
     titleImpression: "Impressie",
     titleMark: "Gebied markeren",
     titleChoose: "Wat moet er gebeuren?",
+    titlePaint: "Kies een kleur",
     shareUnavailableTitle: "Delen niet beschikbaar",
     shareLinkUnavailable:
       "Deze deellink is niet meer beschikbaar. De eigenaar heeft de impressie mogelijk verwijderd.",
@@ -192,12 +193,12 @@ const nl: MessageSchema = {
     deleteRenovationConfirm: "Deze renovatie en alle bijbehorende impressies verwijderen?",
     chooseRemove: "Verwijderen",
     chooseRemoveCost: "{credits} 🪙",
-    choosePaint: "Schilder 🚧",
+    choosePaint: "Schilder",
     chooseOther: "Anders",
-    paintInDevTitle: "Binnenkort beschikbaar",
-    paintInDevBody:
-      'Deze functie is nog in ontwikkeling. Gebruik voor nu de "Anders"-optie met als beschrijving: schilder dit stuk {colorName}.',
-    paintInDevColorNameLabel: "kleurnaam",
+    paintTabStandard: "Standaard",
+    paintTabCustom: "Eigen",
+    paintColorLabel: "Eigen kleur",
+    paintPrompt: "Schilder het gemarkeerde gebied {color}",
   },
   renovations: {
     title: "Renovaties",

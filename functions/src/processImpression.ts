@@ -5,7 +5,7 @@ import { dummyProcess, geminiProcess, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
 import { imageGenerationCredits } from "./credits.js";
 import { FUNCTIONS_REGION } from "./region.js";
-import { storagePathFromUrl } from "./utils.js";
+import { hexToRgb, storagePathFromUrl } from "./utils.js";
 
 export const processImpression = onDocumentCreated(
   {
@@ -30,6 +30,8 @@ export const processImpression = onDocumentCreated(
     const compositeImagePath = impressionData.compositeImagePath as
       | string
       | undefined;
+    const mode = impressionData.mode as string | undefined;
+    const paintColor = impressionData.paintColor as string | undefined;
 
     const impressionRef = db.doc(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
@@ -59,6 +61,38 @@ export const processImpression = onDocumentCreated(
         storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(imagePath).download();
 
+      // Paint mode: build a whole-image colour/material reference by
+      // multiplying the chosen paint colour over the CLEAN source (not the
+      // magenta composite). Passed to Gemini as a second image so it sees how
+      // the colour reads under the room's lighting. Kept in-memory only.
+      let referenceBuffer: Buffer | undefined;
+      if (mode === "paint" && paintColor) {
+        const cleanPath =
+          sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
+        const [cleanBuffer] = await bucket.file(cleanPath).download();
+        const meta = await sharp(cleanBuffer).metadata();
+        const width = meta.width ?? 1024;
+        const height = meta.height ?? 1024;
+        referenceBuffer = Buffer.from(
+          await sharp(cleanBuffer)
+            .composite([
+              {
+                input: {
+                  create: {
+                    width,
+                    height,
+                    channels: 3,
+                    background: hexToRgb(paintColor),
+                  },
+                },
+                blend: "multiply",
+              },
+            ])
+            .webp({ quality: 80 })
+            .toBuffer(),
+        );
+      }
+
       let resultBuffer: Buffer;
       const backend = getAiBackend();
       console.log(`Processing with backend: ${backend}`);
@@ -76,7 +110,12 @@ export const processImpression = onDocumentCreated(
 
         resultBuffer = await dummyProcess(fileBuffer, prompt, priorPrompts);
       } else {
-        resultBuffer = await geminiProcess(backend, fileBuffer, prompt);
+        resultBuffer = await geminiProcess(
+          backend,
+          fileBuffer,
+          prompt,
+          referenceBuffer,
+        );
       }
 
       // Re-encode as lossy WebP to reduce file size

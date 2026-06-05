@@ -20,7 +20,7 @@
     "services:status": "node scripts/services/cli.mjs status",
     "devservices": "npm -s run services:start emulators dev:emulators && npm -s run services:wait emulators dev:emulators",
     "typecheck:tests": "vue-tsc --project tsconfig.test.json --noEmit",
-    "typecheck:all": "vue-tsc -b && npm -s run typecheck:tests && npm --prefix functions exec tsc --noEmit",
+    "typecheck:all": "vue-tsc -b && npm -s run typecheck:tests && npm --prefix functions -s run typecheck",
     "build": "vue-tsc -b && npm -s run typecheck:tests && vite build",
     "build:preview": "npm -s run build && vite preview",
     "preview": "vite preview",
