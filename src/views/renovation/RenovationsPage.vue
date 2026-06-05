@@ -170,6 +170,8 @@ watch(
       padding: var(--app-bar-clearance) 0 0;
     "
   >
+    <NewRenovationCard />
+
     <nav v-if="!currentUser" class="guest-renovations-auth">
       <router-link
         :to="{ path: '/login', query: { redirect: '/renovations' } }"
@@ -191,7 +193,6 @@ watch(
     </div>
 
     <div v-else class="renovation-grid">
-      <NewRenovationCard />
       <article
         v-for="renovation in renovations"
         :key="renovation.id"
@@ -253,7 +254,7 @@ watch(
 
 .guest-renovations-auth {
   justify-content: flex-start;
-  margin: -0.25rem 0 1rem;
+  margin: 0.5rem 0 1rem;
 }
 
 .guest-renovations-link {
