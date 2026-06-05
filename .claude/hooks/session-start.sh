@@ -12,9 +12,6 @@ fi
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
-# --- Configure git to use project hooks directory ----------------------------
-git config core.hooksPath .githooks 2>/dev/null || true
-
 # --- Cleanup trap: kill any background processes we started ----------------
 BACKGROUND_PIDS=()
 cleanup() {
