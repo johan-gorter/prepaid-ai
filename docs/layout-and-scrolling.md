@@ -243,5 +243,5 @@ manually verify all of the following before pushing:
 | `src/style.css`                                                                   | Body / app min-height; additive keyboard runway; horizontal clip; fixed AppBar     |
 | `src/components/StickyFooter.vue`                                                 | Fixed footer using `bottom: var(--kb-inset, 0px)`; mobile bottom-nav layout        |
 | `src/views/PrivateChatPage.vue`                                                   | Document-scrolling chat with an in-flow auto-growing composer                      |
-| `src/views/NewImpressionPage.vue`                                                 | Document-scrolling wizard; prompt textarea reveals itself on focus                 |
-| `src/views/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Document-scrolling page-layout columns                                             |
+| `src/views/renovation/NewImpressionPage.vue`                                      | Document-scrolling wizard; prompt textarea reveals itself on focus                 |
+| `src/views/renovation/PhotoCapturePage.vue`, `CropImagePage.vue`, `RenovationDetailPage.vue` | Document-scrolling page-layout columns                                  |

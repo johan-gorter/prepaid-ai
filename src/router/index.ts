@@ -80,25 +80,25 @@ const routes = [
   {
     path: "/photo",
     name: "photo",
-    component: () => import("../views/PhotoCapturePage.vue"),
+    component: () => import("../views/renovation/PhotoCapturePage.vue"),
     meta: { requiresAuth: false },
   },
   {
     path: "/crop",
     name: "crop",
-    component: () => import("../views/CropImagePage.vue"),
+    component: () => import("../views/renovation/CropImagePage.vue"),
     meta: { requiresAuth: false },
   },
   {
     path: "/new-impression",
     name: "new-impression",
-    component: () => import("../views/NewImpressionPage.vue"),
+    component: () => import("../views/renovation/NewImpressionPage.vue"),
     meta: { requiresAuth: false },
   },
   {
     path: "/share/:token",
     name: "share",
-    component: () => import("../views/NewImpressionPage.vue"),
+    component: () => import("../views/renovation/NewImpressionPage.vue"),
     meta: { requiresAuth: false },
   },
   {

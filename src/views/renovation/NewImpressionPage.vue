@@ -4,12 +4,12 @@ import { ref as storageRef, uploadBytes } from "firebase/storage";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import AppBar from "../components/AppBar.vue";
-import MaskingCanvas from "../components/MaskingCanvas.vue";
-import ShareDialog from "../components/ShareDialog.vue";
-import StickyFooter from "../components/StickyFooter.vue";
-import { useAuth } from "../composables/useAuth";
-import { useBalance } from "../composables/useBalance";
+import AppBar from "../../components/AppBar.vue";
+import MaskingCanvas from "../../components/MaskingCanvas.vue";
+import ShareDialog from "../../components/ShareDialog.vue";
+import StickyFooter from "../../components/StickyFooter.vue";
+import { useAuth } from "../../composables/useAuth";
+import { useBalance } from "../../composables/useBalance";
 import {
   clearImpressionDraft,
   clearImpressionMask,
@@ -21,12 +21,12 @@ import {
   setImpressionMask,
   setImpressionSource,
   type ImpressionDraft,
-} from "../composables/useImpressionStore";
-import { useRenovations } from "../composables/useRenovations";
-import { createOrGetShareToken, fetchShare } from "../composables/useShare";
-import { resolveStorageUrl } from "../composables/useStorageUrl";
-import { IMPRESSION_CREDITS } from "../credits";
-import { db, storage } from "../firebase";
+} from "../../composables/useImpressionStore";
+import { useRenovations } from "../../composables/useRenovations";
+import { createOrGetShareToken, fetchShare } from "../../composables/useShare";
+import { resolveStorageUrl } from "../../composables/useStorageUrl";
+import { IMPRESSION_CREDITS } from "../../credits";
+import { db, storage } from "../../firebase";
 
 type Stage =
   | "preview"

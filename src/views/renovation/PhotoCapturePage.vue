@@ -2,13 +2,13 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import AppBar from "../components/AppBar.vue";
-import StickyFooter from "../components/StickyFooter.vue";
+import AppBar from "../../components/AppBar.vue";
+import StickyFooter from "../../components/StickyFooter.vue";
 import {
   clearImpressionDraft,
   clearImpressionMask,
   setImpressionSource,
-} from "../composables/useImpressionStore";
+} from "../../composables/useImpressionStore";
 
 const { t } = useI18n();
 const router = useRouter();
