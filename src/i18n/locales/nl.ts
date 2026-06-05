@@ -29,29 +29,29 @@ const nl: MessageSchema = {
     switchToDark: "Naar donker thema",
   },
   main: {
-    tagline:
+    taglinePayPerUse:
       "Gebruik de slimste AI-tools {highlight}. Je betaalt simpelweg alleen voor wat je écht gebruikt.",
-    taglineHighlight: "zonder maandelijks abonnement",
-    renovationTitle: "Schets je verbouwing",
-    renovationDesc:
+    withoutMonthlySubscription: "zonder maandelijks abonnement",
+    sketchYourRenovation: "Schets je verbouwing",
+    renovationResultInSeconds:
       "Een kleine opknapbeurt of een grote verbouwing? Zie in een paar seconden het eindresultaat.",
-    renovationImageAlt: "Renovatievoorbeeld",
-    visualizeNow: "TEST JE IDEE",
-    chatTitle: "Veilige Privéchat",
-    chatDesc:
+    renovationPreviewAlt: "Renovatievoorbeeld",
+    testYourIdea: "TEST JE IDEE",
+    securePrivateChat: "Veilige Privéchat",
+    chatExplainInPlainLanguage:
       "Ingewikkeld contract of lastig document? Laat onze assistent het direct in duidelijke taal aan je uitleggen. Jouw gegevens blijven 100% privé.",
-    chatSecurely: "START EEN GESPREK",
+    startChatting: "START EEN GESPREK",
     checkCredits: "Credits bekijken",
     viewUsageTerms: "Gebruiksvoorwaarden",
-    feedbackTitle: "Denk met ons mee",
-    feedbackPrompt:
+    shareYourThoughts: "Denk met ons mee",
+    feedbackWhichToolMissing:
       "Welke functie of AI-tool mis je nog? Laat ons weten wat deze app nóg handiger voor je zou maken.",
-    feedbackThanks: "Bedankt voor je feedback!",
-    feedbackPlaceholder: "Vertel ons over jouw idee...",
-    sendFeedback: "DEEL JOUW IDEE",
+    thanksForFeedback: "Bedankt voor je feedback!",
+    tellUsAboutYourIdea: "Vertel ons over jouw idee...",
+    shareYourIdea: "DEEL JOUW IDEE",
   },
   login: {
-    tagline: "Geef je ruimte opnieuw vorm met AI",
+    reimagineYourSpace: "Geef je ruimte opnieuw vorm met AI",
     withGoogle: "Inloggen met Google",
     withMicrosoft: "Inloggen met Microsoft",
     withApple: "Inloggen met Apple",
@@ -111,11 +111,12 @@ const nl: MessageSchema = {
     acceptableUseIntro:
       "Je bent verantwoordelijk voor de afbeeldingen die je uploadt. Geüploade afbeeldingen {mustNot} bevatten:",
     mustNot: "mogen geen",
-    acceptableUseItem1:
+    acceptableUseNoHarmfulContent:
       "Schadelijke, haatdragende, gewelddadige of anderszins aanstootgevende inhoud",
-    acceptableUseItem2: "Persoonlijke of privégegevens (PII) van een persoon",
-    acceptableUseItem3: "Herkenbare personen zonder hun uitdrukkelijke toestemming",
-    acceptableUseItem4:
+    acceptableUseNoPii: "Persoonlijke of privégegevens (PII) van een persoon",
+    acceptableUseNoPeopleWithoutConsent:
+      "Herkenbare personen zonder hun uitdrukkelijke toestemming",
+    acceptableUseNoLicensePlates:
       "Leesbare kentekenplaten of andere identificerende kenmerken",
     acceptableUseOutro:
       "We behouden ons het recht voor om zonder voorafgaande kennisgeving inhoud te verwijderen die deze richtlijnen schendt.",

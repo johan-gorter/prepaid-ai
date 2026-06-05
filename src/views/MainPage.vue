@@ -48,9 +48,11 @@ async function submitFeedback() {
       padding-bottom: 2rem;
     "
   >
-    <i18n-t keypath="main.tagline" tag="p" class="large-text">
+    <i18n-t keypath="main.taglinePayPerUse" tag="p" class="large-text">
       <template #highlight>
-        <strong class="primary-text">{{ $t("main.taglineHighlight") }}</strong>
+        <strong class="primary-text">{{
+          $t("main.withoutMonthlySubscription")
+        }}</strong>
       </template>
     </i18n-t>
 
@@ -59,17 +61,17 @@ async function submitFeedback() {
       <div class="card-media">
         <img
           src="/assets/renovation-small.png"
-          :alt="$t('main.renovationImageAlt')"
+          :alt="$t('main.renovationPreviewAlt')"
           class="round card-thumb"
         />
         <h6
           class="bold no-margin card-title"
           data-testid="renovations-card-heading"
         >
-          {{ $t("main.renovationTitle") }}
+          {{ $t("main.sketchYourRenovation") }}
         </h6>
         <p class="card-desc">
-          {{ $t("main.renovationDesc") }}
+          {{ $t("main.renovationResultInSeconds") }}
         </p>
       </div>
       <router-link
@@ -77,7 +79,7 @@ async function submitFeedback() {
         class="button responsive small-round card-cta"
         style="margin-top: 4px"
       >
-        <span>{{ $t("main.visualizeNow") }}</span>
+        <span>{{ $t("main.testYourIdea") }}</span>
         <i>photo_camera</i>
       </router-link>
     </article>
@@ -86,13 +88,13 @@ async function submitFeedback() {
     <article class="border medium-text" style="margin-top: 1rem">
       <div class="card-media">
         <i class="extra primary-text">verified_user</i>
-        <h6 class="bold no-margin card-title">{{ $t("main.chatTitle") }}</h6>
+        <h6 class="bold no-margin card-title">{{ $t("main.securePrivateChat") }}</h6>
         <p class="card-desc">
-          {{ $t("main.chatDesc") }}
+          {{ $t("main.chatExplainInPlainLanguage") }}
         </p>
       </div>
       <router-link to="/chat" class="button responsive small-round card-cta">
-        <span>{{ $t("main.chatSecurely") }}</span>
+        <span>{{ $t("main.startChatting") }}</span>
         <i>public</i>
       </router-link>
     </article>
@@ -111,18 +113,18 @@ async function submitFeedback() {
 
     <!-- Feedback card -->
     <article class="border medium-text" style="margin-top: 1.5rem">
-      <h6 class="bold">{{ $t("main.feedbackTitle") }}</h6>
+      <h6 class="bold">{{ $t("main.shareYourThoughts") }}</h6>
       <p>
-        {{ $t("main.feedbackPrompt") }}
+        {{ $t("main.feedbackWhichToolMissing") }}
       </p>
       <div v-if="feedbackSent" class="medium-padding">
-        <p><i class="small">check_circle</i> {{ $t("main.feedbackThanks") }}</p>
+        <p><i class="small">check_circle</i> {{ $t("main.thanksForFeedback") }}</p>
       </div>
       <div v-else>
         <div class="field textarea border">
           <textarea
             v-model="feedbackMessage"
-            :placeholder="$t('main.feedbackPlaceholder')"
+            :placeholder="$t('main.tellUsAboutYourIdea')"
             rows="3"
             data-testid="feedback-input"
             style="background-color: var(--surface-container-lowest)"
@@ -136,7 +138,7 @@ async function submitFeedback() {
           style="margin-top: 8px"
         >
           <i>send</i>
-          <span>{{ $t("main.sendFeedback") }}</span>
+          <span>{{ $t("main.shareYourIdea") }}</span>
         </button>
       </div>
     </article>

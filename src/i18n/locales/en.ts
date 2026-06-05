@@ -28,29 +28,29 @@ const en = {
     switchToDark: "Switch to dark",
   },
   main: {
-    tagline:
-      "Use the smartest AI tools {highlight}. Simply pay only for what you actually use.",
-    taglineHighlight: "without a monthly subscription",
-    renovationTitle: "Sketch your renovation",
-    renovationDesc:
-      "A quick touch-up or a major makeover? See the final result in seconds.",
-    renovationImageAlt: "Renovation preview",
-    visualizeNow: "TEST YOUR IDEA",
-    chatTitle: "Secure Private Chat",
-    chatDesc:
+    taglinePayPerUse:
+      "Use the best AI tools {highlight}. Simply pay only for what you actually use.",
+    withoutMonthlySubscription: "without a monthly subscription",
+    sketchYourRenovation: "Sketch your renovation",
+    renovationResultInSeconds:
+      "Reimagine, redecorate, or remodel. See your ideas come to life with AI.",
+    renovationPreviewAlt: "Renovation preview",
+    testYourIdea: "TEST YOUR IDEA",
+    securePrivateChat: "Secure Private Chat",
+    chatExplainInPlainLanguage:
       "Complex contract or tricky document? Let our assistant explain it to you instantly in plain language. Your data remains 100% private.",
-    chatSecurely: "START CHATTING",
+    startChatting: "START CHATTING",
     checkCredits: "Check Credits",
     viewUsageTerms: "View Usage Terms",
-    feedbackTitle: "Share your thoughts",
-    feedbackPrompt:
+    shareYourThoughts: "Share your thoughts",
+    feedbackWhichToolMissing:
       "Which feature or AI tool are you missing? Let us know what would make this app even more useful to you.",
-    feedbackThanks: "Thanks for your feedback!",
-    feedbackPlaceholder: "Tell us about your idea...",
-    sendFeedback: "SHARE YOUR IDEA",
+    thanksForFeedback: "Thanks for your feedback!",
+    tellUsAboutYourIdea: "Tell us about your idea...",
+    shareYourIdea: "SHARE YOUR IDEA",
   },
   login: {
-    tagline: "Reimagine your space with AI",
+    reimagineYourSpace: "Reimagine your space with AI",
     withGoogle: "Sign in with Google",
     withMicrosoft: "Sign in with Microsoft",
     withApple: "Sign in with Apple",
@@ -110,11 +110,13 @@ const en = {
     acceptableUseIntro:
       "You are responsible for the images you upload. Uploaded images {mustNot} contain:",
     mustNot: "must not",
-    acceptableUseItem1:
+    acceptableUseNoHarmfulContent:
       "Harmful, hateful, violent, or otherwise objectionable content",
-    acceptableUseItem2: "Personal or private information (PII) of any individual",
-    acceptableUseItem3: "Recognizable persons without their explicit consent",
-    acceptableUseItem4:
+    acceptableUseNoPii:
+      "Personal or private information (PII) of any individual",
+    acceptableUseNoPeopleWithoutConsent:
+      "Recognizable persons without their explicit consent",
+    acceptableUseNoLicensePlates:
       "Readable license plates or other identifying markers",
     acceptableUseOutro:
       "We reserve the right to remove any content that violates these guidelines without prior notice.",
@@ -253,7 +255,8 @@ const en = {
     breadcrumbBalance: "Balance",
     breadcrumbTitle: "Purchase complete",
     paymentSuccess: "Payment successful!",
-    creditsAppear: "Your credits will appear in your balance within a few seconds.",
+    creditsAppear:
+      "Your credits will appear in your balance within a few seconds.",
     viewBalance: "View balance",
     session: "Session: {id}",
   },

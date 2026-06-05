@@ -75,7 +75,7 @@ async function handleDevLogin() {
     <article class="large-elevate border">
       <div class="center-align">
         <h4>payasyougo.app</h4>
-        <p class="small-text">{{ $t("login.tagline") }}</p>
+        <p class="small-text">{{ $t("login.reimagineYourSpace") }}</p>
       </div>
 
       <div class="space"></div>

@@ -24,10 +24,10 @@ const { currentUser } = useAuth();
       <template #mustNot><strong>{{ $t("about.mustNot") }}</strong></template>
     </i18n-t>
     <ul>
-      <li>{{ $t("about.acceptableUseItem1") }}</li>
-      <li>{{ $t("about.acceptableUseItem2") }}</li>
-      <li>{{ $t("about.acceptableUseItem3") }}</li>
-      <li>{{ $t("about.acceptableUseItem4") }}</li>
+      <li>{{ $t("about.acceptableUseNoHarmfulContent") }}</li>
+      <li>{{ $t("about.acceptableUseNoPii") }}</li>
+      <li>{{ $t("about.acceptableUseNoPeopleWithoutConsent") }}</li>
+      <li>{{ $t("about.acceptableUseNoLicensePlates") }}</li>
     </ul>
     <p>{{ $t("about.acceptableUseOutro") }}</p>
 
