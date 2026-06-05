@@ -58,7 +58,10 @@ async function onPasteImage() {
   <div class="new-renovation-bar" data-testid="new-renovation-card">
     <div class="new-renovation-row">
       <h5 class="new-renovation-header">{{ $t("newRenovation.title") }}</h5>
-      <nav class="new-renovation-actions">
+      <!-- no-margin: Beer CSS's reset injects margin-top:1rem on a <nav> that
+           follows a sibling (here the <h5>), which would push the actions down
+           and break the row's vertical symmetry. -->
+      <nav class="new-renovation-actions no-margin">
         <button @click="router.push('/photo')">
           <i aria-hidden="true">photo_camera</i>
           <span>{{ $t("newRenovation.takePhoto") }}</span>
