@@ -21,7 +21,7 @@ test.describe("Main Page", () => {
     await page.goto("/main");
     await expect(page.getByRole("heading", { name: "payasyougo.app", exact: true })).toBeVisible();
 
-    const renovationsLink = page.getByRole("link", { name: "TEST YOUR IDEA" });
+    const renovationsLink = page.getByRole("link", { name: "YOUR RENOVATIONS" });
     await expect(renovationsLink).toBeVisible();
     await expect(renovationsLink).toHaveAttribute("href", "/renovations");
 

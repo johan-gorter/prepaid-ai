@@ -36,6 +36,7 @@ const en = {
       "Reimagine, redecorate, or remodel. See your ideas come to life with AI.",
     renovationPreviewAlt: "Renovation preview",
     testYourIdea: "TEST YOUR IDEA",
+    yourRenovations: "YOUR RENOVATIONS",
     securePrivateChat: "Secure Private Chat",
     chatExplainInPlainLanguage:
       "Complex contract or tricky document? Let our assistant explain it to you instantly in plain language. Your data remains 100% private.",

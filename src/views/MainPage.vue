@@ -79,7 +79,9 @@ async function submitFeedback() {
         class="button responsive small-round card-cta"
         style="margin-top: 4px"
       >
-        <span>{{ $t("main.testYourIdea") }}</span>
+        <span>{{
+          currentUser ? $t("main.yourRenovations") : $t("main.testYourIdea")
+        }}</span>
         <i>photo_camera</i>
       </router-link>
     </article>

@@ -37,6 +37,7 @@ const nl: MessageSchema = {
       "Een kleine opknapbeurt of een grote verbouwing? Zie in een paar seconden het eindresultaat.",
     renovationPreviewAlt: "Renovatievoorbeeld",
     testYourIdea: "TEST JE IDEE",
+    yourRenovations: "JOUW VERBOUWINGEN",
     securePrivateChat: "Veilige Privéchat",
     chatExplainInPlainLanguage:
       "Ingewikkeld contract of lastig document? Laat onze assistent het direct in duidelijke taal aan je uitleggen. Jouw gegevens blijven 100% privé.",
