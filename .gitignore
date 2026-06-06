@@ -12,6 +12,7 @@ node_modules
 dist
 dist-emulator
 *.local
+temp
 
 # Environment variables
 .env
