@@ -37,7 +37,7 @@ test.describe("i18n language switching", () => {
     const page = await context.newPage();
     await page.goto("/renovations");
     await expect(
-      page.getByRole("heading", { name: "Renovaties" }),
+      page.getByRole("heading", { name: "Make-overs" }),
     ).toBeVisible();
     await context.close();
   });
@@ -65,14 +65,14 @@ test.describe("i18n language switching", () => {
     await page.getByTestId("language-switcher").click();
     await page.getByTestId("language-option-nl").click();
     await expect(
-      page.getByRole("heading", { name: "Renovaties" }),
+      page.getByRole("heading", { name: "Make-overs" }),
     ).toBeVisible();
 
     // Stored in IndexedDB → survives a full reload (and beats navigator detect,
     // which would otherwise pick English from the en-US context).
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Renovaties" }),
+      page.getByRole("heading", { name: "Make-overs" }),
     ).toBeVisible();
 
     await context.close();
@@ -98,7 +98,7 @@ test.describe("i18n language switching", () => {
     await pageA.getByTestId("usermenu-switch-language").click();
     await pageA.getByTestId("language-option-nl").click();
     await expect(
-      pageA.getByRole("heading", { name: "Renovaties" }),
+      pageA.getByRole("heading", { name: "Make-overs" }),
     ).toBeVisible();
 
     // The per-account preference is written to Firestore.
@@ -114,7 +114,7 @@ test.describe("i18n language switching", () => {
     await waitForVueAuth(pageB);
     await pageB.goto("/renovations");
     await expect(
-      pageB.getByRole("heading", { name: "Renovaties" }),
+      pageB.getByRole("heading", { name: "Make-overs" }),
     ).toBeVisible();
     await ctxB.close();
   });
