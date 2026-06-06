@@ -1,0 +1,27 @@
+name: Sync main to release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-release:
+    name: Force-push main to release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Verify workflow was dispatched from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow must be run from the 'main' branch (got '${{ github.ref_name }}')."
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Force-push main to release
+        run: git push --force origin main:refs/heads/release
