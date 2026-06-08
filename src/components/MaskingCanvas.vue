@@ -339,12 +339,21 @@ function getOriginalBlob(): Promise<Blob> {
 const CHECKER_CELL = 10;
 // Opaque magenta, a color that almost never appears in natural scenes.
 const CHECKER_COLOR = "rgb(255, 0, 255)";
+// Thickness (px, on the 1024² composite) of the magenta outline used by the
+// paint flow's "border" variant.
+const BORDER_WIDTH = 3;
 
-// `solid` switches the AI-facing composite from a magenta checkerboard
-// (the default, used by the free-prompt "Anders" flow) to a solid magenta
-// fill. The remove flow uses the solid variant so Gemini sees a clean
-// "magenta stain" and is asked to inpaint over it.
-function getCompositeBlob(solid = false): Promise<Blob> {
+// `variant` selects the AI-facing magenta marking clipped to the painted mask:
+// - "checker" (default) — magenta checkerboard fill, used by the free-prompt
+//   "Anders" flow.
+// - "solid" — solid magenta fill, used by the remove flow so Gemini sees a
+//   clean "magenta stain" and is asked to inpaint over it.
+// - "border" — a thin magenta outline of the painted region, used by the paint
+//   flow so Gemini keeps the original surface visible and just learns where the
+//   user intended to apply paint.
+function getCompositeBlob(
+  variant: "checker" | "solid" | "border" = "checker",
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (!sourceImage || !maskCanvas) {
       reject(new Error("Canvas not initialized"));
@@ -373,9 +382,7 @@ function getCompositeBlob(solid = false): Promise<Blob> {
       return;
     }
     overlayCtx.fillStyle = CHECKER_COLOR;
-    if (solid) {
-      overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    } else {
+    if (variant === "checker") {
       for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
         for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
           const cellX = Math.floor(x / CHECKER_CELL);
@@ -385,6 +392,9 @@ function getCompositeBlob(solid = false): Promise<Blob> {
           }
         }
       }
+    } else {
+      // "solid" and "border" both start from a solid magenta fill.
+      overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
     }
 
     // 3) Clip the overlay to the mask shape: keep pattern pixels only
@@ -402,6 +412,32 @@ function getCompositeBlob(solid = false): Promise<Blob> {
       CANVAS_SIZE,
       CANVAS_SIZE,
     );
+
+    // 3b) For the "border" variant, reduce the solid magenta silhouette to a
+    // thin outline: erode it by BORDER_WIDTH px (morphological erosion = the
+    // intersection of the silhouette translated over a disc, which
+    // destination-in computes), then punch that eroded interior back out of
+    // the silhouette so only the outline ring remains.
+    if (variant === "border") {
+      const eroded = document.createElement("canvas");
+      eroded.width = CANVAS_SIZE;
+      eroded.height = CANVAS_SIZE;
+      const erodedCtx = eroded.getContext("2d");
+      if (!erodedCtx) {
+        reject(new Error("Erosion context unavailable"));
+        return;
+      }
+      erodedCtx.drawImage(overlay, 0, 0);
+      erodedCtx.globalCompositeOperation = "destination-in";
+      for (let dy = -BORDER_WIDTH; dy <= BORDER_WIDTH; dy++) {
+        for (let dx = -BORDER_WIDTH; dx <= BORDER_WIDTH; dx++) {
+          if (dx * dx + dy * dy > BORDER_WIDTH * BORDER_WIDTH) continue;
+          erodedCtx.drawImage(overlay, dx, dy);
+        }
+      }
+      overlayCtx.globalCompositeOperation = "destination-out";
+      overlayCtx.drawImage(eroded, 0, 0);
+    }
 
     // 4) Overlay the masked overlay onto the source image.
     ctx.drawImage(overlay, 0, 0);

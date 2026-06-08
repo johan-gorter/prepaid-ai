@@ -604,7 +604,7 @@ async function onGenerate() {
 
       const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
       const compositeBlob = await maskingRef.value.getCompositeBlob(
-        useSolidMask.value,
+        usePaintMode.value ? "border" : useSolidMask.value ? "solid" : "checker",
       );
       await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 
