@@ -73,8 +73,8 @@ export async function dummyProcess(
 
 // ---------------------------------------------------------------------------
 // Gemini image editing — the client sends a pre-composited image with a
-// semi-transparent red overlay on the edit area. No server-side image
-// processing needed.
+// magenta overlay on the edit area. No server-side image processing needed
+// except in paint mode, where processImpression supplies two extra images.
 // ---------------------------------------------------------------------------
 
 async function loadGenAI() {
@@ -99,28 +99,37 @@ function createGenAI(
   return new GoogleGenAI({ apiKey });
 }
 
+export interface PaintImages {
+  /** Grayscale of the clean source — shows forms and materials only. */
+  grayscale: Buffer;
+  /** Flat swatch of the chosen paint colour. */
+  color: Buffer;
+}
+
 export async function geminiProcess(
   backend: "google-ai" | "vertex",
   imageBuffer: Buffer,
   prompt: string,
-  referenceBuffer?: Buffer,
+  paintImages?: PaintImages,
 ): Promise<Buffer> {
   const GoogleGenAI = await loadGenAI();
   const ai = createGenAI(GoogleGenAI, backend);
 
-  // Parts are read in order, so the prompt refers to "first"/"second" image
-  // and the inlineData parts are pushed in that same order.
+  // Parts are read in order, so the prompt refers to image 1/2/3 and the
+  // inlineData parts are pushed in that same order.
   const requestParts: Array<Record<string, unknown>> = [];
-  if (referenceBuffer) {
+  if (paintImages) {
+    // Paint mode: the solid magenta in image 1 fully hides the old colour so
+    // it cannot leak into the result. The grayscale supplies the shapes and
+    // materials, the swatch supplies the target colour. The impression doc's
+    // prompt is only a timeline label, so it is deliberately not sent.
     requestParts.push({
       text:
-        `The first image is a room with a magenta checkered area marking ` +
-        `where to apply paint. The second image shows the same room with the ` +
-        `target paint colour applied across the entire image as a colour and ` +
-        `material reference. Repaint ONLY the magenta checkered area so it ` +
-        `matches the colour and finish in the second image, preserving the ` +
-        `room's existing lighting, shadows, perspective and surface texture. ` +
-        `Do not include the checkered pattern in the output.\n\n${prompt}`,
+        `Image 1 is a photo with an area hidden under magenta. ` +
+        `Image 2 is a grayscale of the same photo showing the forms and ` +
+        `materials of the hidden area. Image 3 is a paint colour. ` +
+        `Replace the magenta area with the forms from image 2, painted in ` +
+        `the colour of image 3. Change nothing else.`,
     });
     requestParts.push({
       inlineData: {
@@ -131,7 +140,13 @@ export async function geminiProcess(
     requestParts.push({
       inlineData: {
         mimeType: "image/webp",
-        data: referenceBuffer.toString("base64"),
+        data: paintImages.grayscale.toString("base64"),
+      },
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: paintImages.color.toString("base64"),
       },
     });
   } else {

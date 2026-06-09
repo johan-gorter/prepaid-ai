@@ -61,36 +61,35 @@ export const processImpression = onDocumentCreated(
         storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(imagePath).download();
 
-      // Paint mode: build a whole-image colour/material reference by
-      // multiplying the chosen paint colour over the CLEAN source (not the
-      // magenta composite). Passed to Gemini as a second image so it sees how
-      // the colour reads under the room's lighting. Kept in-memory only.
-      let referenceBuffer: Buffer | undefined;
+      // Paint mode: alongside the solid-magenta composite, Gemini gets a
+      // grayscale of the CLEAN source (forms and materials without the old
+      // colour) and a flat swatch of the chosen paint colour. The grayscale
+      // strips the old colour entirely so it cannot leak into the result.
+      // Both are kept in-memory only.
+      let paintImages: { grayscale: Buffer; color: Buffer } | undefined;
       if (mode === "paint" && paintColor) {
         const cleanPath =
           sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
         const [cleanBuffer] = await bucket.file(cleanPath).download();
-        const meta = await sharp(cleanBuffer).metadata();
-        const width = meta.width ?? 1024;
-        const height = meta.height ?? 1024;
-        referenceBuffer = Buffer.from(
+        const grayscale = Buffer.from(
           await sharp(cleanBuffer)
-            .composite([
-              {
-                input: {
-                  create: {
-                    width,
-                    height,
-                    channels: 3,
-                    background: hexToRgb(paintColor),
-                  },
-                },
-                blend: "multiply",
-              },
-            ])
+            .grayscale()
             .webp({ quality: 80 })
             .toBuffer(),
         );
+        const color = Buffer.from(
+          await sharp({
+            create: {
+              width: 256,
+              height: 256,
+              channels: 3,
+              background: hexToRgb(paintColor),
+            },
+          })
+            .webp({ lossless: true })
+            .toBuffer(),
+        );
+        paintImages = { grayscale, color };
       }
 
       let resultBuffer: Buffer;
@@ -114,7 +113,7 @@ export const processImpression = onDocumentCreated(
           backend,
           fileBuffer,
           prompt,
-          referenceBuffer,
+          paintImages,
         );
       }
 

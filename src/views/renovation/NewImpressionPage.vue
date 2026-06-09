@@ -74,13 +74,13 @@ const sourceObjectUrl = ref<string | null>(null);
 const prompt = ref("");
 const errorMessage = ref<string | null>(null);
 const initialMask = ref<Blob | null>(null);
-// True for the "Verwijderen" flow — switches the composite from a magenta
-// checkerboard to a solid magenta fill. Persisted via the draft so the
-// buy-credits / sign-in detour preserves the intent.
+// True for the "Verwijderen" and "Schilder" flows — switches the composite
+// from a magenta checkerboard to a solid magenta fill. Persisted via the
+// draft so the buy-credits / sign-in detour preserves the intent.
 const useSolidMask = ref(false);
 // Paint flow: true once the user has confirmed a colour in the paint dialog,
 // switching onGenerate to write `mode: "paint"` + the chosen colour so the
-// Cloud Function builds a colour reference image for Gemini.
+// Cloud Function sends Gemini a grayscale of the source plus a colour swatch.
 const usePaintMode = ref(false);
 const paintColor = ref(DEFAULT_PAINT_COLOR);
 const paintTab = ref<"standard" | "custom">("standard");
@@ -414,7 +414,9 @@ function onPaintBack() {
 
 async function onPaintGenerate() {
   usePaintMode.value = true;
-  useSolidMask.value = false;
+  // Solid magenta fully hides the old colour from Gemini; the Cloud Function
+  // supplies a grayscale of the clean source so the forms are still visible.
+  useSolidMask.value = true;
   // Non-empty prompt satisfies canGenerate and gives the timeline a label.
   prompt.value = t("newImpression.paintPrompt", { color: paintColor.value });
   await onGenerate();

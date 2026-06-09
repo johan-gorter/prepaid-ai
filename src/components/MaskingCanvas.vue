@@ -342,8 +342,8 @@ const CHECKER_COLOR = "rgb(255, 0, 255)";
 
 // `solid` switches the AI-facing composite from a magenta checkerboard
 // (the default, used by the free-prompt "Anders" flow) to a solid magenta
-// fill. The remove flow uses the solid variant so Gemini sees a clean
-// "magenta stain" and is asked to inpaint over it.
+// fill. The remove and paint flows use the solid variant so Gemini sees a
+// clean "magenta stain" with nothing of the old content showing through.
 function getCompositeBlob(solid = false): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (!sourceImage || !maskCanvas) {
