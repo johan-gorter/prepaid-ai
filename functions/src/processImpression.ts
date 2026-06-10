@@ -61,22 +61,12 @@ export const processImpression = onDocumentCreated(
         storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(imagePath).download();
 
-      // Paint mode: alongside the solid-magenta composite, Gemini gets a
-      // grayscale of the CLEAN source (forms and materials without the old
-      // colour) and a flat swatch of the chosen paint colour. The grayscale
-      // strips the old colour entirely so it cannot leak into the result.
-      // Both are kept in-memory only.
-      let paintImages: { grayscale: Buffer; color: Buffer } | undefined;
+      // Paint mode: the composite already shows the masked area desaturated
+      // in place (old colour removed, forms and lighting kept). Gemini
+      // additionally gets a flat swatch of the chosen paint colour. Kept
+      // in-memory only.
+      let paint: { color: Buffer; hex: string } | undefined;
       if (mode === "paint" && paintColor) {
-        const cleanPath =
-          sourceImagePath ?? storagePathFromUrl(sourceImageUrl ?? "");
-        const [cleanBuffer] = await bucket.file(cleanPath).download();
-        const grayscale = Buffer.from(
-          await sharp(cleanBuffer)
-            .grayscale()
-            .webp({ quality: 80 })
-            .toBuffer(),
-        );
         const color = Buffer.from(
           await sharp({
             create: {
@@ -89,7 +79,7 @@ export const processImpression = onDocumentCreated(
             .webp({ lossless: true })
             .toBuffer(),
         );
-        paintImages = { grayscale, color };
+        paint = { color, hex: paintColor };
       }
 
       let resultBuffer: Buffer;
@@ -109,12 +99,7 @@ export const processImpression = onDocumentCreated(
 
         resultBuffer = await dummyProcess(fileBuffer, prompt, priorPrompts);
       } else {
-        resultBuffer = await geminiProcess(
-          backend,
-          fileBuffer,
-          prompt,
-          paintImages,
-        );
+        resultBuffer = await geminiProcess(backend, fileBuffer, prompt, paint);
       }
 
       // Re-encode as lossy WebP to reduce file size

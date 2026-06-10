@@ -99,37 +99,36 @@ function createGenAI(
   return new GoogleGenAI({ apiKey });
 }
 
-export interface PaintImages {
-  /** Grayscale of the clean source — shows forms and materials only. */
-  grayscale: Buffer;
+export interface PaintInput {
   /** Flat swatch of the chosen paint colour. */
   color: Buffer;
+  /** Hex code of the chosen colour, e.g. "#F4F4F0". */
+  hex: string;
 }
 
 export async function geminiProcess(
   backend: "google-ai" | "vertex",
   imageBuffer: Buffer,
   prompt: string,
-  paintImages?: PaintImages,
+  paint?: PaintInput,
 ): Promise<Buffer> {
   const GoogleGenAI = await loadGenAI();
   const ai = createGenAI(GoogleGenAI, backend);
 
-  // Parts are read in order, so the prompt refers to image 1/2/3 and the
-  // inlineData parts are pushed in that same order.
+  // Parts are read in order, so the prompt refers to first/second image and
+  // the inlineData parts are pushed in that same order.
   const requestParts: Array<Record<string, unknown>> = [];
-  if (paintImages) {
-    // Paint mode: the solid magenta in image 1 fully hides the old colour so
-    // it cannot leak into the result. The grayscale supplies the shapes and
-    // materials, the swatch supplies the target colour. The impression doc's
-    // prompt is only a timeline label, so it is deliberately not sent.
+  if (paint) {
+    // Paint mode: the masked area arrives desaturated in place, so the old
+    // colour cannot leak into the result while forms, materials and lighting
+    // stay visible. The swatch grounds the target colour. The impression
+    // doc's prompt is only a timeline label, so it is deliberately not sent.
     requestParts.push({
       text:
-        `Image 1 is a photo with an area hidden under magenta. ` +
-        `Image 2 is a grayscale of the same photo showing the forms and ` +
-        `materials of the hidden area. Image 3 is a paint colour. ` +
-        `Replace the magenta area with the forms from image 2, painted in ` +
-        `the colour of image 3. Change nothing else.`,
+        `The first image is a photo in which the area to repaint has been ` +
+        `desaturated to grayscale. The second image is the paint colour ` +
+        `(${paint.hex}). Repaint the grayscale area in this colour. ` +
+        `Change nothing else.`,
     });
     requestParts.push({
       inlineData: {
@@ -140,13 +139,7 @@ export async function geminiProcess(
     requestParts.push({
       inlineData: {
         mimeType: "image/webp",
-        data: paintImages.grayscale.toString("base64"),
-      },
-    });
-    requestParts.push({
-      inlineData: {
-        mimeType: "image/webp",
-        data: paintImages.color.toString("base64"),
+        data: paint.color.toString("base64"),
       },
     });
   } else {

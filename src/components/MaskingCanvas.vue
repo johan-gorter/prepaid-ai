@@ -340,11 +340,18 @@ const CHECKER_CELL = 10;
 // Opaque magenta, a color that almost never appears in natural scenes.
 const CHECKER_COLOR = "rgb(255, 0, 255)";
 
-// `solid` switches the AI-facing composite from a magenta checkerboard
-// (the default, used by the free-prompt "Anders" flow) to a solid magenta
-// fill. The remove and paint flows use the solid variant so Gemini sees a
-// clean "magenta stain" with nothing of the old content showing through.
-function getCompositeBlob(solid = false): Promise<Blob> {
+// The AI-facing composite marks the masked area in one of three ways:
+// - "checker": magenta checkerboard (free-prompt "Anders" flow)
+// - "solid": opaque magenta fill — the remove flow uses this so Gemini sees
+//   a clean "magenta stain" with nothing of the old content showing through
+// - "grayscale": the area is desaturated in place — the paint flow uses this
+//   so the old colour is gone while forms, materials and lighting stay
+//   visible for Gemini to repaint
+export type CompositeVariant = "checker" | "solid" | "grayscale";
+
+function getCompositeBlob(
+  variant: CompositeVariant = "checker",
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (!sourceImage || !maskCanvas) {
       reject(new Error("Canvas not initialized"));
@@ -362,8 +369,8 @@ function getCompositeBlob(solid = false): Promise<Blob> {
     }
     ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 2) Build a magenta layer (checkerboard or solid), sized to the image
-    // region.
+    // 2) Build the marker layer (magenta or desaturated source), sized to
+    // the image region.
     const overlay = document.createElement("canvas");
     overlay.width = CANVAS_SIZE;
     overlay.height = CANVAS_SIZE;
@@ -372,16 +379,29 @@ function getCompositeBlob(solid = false): Promise<Blob> {
       reject(new Error("Overlay context unavailable"));
       return;
     }
-    overlayCtx.fillStyle = CHECKER_COLOR;
-    if (solid) {
-      overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    if (variant === "grayscale") {
+      // Manual luminance conversion — ctx.filter = "grayscale(1)" is not
+      // available on older Safari.
+      overlayCtx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      const img = overlayCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!;
+        d[i] = d[i + 1] = d[i + 2] = lum;
+      }
+      overlayCtx.putImageData(img, 0, 0);
     } else {
-      for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
-        for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
-          const cellX = Math.floor(x / CHECKER_CELL);
-          const cellY = Math.floor(y / CHECKER_CELL);
-          if ((cellX + cellY) % 2 === 0) {
-            overlayCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
+      overlayCtx.fillStyle = CHECKER_COLOR;
+      if (variant === "solid") {
+        overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      } else {
+        for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
+          for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
+            const cellX = Math.floor(x / CHECKER_CELL);
+            const cellY = Math.floor(y / CHECKER_CELL);
+            if ((cellX + cellY) % 2 === 0) {
+              overlayCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
+            }
           }
         }
       }
