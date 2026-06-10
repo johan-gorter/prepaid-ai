@@ -339,14 +339,19 @@ function getOriginalBlob(): Promise<Blob> {
 const CHECKER_CELL = 10;
 // Opaque magenta, a color that almost never appears in natural scenes.
 const CHECKER_COLOR = "rgb(255, 0, 255)";
+// Dot grid for the paint ("grayscale") variant: 5px circles every 15px.
+const DOT_SPACING = 15;
+const DOT_RADIUS = 2.5;
 
 // The AI-facing composite marks the masked area in one of three ways:
 // - "checker": magenta checkerboard (free-prompt "Anders" flow)
 // - "solid": opaque magenta fill — the remove flow uses this so Gemini sees
 //   a clean "magenta stain" with nothing of the old content showing through
-// - "grayscale": the area is desaturated in place — the paint flow uses this
-//   so the old colour is gone while forms, materials and lighting stay
-//   visible for Gemini to repaint
+// - "grayscale": the area is desaturated in place and overlaid with a grid
+//   of small magenta dots — the paint flow uses this so the old colour is
+//   gone and the area is clearly marked even on near-white surfaces (a
+//   plain desaturated ceiling is invisible as a marker), while forms,
+//   materials and lighting stay visible between the dots
 export type CompositeVariant = "checker" | "solid" | "grayscale";
 
 function getCompositeBlob(
@@ -390,6 +395,16 @@ function getCompositeBlob(
         d[i] = d[i + 1] = d[i + 2] = lum;
       }
       overlayCtx.putImageData(img, 0, 0);
+      // Magenta dot grid so the marked area is visible even where the
+      // desaturated pixels look identical to the original (white ceilings).
+      overlayCtx.fillStyle = CHECKER_COLOR;
+      for (let y = DOT_SPACING / 2; y < CANVAS_SIZE; y += DOT_SPACING) {
+        for (let x = DOT_SPACING / 2; x < CANVAS_SIZE; x += DOT_SPACING) {
+          overlayCtx.beginPath();
+          overlayCtx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+          overlayCtx.fill();
+        }
+      }
     } else {
       overlayCtx.fillStyle = CHECKER_COLOR;
       if (variant === "solid") {

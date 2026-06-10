@@ -119,15 +119,19 @@ export async function geminiProcess(
   // the inlineData parts are pushed in that same order.
   const requestParts: Array<Record<string, unknown>> = [];
   if (paint) {
-    // Paint mode: the masked area arrives desaturated in place, so the old
-    // colour cannot leak into the result while forms, materials and lighting
-    // stay visible. The swatch grounds the target colour. The impression
-    // doc's prompt is only a timeline label, so it is deliberately not sent.
+    // Paint mode: the masked area arrives desaturated in place and overlaid
+    // with a grid of magenta dots. Desaturation removes the old colour so it
+    // cannot leak into the result while forms, materials and lighting stay
+    // visible; the dots make the area unmissable even on near-white surfaces
+    // where desaturation alone is invisible. The swatch grounds the target
+    // colour. The impression doc's prompt is only a timeline label, so it is
+    // deliberately not sent.
     requestParts.push({
       text:
         `The first image is a photo in which the area to repaint has been ` +
-        `desaturated to grayscale. The second image is the paint colour ` +
-        `(${paint.hex}). Repaint the grayscale area in this colour. ` +
+        `desaturated to grayscale and marked with a grid of magenta dots. ` +
+        `The second image is the paint colour (${paint.hex}). Repaint the ` +
+        `dotted grayscale area in this colour, removing all dots. ` +
         `Change nothing else.`,
     });
     requestParts.push({

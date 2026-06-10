@@ -604,9 +604,10 @@ async function onGenerate() {
       }
 
       const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
-      // Paint desaturates the masked area in place (old colour gone, forms
-      // kept); remove hides it under solid magenta; the free-prompt flow
-      // uses the magenta checkerboard.
+      // Paint desaturates the masked area in place and marks it with a
+      // magenta dot grid (old colour gone, forms kept, area visible even on
+      // white surfaces); remove hides it under solid magenta; the
+      // free-prompt flow uses the magenta checkerboard.
       const compositeBlob = await maskingRef.value.getCompositeBlob(
         usePaintMode.value
           ? "grayscale"
