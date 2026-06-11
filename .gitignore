@@ -32,6 +32,9 @@ playwright/.cache/
 functions/lib/
 functions/.env.local
 
+# AI lab experiment output
+functions/ai-lab/out/
+
 # Firebase
 .firebase/
 firebase-debug.log
