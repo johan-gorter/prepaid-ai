@@ -104,7 +104,6 @@ const nl: MessageSchema = {
     },
   },
   about: {
-    breadcrumb: "Over",
     title: "Over payasyougo.app",
     intro:
       "payasyougo.app helpt je je make-over te visualiseren. Combineer je eigen foto's met slimme AI-beeldbewerking. Upload een foto van je ruimte, markeer wat je wilt veranderen, beschrijf je idee en zie meteen het resultaat.",
@@ -190,6 +189,7 @@ const nl: MessageSchema = {
     back: "Terug",
     generate: "Genereren",
     processingFailed: "Verwerking mislukt",
+    processingTimeout: "Het duurt langer dan verwacht. Probeer het opnieuw.",
     unknownError: "Onbekende fout",
     failedShareLink: "Deellink aanmaken mislukt",
     deleteRenovationConfirm: "Deze make-over en alle bijbehorende impressies verwijderen?",
@@ -253,8 +253,6 @@ const nl: MessageSchema = {
     downloadConvAria: "Gesprek downloaden",
   },
   checkoutSuccess: {
-    breadcrumbBalance: "Saldo",
-    breadcrumbTitle: "Aankoop voltooid",
     paymentSuccess: "Betaling geslaagd!",
     creditsAppear: "Je credits verschijnen binnen enkele seconden in je saldo.",
     viewBalance: "Saldo bekijken",

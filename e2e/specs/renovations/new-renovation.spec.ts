@@ -7,6 +7,7 @@ import {
   createGrayPng,
   createRenovationAndWaitForResult,
   fillNewRenovationForm,
+  waitForPreviewResult,
 } from "../../helpers/renovation";
 
 test.describe("New Renovation Page", () => {
@@ -269,12 +270,7 @@ test.describe("New Renovation Page", () => {
       try {
         // First Generate
         await page.getByRole("button", { name: "Generate" }).click();
-        await expect(
-          page.getByRole("button", { name: "Renovation Details" }),
-        ).toBeVisible();
-        await expect(page.getByAltText("Result")).toBeVisible({
-          timeout: 30000,
-        });
+        await waitForPreviewResult(page);
 
         // Chain via Next Change → mask stage in-place, draw mask, generate
         await page.getByRole("button", { name: "Next Change" }).click();
@@ -301,12 +297,7 @@ test.describe("New Renovation Page", () => {
         await promptInput.fill("second attempt");
 
         await page.getByRole("button", { name: "Generate" }).click();
-        await expect(
-          page.getByRole("button", { name: "Renovation Details" }),
-        ).toBeVisible();
-        await expect(page.getByAltText("Result")).toBeVisible({
-          timeout: 30000,
-        });
+        await waitForPreviewResult(page);
       } finally {
         rmSync(grayPngPath, { force: true });
       }
@@ -407,12 +398,7 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
         //    the 200 credits just purchased, so the wizard runs the real
         //    impression pipeline and a result image appears.
         await page.getByRole("button", { name: "Generate" }).click();
-        await baseExpect(
-          page.getByRole("button", { name: "Renovation Details" }),
-        ).toBeVisible();
-        await baseExpect(page.getByAltText("Result")).toBeVisible({
-          timeout: 45_000,
-        });
+        await waitForPreviewResult(page);
       } finally {
         rmSync(grayPngPath, { force: true });
         await context.close();

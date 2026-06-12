@@ -85,8 +85,14 @@ watch(
     }
 
     const userRef = doc(db, "users", uid);
+    // `includeMetadataChanges: true` for the same reason as in useBalance.ts:
+    // the seed decision below gates on `hasPendingWrites`, and the
+    // acknowledgement of a plain-value write to this doc changes only
+    // metadata. A default listener would never re-evaluate after attaching
+    // during an in-flight write, skipping the seed for the whole session.
     unsubscribe = onSnapshot(
       userRef,
+      { includeMetadataChanges: true },
       (snap) => {
         const remote = snap.data()?.locale;
         if (isSupportedLocale(remote)) {

@@ -81,6 +81,32 @@ export async function chooseFreePrompt(page: Page): Promise<void> {
 }
 
 /**
+ * Default timeout for waiting on the processImpression Cloud Function.
+ * The Functions emulator cold-starts its worker on the first invocation and
+ * serializes CPU-bound sharp work across parallel Playwright workers, so a
+ * single generate can take well over the 10s default expect timeout.
+ */
+export const CLOUD_FUNCTION_TIMEOUT = 45_000;
+
+/**
+ * Wait for the wizard to land on the preview stage after a Generate click.
+ *
+ * The wizard stays on the processing stage until the processImpression
+ * Cloud Function (running in the Functions emulator) writes
+ * `status: "completed"` — only then does the preview footer render. The
+ * footer's "Renovation Details" button is therefore the first element gated
+ * on the Cloud Function and must carry the long timeout; once it is visible
+ * the result is already written, so the result-image check that follows
+ * needs no extended timeout.
+ */
+export async function waitForPreviewResult(page: Page): Promise<void> {
+  await expect(
+    page.getByRole("button", { name: "Renovation Details" }),
+  ).toBeVisible({ timeout: CLOUD_FUNCTION_TIMEOUT });
+  await expect(page.getByAltText("Result")).toBeVisible();
+}
+
+/**
  * Create a full renovation: fill form, click Generate, wait for result step.
  *
  * Flow: Home (camera input) → Mask → Prompt → Generate → Result
@@ -93,16 +119,9 @@ export async function createRenovationAndWaitForResult(
 ): Promise<{ grayPngPath: string }> {
   const grayPngPath = await fillNewRenovationForm(page, promptText);
 
-  // Click Generate
+  // Click Generate, then wait out the Cloud Function round-trip
   await page.getByRole("button", { name: "Generate" }).click();
-
-  // Wait for step 4 — three-button bar appears
-  await expect(
-    page.getByRole("button", { name: "Renovation Details" }),
-  ).toBeVisible();
-
-  // Wait for the Cloud Function to produce the result image
-  await expect(page.getByAltText("Result")).toBeVisible({ timeout: 45_000 });
+  await waitForPreviewResult(page);
 
   return { grayPngPath };
 }

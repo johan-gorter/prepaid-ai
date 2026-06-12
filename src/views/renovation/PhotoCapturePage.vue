@@ -88,7 +88,7 @@ function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <AppBar :title="$t('photoCapture.title')" />
+    <AppBar />
 
     <main
       class="responsive"
@@ -104,6 +104,7 @@ function handleCancel() {
         <p>{{ errorMessage }}</p>
       </div>
       <template v-else>
+        <h5 class="center-align no-margin">{{ $t("photoCapture.title") }}</h5>
         <p class="center-align small-text">
           {{ $t("photoCapture.positionHint") }}
         </p>

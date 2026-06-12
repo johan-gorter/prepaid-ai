@@ -303,7 +303,7 @@ onMounted(() => {
 
 <template>
   <div class="page-layout">
-    <AppBar :title="$t('renovationDetail.title')">
+    <AppBar>
       <div style="position: relative; flex-shrink: 0">
         <button
           class="transparent circle"
@@ -351,6 +351,8 @@ onMounted(() => {
         padding: var(--app-bar-clearance) 0 0;
       "
     >
+      <h4 style="padding: 0 0.5rem">{{ $t("renovationDetail.title") }}</h4>
+
       <div v-if="loading" class="center-align large-padding">
         <progress class="circle"></progress>
         <p>{{ $t("renovationDetail.loading") }}</p>

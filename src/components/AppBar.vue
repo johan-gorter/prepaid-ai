@@ -1,29 +1,17 @@
 <template>
   <header class="fixed">
     <nav>
-      <!-- Homescreen: full wordmark only (payasyougo.app) -->
-      <template v-if="!title">
-        <h6 class="app-bar-home-title" data-testid="app-logo">
-          <router-link :to="homeRoute" class="app-bar-logo-link">
-            <Logo variant="wide" :size="28" />
-          </router-link>
-        </h6>
-        <div class="max"></div>
-      </template>
-
-      <!-- Subpage: stacked logo + chevron + title -->
-      <template v-else>
-        <router-link
-          :to="homeRoute"
-          class="app-bar-logo-link"
-          aria-label="payasyougo home"
-          data-testid="app-logo"
-        >
-          <Logo variant="square" :size="28" />
+      <!-- Logo only — no breadcrumbs; page titles live in the page content
+           (#84). Full wordmark by default, square variant only when the
+           space next to the app-bar actions is too narrow for it. -->
+      <h6 class="app-bar-logo-box" data-testid="app-logo">
+        <!-- No aria-label here: the logo text is the accessible name of both
+             the link and the surrounding heading ("payasyougo.app"). -->
+        <router-link to="/" class="app-bar-logo-link">
+          <span class="app-bar-logo--wide"><Logo variant="wide" :size="28" /></span>
+          <span class="app-bar-logo--square"><Logo variant="square" :size="28" /></span>
         </router-link>
-        <span class="app-bar-sep" aria-hidden="true">&gt;</span>
-        <h1 class="max app-bar-title">{{ title }}</h1>
-      </template>
+      </h6>
 
       <slot />
       <LanguageMenu v-if="!isAuthenticated" />
@@ -39,44 +27,45 @@ import Logo from "./Logo.vue";
 import UserMenu from "./UserMenu.vue";
 
 const { isAuthenticated } = useAuth();
-
-withDefaults(
-  defineProps<{
-    title?: string;
-    homeRoute?: string;
-  }>(),
-  { homeRoute: "/" },
-);
 </script>
 
 <style scoped>
+/* The logo box absorbs all space the app-bar actions leave over, and acts as
+   the container the logo variants respond to: when the leftover space cannot
+   fit the full wordmark, the square logo is shown instead. */
+.app-bar-logo-box {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  container-type: inline-size;
+}
+
 .app-bar-logo-link {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
   color: inherit;
-  flex-shrink: 0;
   padding: 0;
 }
 
-.app-bar-home-title {
-  display: flex;
+.app-bar-logo--wide,
+.app-bar-logo--square {
+  display: inline-flex;
   align-items: center;
-  margin: 0;
-  flex-shrink: 0;
-  min-width: 0;
-  overflow: visible;
 }
 
-.app-bar-sep {
-  margin: 0 0.4rem;
-  flex-shrink: 0;
-  font-size: 1.1rem;
-  opacity: 0.6;
+.app-bar-logo--square {
+  display: none;
 }
 
-.app-bar-title {
-  min-width: 0;
+@container (max-width: 190px) {
+  .app-bar-logo--wide {
+    display: none;
+  }
+
+  .app-bar-logo--square {
+    display: inline-flex;
+  }
 }
 
 header {

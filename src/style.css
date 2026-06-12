@@ -41,13 +41,8 @@ canvas {
   border-radius: 0;
 }
 
-/* Top bar heading: semantic h1 with compact size */
-header nav h1 {
-  font-size: 1.25rem;
-}
-
-/* Any page title heading inside the header must shrink and truncate so the
-   trailing UserMenu stays visible at 320px. */
+/* The heading wrapping the app-bar logo must shrink and keep to one line so
+   the trailing actions (language switcher, UserMenu) stay visible at 320px. */
 header nav :is(h1, h2, h3, h4, h5, h6) {
   min-width: 0;
   overflow: hidden;

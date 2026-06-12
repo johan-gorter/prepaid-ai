@@ -4,6 +4,7 @@ import {
   chooseFreePrompt,
   createRenovationAndWaitForResult,
   drawMaskStroke,
+  waitForPreviewResult,
 } from "../../helpers/renovation";
 
 test.describe("Renovation Details Page", () => {
@@ -206,12 +207,7 @@ test.describe("Renovation Details Page", () => {
 
       // Generate
       await page.getByRole("button", { name: "Generate" }).click();
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 30000,
-      });
+      await waitForPreviewResult(page);
 
       // Go back to timeline
       await page.getByRole("button", { name: "Renovation Details" }).click();
@@ -286,16 +282,9 @@ test.describe("Renovation Details Page", () => {
       await expect(promptInput).toBeVisible();
       await promptInput.fill("chained from result");
 
-      // Generate
+      // Generate → preview stage with the chained result image
       await page.getByRole("button", { name: "Generate" }).click();
-
-      // Processing starts — three-button bar appears
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
-
-      // Wait for the chained result image
-      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
+      await waitForPreviewResult(page);
 
       // Navigate back to timeline
       await page.getByRole("button", { name: "Renovation Details" }).click();

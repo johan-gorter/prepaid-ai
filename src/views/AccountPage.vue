@@ -48,7 +48,7 @@ async function handleDeleteAccount() {
 </script>
 
 <template>
-  <AppBar :title="$t('account.title')" />
+  <AppBar />
 
   <main
     class="responsive"

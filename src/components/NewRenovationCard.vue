@@ -101,7 +101,7 @@ async function onPasteImage() {
   flex-direction: column;
   gap: 0.5rem;
   /* Match the page content's horizontal inset (AppBar nav + main both use
-     0.5rem) so the header lines up under the app-bar title, while the
+     0.5rem) so the header lines up under the app-bar logo, while the
      border spans the full width as a separator above the photo grid. */
   padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--outline-variant);

@@ -160,7 +160,7 @@ watch(
 </script>
 
 <template>
-  <AppBar :title="$t('renovations.title')" />
+  <AppBar />
 
   <main
     class="responsive"
@@ -170,6 +170,9 @@ watch(
       padding: var(--app-bar-clearance) 0 0;
     "
   >
+    <!-- Match the 0.5rem horizontal inset used by NewRenovationCard -->
+    <h4 style="padding: 0 0.5rem">{{ $t("renovations.title") }}</h4>
+
     <NewRenovationCard />
 
     <nav v-if="!currentUser" class="guest-renovations-auth">

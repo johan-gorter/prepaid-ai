@@ -44,7 +44,7 @@ test.describe("Home Page", () => {
   });
 
   test("shows user info in header", async ({ authenticatedPage: page }) => {
-    await expect(page.getByText("payasyougo")).toBeVisible();
+    await expect(page.getByTestId("app-logo")).toBeVisible();
     await page.getByRole("button", { name: "User menu" }).click();
     await expect(page.getByText("Sign out")).toBeVisible();
   });

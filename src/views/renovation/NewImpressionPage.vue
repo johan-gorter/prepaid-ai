@@ -116,7 +116,7 @@ const sharePending = ref(false);
 // rather than the half-broken preview shell.
 const shareError = ref<string | null>(null);
 
-const headerTitle = computed(() => {
+const pageTitle = computed(() => {
   if (stage.value === "prompt") return t("newImpression.titleDescribe");
   if (stage.value === "processing") return t("newImpression.titleProcessing");
   if (stage.value === "preview") return t("newImpression.titleImpression");
@@ -484,6 +484,14 @@ async function onTrash() {
   }
 }
 
+/**
+ * Safety ceiling for the Cloud Function round-trip. If the function never
+ * reports back (crashed, not deployed, emulator down), fail the wait so the
+ * user gets an error and their retry buttons back instead of an eternal
+ * processing spinner. Generations normally finish well within this.
+ */
+const COMPLETION_TIMEOUT_MS = 90_000;
+
 function waitForCompletion(
   uid: string,
   renoId: string,
@@ -499,15 +507,21 @@ function waitForCompletion(
       "impressions",
       impId,
     );
+    const timer = setTimeout(() => {
+      unsub();
+      reject(new Error(t("newImpression.processingTimeout")));
+    }, COMPLETION_TIMEOUT_MS);
     const unsub = onSnapshot(
       docRef,
       (snap) => {
         const data = snap.data();
         if (!data) return;
         if (data.status === "completed" && data.resultImagePath) {
+          clearTimeout(timer);
           unsub();
           resolve(data.resultImagePath as string);
         } else if (data.status === "failed") {
+          clearTimeout(timer);
           unsub();
           reject(
             new Error(
@@ -518,6 +532,7 @@ function waitForCompletion(
         }
       },
       (err) => {
+        clearTimeout(timer);
         unsub();
         reject(err);
       },
@@ -695,12 +710,16 @@ async function onShare() {
 
 <template>
   <div class="page-layout">
-    <AppBar :title="headerTitle" />
+    <AppBar />
 
     <main
       class="responsive wizard-main"
       :class="{ 'wizard-main--prompt': stage === 'prompt' }"
     >
+      <h5 v-if="!shareError" class="center-align no-margin wizard-title">
+        {{ pageTitle }}
+      </h5>
+
       <article
         v-if="shareError"
         class="border large-padding center-align share-error-card"
@@ -1030,6 +1049,10 @@ async function onShare() {
 
 .inert-canvas :deep(.masking-wrapper) {
   pointer-events: none;
+}
+
+.wizard-title {
+  padding: 0 1rem;
 }
 
 .step-hint {
