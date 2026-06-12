@@ -51,6 +51,17 @@ sharp can read; it is resized to the source dimensions.
   node functions/ai-lab/run.mjs current --source in/in-beams.png --mask in/mask-beams.png --color "#887360"
   ```
 
+- **`reference`** — like `current`, but the colour/material reference is built
+  from a bundled reference room (`functions/reference/room.png` or
+  `room-dark.png`) tinted with the paint colour, rather than the source photo.
+  The bright or dim room is chosen by the colour's luminance so the colour
+  reads naturally on real wall/ceiling/wood surfaces. Builds the composite from
+  `--source` + `--mask`, or sends an existing one via `--composite`.
+
+  ```bash
+  node functions/ai-lab/run.mjs reference --source in/in-beams.png --mask in/mask-beams.png --color "#887360"
+  ```
+
 - **`two-step`** — splits paint and compose into two generations: step 1
   fills the marked area with the flat target colour; step 2 gets the original
   photo + the flat repaint and harmonises lighting/shadows/texture.
@@ -77,6 +88,9 @@ the utilities from `lib.mjs`:
   `buildSolidComposite(source, mask)` — the production composite variants
 - `buildColorReference(source, hex)` — the production whole-image colour
   reference: the paint colour multiplied over the clean source
+- `buildRoomReference(hex, variant)` — tint a bundled reference room
+  (`functions/reference/room.png` / `room-dark.png`) with the paint colour;
+  `variant` defaults to the luminance-based switch (`pickRoomVariant`)
 - `grayscale`, `colorSwatch`, `dotGrid`, `compositeMasked` — primitives to
   build new variants
 - `makeOutDir(name)` / `save(dir, name, data)` — run output

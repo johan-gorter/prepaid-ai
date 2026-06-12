@@ -8,7 +8,7 @@ import { parseArgs } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const LAB_DIR = path.dirname(fileURLToPath(import.meta.url));
-const APPROACHES = ["current", "two-step", "custom"];
+const APPROACHES = ["current", "reference", "two-step", "custom"];
 
 const USAGE = `Usage: node functions/ai-lab/run.mjs <approach> [options]
 
@@ -16,6 +16,10 @@ Approaches:
   current    Replicate the production paint pipeline: dotted-grayscale
              composite + whole-image colour/material reference (paint
              multiplied over the clean source), one generation.
+  reference  Like current, but the colour reference comes from the bundled
+             reference room (functions/reference/room.png or functions/reference/room-dark.png)
+             tinted with the paint colour, sent as two references (bright +
+             dim lighting).
   two-step   Step 1 fills the marked area with the flat target colour;
              step 2 harmonises lighting/texture against the original photo.
   custom     Send an arbitrary prompt + images as-is.
@@ -38,6 +42,7 @@ Options:
 Examples:
   node functions/ai-lab/run.mjs current --source room.jpg --mask ceiling-mask.png --color "#213529"
   node functions/ai-lab/run.mjs current --source room.jpg --composite composite.webp --color "#213529"
+  node functions/ai-lab/run.mjs reference --source room.jpg --mask ceiling-mask.png --color "#213529"
   node functions/ai-lab/run.mjs two-step --source room.jpg --mask ceiling-mask.png --color "#213529"
   node functions/ai-lab/run.mjs custom --prompt "Describe this image" --image room.jpg
 

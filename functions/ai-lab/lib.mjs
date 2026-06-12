@@ -143,6 +143,53 @@ export async function buildColorReference(source, hex) {
     .toBuffer();
 }
 
+// Bundled reference-room scenes (functions/reference/) that show paintable
+// surfaces (wall, ceiling, wood) in grayscale. The bright (`room.png`) and dim
+// (`room-dark.png`) scenes are a dynamic switch — a single reference is chosen
+// by the paint colour's luminance so the colour reads naturally rather than
+// crushed (dark colours on a bright room) or washed out (light colours on a
+// dim room).
+const REFERENCE_DIR = path.join(REPO_ROOT, "functions", "reference");
+const ROOM_REFERENCE = { light: "room.png", dark: "room-dark.png" };
+
+// BT.709 perceived luminance on a 0–255 scale; below the threshold a colour
+// uses the dim reference room. Mirrors temp.local/index.html.
+const LUMINANCE_THRESHOLD = 110;
+
+export function luminance(hex) {
+  const n = parseInt(hex.replace(/^#/, ""), 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Pick the reference room ("light" or "dark") for a paint colour. */
+export function pickRoomVariant(hex) {
+  return luminance(hex) < LUMINANCE_THRESHOLD ? "dark" : "light";
+}
+
+/**
+ * Preview the paint colour on a single reference room: multiply the colour
+ * over the grayscale `room.png` (bright) or `room-dark.png` (dim) scene so the
+ * model sees the colour on real wall/ceiling/wood surfaces. `variant` defaults
+ * to the luminance-based switch (`pickRoomVariant`) but can be forced.
+ */
+export async function buildRoomReference(hex, variant = pickRoomVariant(hex)) {
+  const file = ROOM_REFERENCE[variant] ?? ROOM_REFERENCE.light;
+  const base = await readFile(path.join(REFERENCE_DIR, file));
+  const { width, height } = await imageSize(base);
+  return sharp(base)
+    .composite([
+      {
+        input: { create: { width, height, channels: 3, background: hex } },
+        blend: "multiply",
+      },
+    ])
+    .png()
+    .toBuffer();
+}
+
 /** Transparent layer with a grid of filled circles. */
 export async function dotGrid(
   width,
