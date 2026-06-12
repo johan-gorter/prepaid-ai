@@ -10,8 +10,16 @@ and `out/` is git-ignored.
 
 ## Setup
 
-`GEMINI_API_KEY` is read from the environment, or from the first of
-`functions/.secret.local`, `functions/.env`, `.env` that defines it.
+The lab talks to Gemini through **Vertex AI** (mirrors the production Cloud
+Function's `vertex` backend) using Application Default Credentials:
+
+```bash
+gcloud auth application-default login
+```
+
+The GCP project is read from `GOOGLE_CLOUD_PROJECT` (or `GCLOUD_PROJECT` /
+`GCP_PROJECT`), falling back to the `default` project in `.firebaserc`. Set
+`AI_REGION` to override the location (default: `global`).
 
 ## Usage
 
@@ -37,7 +45,7 @@ sharp can read; it is resized to the source dimensions.
   for quick prompt-only experiments.
 
   ```bash
-  node functions/ai-lab/run.mjs current --source room.jpg --mask ceiling-mask.png --color "#213529"
+  node functions/ai-lab/run.mjs current --source in/in-beams.png --mask in/mask-beams.png --color "#887360"
   ```
 
 - **`two-step`** — splits paint and compose into two generations: step 1
@@ -45,7 +53,7 @@ sharp can read; it is resized to the source dimensions.
   photo + the flat repaint and harmonises lighting/shadows/texture.
 
   ```bash
-  node functions/ai-lab/run.mjs two-step --source room.jpg --mask ceiling-mask.png --color "#213529"
+  node functions/ai-lab/run.mjs two-step --source in/in-beams.png --mask in/mask-beams.png --color "#887360"
   ```
 
 - **`custom`** — arbitrary prompt + images, sent in order:

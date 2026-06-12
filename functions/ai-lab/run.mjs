@@ -41,8 +41,10 @@ Examples:
 Outputs (inputs, prompts, intermediate and final images) are written to
 functions/ai-lab/out/<approach>-<timestamp>/ (git-ignored).
 
-GEMINI_API_KEY is read from the environment, functions/.secret.local,
-functions/.env or .env.`;
+Uses Vertex AI via Application Default Credentials. Run
+\`gcloud auth application-default login\` once and set GOOGLE_CLOUD_PROJECT
+(or rely on the default project in .firebaserc). AI_REGION overrides the
+location (default: global).`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,

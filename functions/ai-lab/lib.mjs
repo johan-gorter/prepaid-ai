@@ -23,29 +23,47 @@ const LAB_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(LAB_DIR, "..", "..");
 
 // --------------------------------------------------------------------------
-// API key + Gemini
+// Vertex AI client
 // --------------------------------------------------------------------------
 
-export function getApiKey() {
-  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
-  for (const file of [
-    path.join(REPO_ROOT, "functions", ".secret.local"),
-    path.join(REPO_ROOT, "functions", ".env"),
-    path.join(REPO_ROOT, ".env"),
-  ]) {
-    if (!existsSync(file)) continue;
-    const match = readFileSync(file, "utf8").match(/^GEMINI_API_KEY=(.+)$/m);
-    if (match) return match[1].trim().replace(/^["']|["']$/g, "");
+// Mirrors functions/src/ai.ts (vertex backend): the lab talks to Gemini
+// through Vertex AI using Application Default Credentials. Run
+// `gcloud auth application-default login` once, then set GOOGLE_CLOUD_PROJECT
+// (or rely on the `default` project in .firebaserc).
+export function getProject() {
+  const fromEnv =
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    process.env.GCLOUD_PROJECT ||
+    process.env.GCP_PROJECT;
+  if (fromEnv) return fromEnv;
+
+  const firebaseRc = path.join(REPO_ROOT, ".firebaserc");
+  if (existsSync(firebaseRc)) {
+    try {
+      const def = JSON.parse(readFileSync(firebaseRc, "utf8"))?.projects
+        ?.default;
+      if (def) return def;
+    } catch {
+      // fall through to the error below
+    }
   }
   throw new Error(
-    "GEMINI_API_KEY not found. Set the env var or add it to " +
-      "functions/.secret.local, functions/.env or .env",
+    "GCP project not found. Set GOOGLE_CLOUD_PROJECT or add a default " +
+      "project to .firebaserc.",
   );
+}
+
+export function getLocation() {
+  return process.env.AI_REGION || "global";
 }
 
 let genai;
 function client() {
-  genai ??= new GoogleGenAI({ apiKey: getApiKey() });
+  genai ??= new GoogleGenAI({
+    vertexai: true,
+    project: getProject(),
+    location: getLocation(),
+  });
   return genai;
 }
 
