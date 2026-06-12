@@ -69,9 +69,13 @@ pipeline. All **[proven]**:
    (applied to both the prompt hex and the tinted reference room) lands the
    result close to the requested colour (`PAINT_COLOR_LIGHTEN` in
    `functions/src/ai.ts`).
-5. **The colour reference is a tinted reference room** (`functions/reference/
-   room.png` / `room-dark.png`, picked by colour luminance), not a flat
-   swatch — the model sees the colour on real wall/ceiling/wood surfaces.
+5. **No colour reference image at all — the hex in the prompt suffices.**
+   Nano banana 2 painted as accurately from the hex alone as from a tinted
+   reference room, and edited more surgically without one (no paint spill
+   outside the mask, objects in front survived better). The earlier
+   "reference image beats naming the colour" finding below was proven on
+   `gemini-2.5-flash-image` and does not transfer. Revert the
+   reference-removal commit to restore the tinted-room pipeline.
 
 The live paint prompt lives in `geminiProcess()` (`functions/src/ai.ts`);
 the parameterized lab approach that reproduces it is
@@ -161,8 +165,10 @@ none is present, surface the returned text as the error (it usually explains a
 refusal). **[proven]**
 
 A **second reference image** as the colour source works better than naming a
-colour in words alone. Refer to it explicitly ("using the colour shown in the
-second image"). **[proven]**
+colour in words alone **on `gemini-2.5-flash-image`**. Refer to it explicitly
+("using the colour shown in the second image"). **[proven]** On nano banana 2
+this no longer holds — the hex alone is just as accurate and the edit is more
+surgical (see the 2026-06-12 update).
 
 ---
 
@@ -177,8 +183,8 @@ Current production prompt (nano banana 2, 50% checker, lightened hex):
 > The first image is a photo in which the area to repaint is covered by a
 > magenta checkerboard; the original surfaces are partly visible between the
 > magenta squares. Paint every surface under the checkerboard - whatever its
-> material or original colour - in the paint colour shown in the second image
-> (#xxxxxx). Reconstruct the covered geometry exactly as it appears in the
+> material or original colour - in the paint colour #xxxxxx. Reconstruct the
+> covered geometry exactly as it appears in the
 > photo: every structural element stays in place, painted in this same single
 > colour, varied only by lighting. Light fixtures and other objects in front
 > of the painted surfaces are not painted: reconstruct them crisp with their

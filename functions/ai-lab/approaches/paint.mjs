@@ -7,9 +7,12 @@
 //   stays readable between the squares. Dots (~5%) and quarter checker (25%)
 //   both let the model keep wood/material colours. Tweak with --variant,
 //   --cell, --coverage, --spacing, --radius.
-// - Colour: nano banana renders paint consistently darker than asked, so the
-//   colour sent to the model (prompt hex + tinted reference room) is
-//   lightened toward white with --lighten (0..1).
+// - Colour: named by hex in the prompt only (production behaviour since
+//   2026-06-12 — nano banana 2 paints as accurately from the hex alone and
+//   edits more surgically); --reference additionally sends the tinted
+//   reference room. Nano banana renders paint consistently darker than
+//   asked, so the colour sent to the model is lightened toward white with
+//   --lighten (0..1).
 // - Model: gemini-2.5-flash-image cannot do this edit at all (no-ops);
 //   nano banana 2 is required. --model overrides.
 //
@@ -73,9 +76,12 @@ export default async function paint(args) {
     `  paint colour ${args.color} -> sent as ${color} (lighten ${lighten})`,
   );
 
-  const roomVariant = pickRoomVariant(color);
-  const reference = await buildRoomReference(color, roomVariant);
-  await save(outDir, `reference-${roomVariant}.png`, reference);
+  let reference;
+  if (args.reference) {
+    const roomVariant = pickRoomVariant(color);
+    reference = await buildRoomReference(color, roomVariant);
+    await save(outDir, `reference-${roomVariant}.png`, reference);
+  }
 
   const marking = MARKING_DESCRIPTION[variant] ?? MARKING_DESCRIPTION.checker;
   const markingNoun =
@@ -88,8 +94,9 @@ export default async function paint(args) {
     args.prompt ??
     `The first image is a photo in which the area to repaint ${marking}. ` +
       `Paint every surface under the ${markingNoun} - whatever its ` +
-      `material or original colour - in the paint colour shown in the ` +
-      `second image (${color}). Reconstruct the covered geometry exactly ` +
+      `material or original colour - in the paint colour ` +
+      `${reference ? `shown in the second image (${color})` : color}. ` +
+      `Reconstruct the covered geometry exactly ` +
       `as it appears in the photo: every structural element stays in ` +
       `place, painted in this same single colour, varied only by lighting. ` +
       `Light fixtures and other objects in front of the painted surfaces ` +
@@ -100,7 +107,7 @@ export default async function paint(args) {
 
   const { image, text } = await generateImage({
     prompt,
-    images: [composite, reference],
+    images: reference ? [composite, reference] : [composite],
     model: args.model ?? NANO_BANANA_2,
   });
   if (text) await save(outDir, "response.txt", text);

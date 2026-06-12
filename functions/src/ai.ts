@@ -6,7 +6,6 @@
 // - "dummy"     — Sharp text overlay (no AI, for testing)
 // ---------------------------------------------------------------------------
 
-import path from "node:path";
 import { hexToRgb } from "./utils.js";
 
 export type AiBackend = "vertex" | "google-ai" | "dummy";
@@ -82,28 +81,13 @@ export async function dummyProcess(
 
 // ---------------------------------------------------------------------------
 // Gemini image editing — the client sends a pre-composited image with a
-// magenta overlay on the edit area. No server-side image processing needed
-// except in paint mode, where the colour reference image is built here.
+// magenta overlay on the edit area. No server-side image processing needed.
 // ---------------------------------------------------------------------------
 
 // Nano banana renders paint consistently darker than the requested colour
-// (ai-lab, 2026-06-12), so the colour sent to the model — prompt hex and
-// tinted reference room — is lightened toward white to compensate.
+// (ai-lab, 2026-06-12), so the hex sent to the model is lightened toward
+// white to compensate.
 const PAINT_COLOR_LIGHTEN = 0.2;
-
-// BT.709 perceived luminance (0–255); below the threshold the dim reference
-// room is used so dark colours read naturally instead of crushed.
-const LUMINANCE_THRESHOLD = 110;
-
-// Bundled grayscale reference rooms showing paintable wall/ceiling/wood
-// surfaces; deployed alongside the compiled functions (firebase.json does
-// not ignore reference/). __dirname is lib/ after compilation.
-const REFERENCE_DIR = path.join(__dirname, "..", "reference");
-
-function luminance(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
 
 /** Blend a hex colour toward white by `factor` (0 = unchanged, 1 = white). */
 function lightenColor(hex: string, factor: number): string {
@@ -113,37 +97,6 @@ function lightenColor(hex: string, factor: number): string {
       .toString(16)
       .padStart(2, "0");
   return `#${lift(r)}${lift(g)}${lift(b)}`;
-}
-
-/**
- * Colour reference for paint mode: the bright or dim reference room (picked
- * by the colour's luminance) tinted with the paint colour, so the model sees
- * the colour applied to real wall, ceiling and wood surfaces.
- */
-async function buildPaintReference(hex: string): Promise<Buffer> {
-  const sharp = (await import("sharp")).default;
-  const room =
-    luminance(hex) < LUMINANCE_THRESHOLD ? "room-dark.png" : "room.png";
-  const file = path.join(REFERENCE_DIR, room);
-  const meta = await sharp(file).metadata();
-  return Buffer.from(
-    await sharp(file)
-      .composite([
-        {
-          input: {
-            create: {
-              width: meta.width ?? 1024,
-              height: meta.height ?? 1024,
-              channels: 3,
-              background: hexToRgb(hex),
-            },
-          },
-          blend: "multiply",
-        },
-      ])
-      .webp({ quality: 90 })
-      .toBuffer(),
-  );
 }
 
 async function loadGenAI() {
@@ -192,36 +145,29 @@ export async function geminiProcess(
     // grids, 25% checker) the model sees enough of the original surface to
     // "preserve the materials" and leaves wood etc. unpainted, while at 50%
     // it repaints every marked surface and the geometry stays readable
-    // between the squares. The reference room shows the lightened colour on
-    // real wall/ceiling/wood surfaces. The impression doc's prompt is only
-    // a timeline label, so it is deliberately not sent.
+    // between the squares. The colour is named by hex only — nano banana 2
+    // paints as accurately from the hex as from a tinted reference image,
+    // and edits more surgically without one. The impression doc's prompt is
+    // only a timeline label, so it is deliberately not sent.
     const sentColor = lightenColor(paint.hex, PAINT_COLOR_LIGHTEN);
-    const reference = await buildPaintReference(sentColor);
     requestParts.push({
       text:
         `The first image is a photo in which the area to repaint is ` +
         `covered by a magenta checkerboard; the original surfaces are ` +
         `partly visible between the magenta squares. Paint every surface ` +
         `under the checkerboard - whatever its material or original ` +
-        `colour - in the paint colour shown in the second image ` +
-        `(${sentColor}). Reconstruct the covered geometry exactly as it ` +
-        `appears in the photo: every structural element stays in place, ` +
-        `painted in this same single colour, varied only by lighting. ` +
-        `Light fixtures and other objects in front of the painted ` +
-        `surfaces are not painted: reconstruct them crisp with their ` +
-        `original colours. No magenta remains, and everything outside the ` +
-        `marked area stays unchanged.`,
+        `colour - in the paint colour ${sentColor}. Reconstruct the ` +
+        `covered geometry exactly as it appears in the photo: every ` +
+        `structural element stays in place, painted in this same single ` +
+        `colour, varied only by lighting. Light fixtures and other ` +
+        `objects in front of the painted surfaces are not painted: ` +
+        `reconstruct them crisp with their original colours. No magenta ` +
+        `remains, and everything outside the marked area stays unchanged.`,
     });
     requestParts.push({
       inlineData: {
         mimeType: "image/webp",
         data: imageBuffer.toString("base64"),
-      },
-    });
-    requestParts.push({
-      inlineData: {
-        mimeType: "image/webp",
-        data: reference.toString("base64"),
       },
     });
   } else {

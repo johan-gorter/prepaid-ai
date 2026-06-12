@@ -41,17 +41,21 @@ sharp can read; it is resized to the source dimensions.
   **nano banana 2** (`gemini-3-pro-image-preview` — `gemini-2.5-flash-image`
   no-ops on this edit). Marks the masked area with a magenta checkerboard at
   50% coverage over the original colours (coverage is the colour-commitment
-  dial: sparser markings let the model keep the original materials), sends
-  the tinted reference room as the colour reference, and lightens the colour
-  sent to the model with `--lighten` (nano banana renders paint darker than
-  asked). All inputs sent to the model are saved next to the result.
+  dial: sparser markings let the model keep the original materials), names
+  the colour by hex in the prompt (nano banana 2 paints as accurately from
+  the hex as from a reference image, and edits more surgically without one),
+  and lightens the colour sent to the model with `--lighten` (nano banana
+  renders paint darker than asked). All inputs sent to the model are saved
+  next to the result.
 
   ```bash
   node functions/ai-lab/run.mjs paint --source in/in-beams.png --mask in/mask-beams.png --color "#887360" --lighten 0.2
   ```
 
   Tweak the marking with `--variant checker|dots|grayscale|solid`,
-  `--cell <px>`, `--coverage half|quarter`, `--spacing <px>`, `--radius <px>`.
+  `--cell <px>`, `--coverage half|quarter`, `--spacing <px>`, `--radius <px>`;
+  `--reference` additionally sends the tinted reference room as a second
+  image (the pre-2026-06-12 production behaviour).
 
 - **`current`** — baseline; replicates the old production paint pipeline:
   dotted-grayscale composite + a whole-image colour/material reference (the

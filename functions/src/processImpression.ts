@@ -63,9 +63,8 @@ export const processImpression = onDocumentCreated(
       const [fileBuffer] = await bucket.file(imagePath).download();
 
       // Paint mode: the composite already shows the masked area covered by
-      // the magenta checkerboard. geminiProcess builds the colour reference
-      // (tinted reference room) from the hex and switches to the paint
-      // model.
+      // the magenta checkerboard. geminiProcess lightens the hex, names it
+      // in the prompt, and switches to the paint model.
       const paint =
         mode === "paint" && paintColor ? { hex: paintColor } : undefined;
 

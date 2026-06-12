@@ -22,9 +22,10 @@ const USAGE = `Usage: node functions/ai-lab/run.mjs <approach> [options]
 Approaches:
   paint      One-shot masked repaint on nano banana 2 (the 2026-06-12
              experiment winner): magenta checker composite (50% coverage)
-             + tinted reference room, with a tweakable marking variant
-             (--variant/--cell/--coverage/--spacing/--radius) and colour
-             lightening (--lighten).
+             + hex-only colour, with a tweakable marking variant
+             (--variant/--cell/--coverage/--spacing/--radius), colour
+             lightening (--lighten) and optional tinted reference room
+             (--reference).
   current    Replicate the old production paint pipeline: dotted-grayscale
              composite + whole-image colour/material reference (paint
              multiplied over the clean source), one generation.
@@ -60,8 +61,10 @@ Options:
                       (default half)
   --spacing <px>      Dot grid spacing (default 15)
   --radius <px>       Dot radius (default 2.5)
-  --lighten <0..1>    Lighten the colour sent to the model (prompt +
-                      reference) toward white (paint; default 0)
+  --lighten <0..1>    Lighten the colour sent to the model toward white
+                      (paint; default 0)
+  --reference         Also send the tinted reference room as a second image
+                      (paint; default off — production sends hex only)
 
 Examples:
   node functions/ai-lab/run.mjs paint --source room.jpg --mask ceiling-mask.png --color "#887360" --lighten 0.2
@@ -95,6 +98,7 @@ const { values, positionals } = parseArgs({
     spacing: { type: "string" },
     radius: { type: "string" },
     lighten: { type: "string" },
+    reference: { type: "boolean" },
     help: { type: "boolean", short: "h" },
   },
 });
