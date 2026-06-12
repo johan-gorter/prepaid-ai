@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Paint Color Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Smooth transitions for the color overlay and image source changes */
+      .blend-layer {
+        transition: background-color 0.4s ease-in-out;
+      }
+
+      #baseImage {
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      /* * Approximate clip-path to mask out the top "PAINT" header block 
+         * so the black bar and text don't get tinted by the multiply overlay.
+         * Adjust the 16.5% if your final image header is slightly taller/shorter.
+         */
+      .header-mask {
+        clip-path: inset(16.5% 0 0 0);
+      }
+
+      /* * Optional: If you ever want to mask out the window entirely so the outside view 
+         * stays perfectly untinted, you would use a polygon clip-path like this:
+         * clip-path: polygon(0% 16.5%, 28% 16.5%, 28% 85%, 72% 85%, 72% 16.5%, 100% 16.5%, 100% 100%, 0% 100%);
+         * (Coordinates are approximate examples)
+         */
+    </style>
+  </head>
+  <body
+    class="bg-gray-50 min-h-screen text-slate-800 font-sans selection:bg-blue-200"
+  >
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900 tracking-tight">
+          Virtual Paint Studio
+        </h1>
+        <p class="text-slate-500 mt-2">
+          Dynamic base switching for accurate light and dark color rendering.
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Visualizer Area (Left) -->
+        <div
+          class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative flex flex-col"
+        >
+          <!-- Image Container -->
+          <!-- We force an aspect ratio close to a square to maintain consistent layout -->
+          <div
+            class="relative w-full bg-slate-200 aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden group"
+          >
+            <!-- Base Image (room.png or room-dark.png) -->
+            <!-- We use an absolute positioning setup so it scales cleanly -->
+            <img
+              id="baseImage"
+              src="room.png"
+              alt="Room base"
+              class="absolute inset-0 w-full h-full object-cover object-top"
+              onerror="
+                this.src =
+                  'https://placehold.co/800x800/E2E8F0/94A3B8?text=Missing+room.png\nor+room-dark.png'
+              "
+            />
+
+            <!-- Color Overlay with Multiply Blend Mode -->
+            <div
+              id="colorOverlay"
+              class="absolute inset-0 w-full h-full mix-blend-multiply pointer-events-none blend-layer header-mask"
+              style="background-color: #f4f4f0"
+            ></div>
+          </div>
+
+          <!-- Status Bar -->
+          <div
+            class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-sm"
+          >
+            <div class="flex items-center gap-2">
+              <span
+                class="w-3 h-3 rounded-full border border-slate-300"
+                id="currentColorPreview"
+                style="background-color: #f4f4f0"
+              ></span>
+              <span id="currentColorHex" class="font-mono text-slate-600"
+                >#F4F4F0</span
+              >
+            </div>
+            <div class="flex items-center gap-2 text-slate-500">
+              <span>Active Base:</span>
+              <span
+                id="activeBaseBadge"
+                class="bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs font-medium uppercase tracking-wider"
+                >room.png</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Area (Right) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+          <!-- Custom Color Picker -->
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"
+          >
+            <h3
+              class="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider"
+            >
+              Custom Color
+            </h3>
+            <div class="flex items-center gap-4">
+              <div
+                class="relative w-12 h-12 rounded-full overflow-hidden border-2 border-slate-200 shadow-inner flex-shrink-0"
+              >
+                <input
+                  type="color"
+                  id="customColorPicker"
+                  value="#F4F4F0"
+                  class="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
+                />
+              </div>
+              <div class="flex-grow">
+                <label
+                  for="customColorPicker"
+                  class="block text-xs text-slate-500 mb-1"
+                  >Select any hex code</label
+                >
+                <input
+                  type="text"
+                  id="hexInput"
+                  value="#F4F4F0"
+                  class="w-full font-mono text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none uppercase transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Curated RAL Palettes -->
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex-grow"
+          >
+            <h3
+              class="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider"
+            >
+              Popular RAL Colors
+            </h3>
+
+            <div class="space-y-6" id="paletteContainer">
+              <!-- Swatches injected via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Data Structure for Popular RAL Colors
+      const ralPalettes = [
+        {
+          category: "Light Neutrals",
+          colors: [
+            { name: "RAL 9010 Pure White", hex: "#F4F4F0" },
+            { name: "RAL 9001 Cream", hex: "#EAE6CA" },
+            { name: "RAL 1013 Oyster White", hex: "#E3D9C6" },
+            { name: "RAL 7035 Light Grey", hex: "#C5C7C4" },
+          ],
+        },
+        {
+          category: "Deep & Dark",
+          colors: [
+            { name: "RAL 7016 Anthracite Grey", hex: "#383E42" },
+            { name: "RAL 9005 Jet Black", hex: "#0A0A0A" },
+            { name: "RAL 5004 Black Blue", hex: "#18171C" },
+            { name: "RAL 6009 Fir Green", hex: "#213529" },
+          ],
+        },
+        {
+          category: "Vibrant Accents",
+          colors: [
+            { name: "RAL 3020 Traffic Red", hex: "#CC0605" },
+            { name: "RAL 5010 Gentian Blue", hex: "#004F7C" },
+            { name: "RAL 6005 Moss Green", hex: "#0F4C3A" },
+            { name: "RAL 1023 Traffic Yellow", hex: "#F3A505" },
+          ],
+        },
+      ];
+
+      // DOM Elements
+      const colorOverlay = document.getElementById("colorOverlay");
+      const baseImage = document.getElementById("baseImage");
+      const customColorPicker = document.getElementById("customColorPicker");
+      const hexInput = document.getElementById("hexInput");
+      const currentColorPreview = document.getElementById(
+        "currentColorPreview",
+      );
+      const currentColorHex = document.getElementById("currentColorHex");
+      const activeBaseBadge = document.getElementById("activeBaseBadge");
+      const paletteContainer = document.getElementById("paletteContainer");
+
+      // State
+      let currentImageState = "light"; // 'light' or 'dark'
+      const LUMINANCE_THRESHOLD = 110; // 0-255 scale. Below this is considered "dark"
+
+      // Initialize UI
+      function init() {
+        renderPalettes();
+        applyColor(customColorPicker.value, true);
+
+        // Event Listeners for custom color inputs
+        customColorPicker.addEventListener("input", (e) => {
+          applyColor(e.target.value);
+          hexInput.value = e.target.value.toUpperCase();
+        });
+
+        hexInput.addEventListener("change", (e) => {
+          let val = e.target.value;
+          if (!val.startsWith("#")) val = "#" + val;
+          if (/^#[0-9A-F]{6}$/i.test(val)) {
+            applyColor(val);
+            customColorPicker.value = val;
+          }
+        });
+      }
+
+      // Calculate perceived brightness of a hex color (Standard ITU-R BT.709)
+      function getLuminance(hex) {
+        const c = hex.substring(1); // strip #
+        const rgb = parseInt(c, 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = (rgb >> 0) & 0xff;
+
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      }
+
+      // Apply Color and switch base image if necessary
+      function applyColor(hex, forceUpdate = false) {
+        const luma = getLuminance(hex);
+        const isDarkColor = luma < LUMINANCE_THRESHOLD;
+        const requiredBase = isDarkColor ? "dark" : "light";
+
+        // 1. Update the CSS multiply overlay
+        colorOverlay.style.backgroundColor = hex;
+
+        // 2. Update Status UI
+        currentColorPreview.style.backgroundColor = hex;
+        currentColorHex.textContent = hex.toUpperCase();
+
+        // 3. Switch base image if crossing the threshold
+        if (currentImageState !== requiredBase || forceUpdate) {
+          currentImageState = requiredBase;
+
+          // Slight fade effect for image transition
+          baseImage.style.opacity = "0.8";
+
+          setTimeout(() => {
+            if (currentImageState === "dark") {
+              baseImage.src = "room-dark.png";
+              activeBaseBadge.textContent = "room-dark.png";
+              activeBaseBadge.className =
+                "bg-slate-800 text-slate-200 px-2 py-1 rounded text-xs font-medium uppercase tracking-wider";
+            } else {
+              baseImage.src = "room.png";
+              activeBaseBadge.textContent = "room.png";
+              activeBaseBadge.className =
+                "bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium uppercase tracking-wider";
+            }
+            baseImage.style.opacity = "1";
+          }, 150);
+        }
+      }
+
+      // Render the preset swatch buttons
+      function renderPalettes() {
+        paletteContainer.innerHTML = "";
+
+        ralPalettes.forEach((group) => {
+          const groupDiv = document.createElement("div");
+
+          const title = document.createElement("h4");
+          title.className = "text-xs font-medium text-slate-500 mb-2";
+          title.textContent = group.category;
+          groupDiv.appendChild(title);
+
+          const grid = document.createElement("div");
+          grid.className = "grid grid-cols-2 gap-2";
+
+          group.colors.forEach((color) => {
+            const btn = document.createElement("button");
+            btn.className =
+              "flex items-center justify-start gap-3 p-2 rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all text-left group w-full";
+            btn.onclick = () => {
+              applyColor(color.hex);
+              customColorPicker.value = color.hex;
+              hexInput.value = color.hex.toUpperCase();
+            };
+
+            const swatch = document.createElement("span");
+            swatch.className =
+              "w-6 h-6 rounded-md shadow-sm border border-black/10 flex-shrink-0";
+            swatch.style.backgroundColor = color.hex;
+
+            const labelDiv = document.createElement("div");
+            labelDiv.className = "flex flex-col overflow-hidden";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className =
+              "text-xs font-semibold text-slate-700 truncate group-hover:text-blue-700";
+            nameSpan.textContent = color.name.split(" ").slice(0, 2).join(" "); // e.g. "RAL 9010"
+
+            const hexSpan = document.createElement("span");
+            hexSpan.className =
+              "text-[10px] text-slate-400 font-mono mt-0.5 group-hover:text-blue-500";
+            hexSpan.textContent =
+              color.name.split(" ").slice(2).join(" ") || color.hex; // The rest of the name
+
+            labelDiv.appendChild(nameSpan);
+            labelDiv.appendChild(hexSpan);
+
+            btn.appendChild(swatch);
+            btn.appendChild(labelDiv);
+            grid.appendChild(btn);
+          });
+
+          groupDiv.appendChild(grid);
+          paletteContainer.appendChild(groupDiv);
+        });
+      }
+
+      // Boot
+      init();
+    </script>
+  </body>
+</html>
