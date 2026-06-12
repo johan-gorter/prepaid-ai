@@ -31,11 +31,11 @@ const en = {
     taglinePayPerUse:
       "Use the best AI tools {highlight}. Simply pay only for what you actually use.",
     withoutMonthlySubscription: "without a monthly subscription",
-    sketchYourRenovation: "Sketch your renovation",
+    sketchYourRenovation: "See the result before you start",
     renovationResultInSeconds:
-      "Reimagine, redecorate, or remodel. See your ideas come to life with AI.",
+      "A wall in a new colour, a different floor, that cabinet gone — or a full remodel? Take a photo of your space, describe your idea, and see the result in seconds.",
     renovationPreviewAlt: "Renovation preview",
-    testYourIdea: "TEST YOUR IDEA",
+    testYourIdea: "TRY WITH YOUR PHOTO",
     yourRenovations: "YOUR RENOVATIONS",
     securePrivateChat: "Secure Private Chat",
     chatExplainInPlainLanguage:

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import { useAuth } from "../composables/useAuth";
 import { idbSet } from "../composables/useIdbStorage";
@@ -8,7 +9,15 @@ import { updateLastActivity } from "../composables/useLastActivity";
 import { db } from "../firebase";
 
 const { currentUser } = useAuth();
+const router = useRouter();
 const feedbackMessage = ref("");
+
+// The whole card is a tap target, but the CTA link inside stays the real
+// (focusable, announced) link — skip when the click already came from it.
+function openCard(event: MouseEvent, to: string) {
+  if ((event.target as HTMLElement).closest("a")) return;
+  void router.push(to);
+}
 const feedbackSending = ref(false);
 const feedbackSent = ref(false);
 
@@ -57,7 +66,11 @@ async function submitFeedback() {
     </i18n-t>
 
     <!-- AI Impressions card -->
-    <article class="border medium-text" data-testid="renovations-card">
+    <article
+      class="border medium-text tappable"
+      data-testid="renovations-card"
+      @click="openCard($event, '/renovations')"
+    >
       <div class="card-media">
         <img
           src="/assets/renovation-small.png"
@@ -87,7 +100,11 @@ async function submitFeedback() {
     </article>
 
     <!-- Private Chat card -->
-    <article class="border medium-text" style="margin-top: 1rem">
+    <article
+      class="border medium-text tappable"
+      style="margin-top: 1rem"
+      @click="openCard($event, '/chat')"
+    >
       <div class="card-media">
         <i class="extra primary-text">verified_user</i>
         <h6 class="bold no-margin card-title">{{ $t("main.securePrivateChat") }}</h6>
@@ -188,6 +205,13 @@ async function submitFeedback() {
   max-width: 360px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* The whole card is clickable (see openCard); the CTA link inside remains the
+   real focusable link. A CSS stretched-link overlay doesn't work here: Beer CSS
+   already uses the button's ::before/::after for hover and ripple effects. */
+.tappable {
+  cursor: pointer;
 }
 
 /* Below 360px the side-by-side text column gets too narrow and the cards grow

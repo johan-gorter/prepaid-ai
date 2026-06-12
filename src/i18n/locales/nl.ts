@@ -32,11 +32,11 @@ const nl: MessageSchema = {
     taglinePayPerUse:
       "Gebruik de slimste AI-tools {highlight}. Je betaalt simpelweg alleen voor wat je écht gebruikt.",
     withoutMonthlySubscription: "zonder maandelijks abonnement",
-    sketchYourRenovation: "Schets je make-over",
+    sketchYourRenovation: "Zie het resultaat vóórdat je begint",
     renovationResultInSeconds:
-      "Opknappen, verbouwen of nieuwe inrichting? Zie alvast het eindresultaat met AI.",
+      "Een muur in een andere kleur, een nieuwe vloer, dat kastje weg of toch die uitbouw? Maak een foto van je ruimte, beschrijf je idee en zie in seconden hoe het wordt.",
     renovationPreviewAlt: "Voorbeeld van een make-over",
-    testYourIdea: "TEST JE IDEE",
+    testYourIdea: "PROBEER MET JOUW FOTO",
     yourRenovations: "JOUW MAKE-OVERS",
     securePrivateChat: "Veilige Privéchat",
     chatExplainInPlainLanguage:
