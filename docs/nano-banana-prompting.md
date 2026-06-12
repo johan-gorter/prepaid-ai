@@ -64,11 +64,13 @@ pipeline. All **[proven]**:
    them from being repainted. Omit either and that aspect regresses. Thin
    filigree objects (chandeliers) still aren't reliably recoverable at 50%
    cover — accepted trade-off.
-4. **Lighten the colour sent to the model.** Nano banana renders paint
-   consistently darker than asked; blending the hex ~20% toward white
-   (applied to both the prompt hex and the tinted reference room) lands the
-   result close to the requested colour (`PAINT_COLOR_LIGHTEN` in
-   `functions/src/ai.ts`).
+4. **Lighten light colours sent to the model — not dark ones.** Nano banana
+   renders light paint colours darker than asked (light taupe #887360 needed
+   a ~20% white-blend), but dark colours come back close to the requested
+   value (dark green #213529 rendered ≈ the sent hex, so a flat lighten
+   overshoots it). The lighten factor ramps with the colour's luminance from
+   0 (≤50) to the full 20% (≥120) — `paintLightenFactor` in
+   `functions/src/ai.ts`.
 5. **No colour reference image at all — the hex in the prompt suffices.**
    Nano banana 2 painted as accurately from the hex alone as from a tinted
    reference room, and edited more surgically without one (no paint spill

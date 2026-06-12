@@ -84,10 +84,28 @@ export async function dummyProcess(
 // magenta overlay on the edit area. No server-side image processing needed.
 // ---------------------------------------------------------------------------
 
-// Nano banana renders paint consistently darker than the requested colour
-// (ai-lab, 2026-06-12), so the hex sent to the model is lightened toward
-// white to compensate.
+// Nano banana renders LIGHT paint colours consistently darker than asked,
+// while dark colours come back close to the requested value (ai-lab,
+// 2026-06-12: light taupe #887360, luminance ≈118, needed the full 20%
+// white-blend; dark green #213529, luminance ≈48, rendered true with none).
+// The lighten factor therefore ramps from 0 at the dark anchor to the full
+// factor at the light anchor.
 const PAINT_COLOR_LIGHTEN = 0.2;
+const LIGHTEN_RAMP_START = 50;
+const LIGHTEN_RAMP_FULL = 120;
+
+/** BT.709 perceived luminance on a 0–255 scale. */
+function luminance(hex: string): number {
+  const { r, g, b } = hexToRgb(hex);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function paintLightenFactor(hex: string): number {
+  const t =
+    (luminance(hex) - LIGHTEN_RAMP_START) /
+    (LIGHTEN_RAMP_FULL - LIGHTEN_RAMP_START);
+  return PAINT_COLOR_LIGHTEN * Math.min(1, Math.max(0, t));
+}
 
 /** Blend a hex colour toward white by `factor` (0 = unchanged, 1 = white). */
 function lightenColor(hex: string, factor: number): string {
@@ -149,7 +167,7 @@ export async function geminiProcess(
     // paints as accurately from the hex as from a tinted reference image,
     // and edits more surgically without one. The impression doc's prompt is
     // only a timeline label, so it is deliberately not sent.
-    const sentColor = lightenColor(paint.hex, PAINT_COLOR_LIGHTEN);
+    const sentColor = lightenColor(paint.hex, paintLightenFactor(paint.hex));
     requestParts.push({
       text:
         `The first image is a photo in which the area to repaint is ` +
