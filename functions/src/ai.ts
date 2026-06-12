@@ -114,24 +114,10 @@ export async function geminiProcess(
   if (referenceBuffer) {
     requestParts.push({
       text:
-        `The first image is an interior photo in which the user drew a rough magenta ` +
-        `line around the area they want repainted. Treat this line as an approximate ` +
-        `boundary, not a precise mask.\n\n` +
-        `Repaint EVERY paintable architectural surface inside the outlined area — ` +
-        `walls, ceilings and ceiling panels, exposed beams and rafters, trim, moldings, ` +
-        `and door or window frames. If the area contains several different surfaces ` +
-        `(for example a ceiling together with its wooden beams), paint all of them in ` +
-        `the same colour, including the beams themselves — not just the largest or most ` +
-        `obvious surface.\n\n` +
-        `Leave non-paintable things untouched even where the rough line overlaps them: ` +
-        `glass and windows, furniture, light fixtures, artwork, plants, fabrics, and people.\n\n` +
-        `The second image is a swatch of the desired paint colour shown under several ` +
-        `lighting conditions. Apply this colour to every surface you identified, keeping ` +
-        `it consistent across all of them while preserving the original lighting, shadows, ` +
-        `highlights, surface texture, and perspective so the result looks like a genuine ` +
-        `photo of the freshly painted room.\n\n` +
-        `Finally, remove the magenta line completely and keep everything outside the ` +
-        `outlined area exactly as in the original photo.\n\n${prompt}`,
+        `The first image shows a scene where the area to be changed is marked with a pattern ` +
+        `of small magenta dots. Color everything that is covered by the dots ` +
+        `using the colour that is shown in the second image. The old colors are completely replaced.` +
+        `Also remove all magenta dots in the now recolored area.\n\n${prompt}`,
     });
     requestParts.push({
       inlineData: {
