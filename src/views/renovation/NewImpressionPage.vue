@@ -79,9 +79,9 @@ const initialMask = ref<Blob | null>(null);
 // buy-credits / sign-in detour preserves the intent.
 const useSolidMask = ref(false);
 // Paint flow: true once the user has confirmed a colour in the paint dialog.
-// Switches the composite to the in-place grayscale variant and makes
-// onGenerate write `mode: "paint"` + the chosen colour so the Cloud Function
-// asks Gemini to repaint the desaturated area in that colour.
+// Makes onGenerate write `mode: "paint"` + the chosen colour so the Cloud
+// Function asks Gemini to repaint the checkerboard-marked area in that
+// colour.
 const usePaintMode = ref(false);
 const paintColor = ref(DEFAULT_PAINT_COLOR);
 const paintTab = ref<"standard" | "custom">("standard");
@@ -604,16 +604,12 @@ async function onGenerate() {
       }
 
       const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
-      // Paint desaturates the masked area in place and marks it with a
-      // magenta dot grid (old colour gone, forms kept, area visible even on
-      // white surfaces); remove hides it under solid magenta; the
-      // free-prompt flow uses the magenta checkerboard.
+      // Paint and the free-prompt flow mark the masked area with the magenta
+      // checkerboard (50% coverage forces a full repaint while the geometry
+      // stays readable between the squares); remove hides it under solid
+      // magenta.
       const compositeBlob = await maskingRef.value.getCompositeBlob(
-        usePaintMode.value
-          ? "grayscale"
-          : useSolidMask.value
-            ? "solid"
-            : "checker",
+        useSolidMask.value ? "solid" : "checker",
       );
       await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
 

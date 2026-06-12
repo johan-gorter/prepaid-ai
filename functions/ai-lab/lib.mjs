@@ -17,6 +17,7 @@ export const GEMINI_MODEL = "gemini-2.5-flash-image";
 // Production dot-grid parameters (see MaskingCanvas.vue).
 export const DOT_SPACING = 15;
 export const DOT_RADIUS = 2.5;
+export const CHECKER_CELL = 10;
 export const MAGENTA = "#FF00FF";
 
 const LAB_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -164,6 +165,21 @@ export function luminance(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/**
+ * Blend a hex colour toward white by `factor` (0 = unchanged, 1 = white).
+ * Nano banana renders paint consistently darker than the requested colour,
+ * so the colour sent to the model (prompt + reference) is lightened to
+ * compensate.
+ */
+export function lightenColor(hex, factor) {
+  const n = parseInt(hex.replace(/^#/, ""), 16);
+  const lift = (c) =>
+    Math.round(c + (255 - c) * factor)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${lift((n >> 16) & 0xff)}${lift((n >> 8) & 0xff)}${lift(n & 0xff)}`;
+}
+
 /** Pick the reference room ("light" or "dark") for a paint colour. */
 export function pickRoomVariant(hex) {
   return luminance(hex) < LUMINANCE_THRESHOLD ? "dark" : "light";
@@ -206,6 +222,68 @@ export async function dotGrid(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" ` +
     `height="${height}">${circles.join("")}</svg>`;
   return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+/**
+ * Transparent layer with a magenta checkerboard. `coverage` "half" fills
+ * every other cell ((x+y) parity, 50% — mirrors MaskingCanvas.vue);
+ * "quarter" fills every other cell on both axes (25%).
+ */
+export async function checkerPattern(
+  width,
+  height,
+  { cell = CHECKER_CELL, coverage = "half", color = MAGENTA } = {},
+) {
+  const rects = [];
+  for (let y = 0; y < height; y += cell) {
+    for (let x = 0; x < width; x += cell) {
+      const cx = Math.floor(x / cell);
+      const cy = Math.floor(y / cell);
+      const filled =
+        coverage === "quarter"
+          ? cx % 2 === 0 && cy % 2 === 0
+          : (cx + cy) % 2 === 0;
+      if (filled) {
+        rects.push(
+          `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${color}"/>`,
+        );
+      }
+    }
+  }
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" ` +
+    `height="${height}">${rects.join("")}</svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+/**
+ * Mark the masked area of `source` in one of the variants we have
+ * experimented with:
+ * - "checker":   magenta checkerboard over the original colours (cell,
+ *                coverage) — the experiment winner: 50% coverage forces a
+ *                full repaint while keeping the geometry visible between
+ *                the squares
+ * - "dots":      magenta dot grid over the original colours (spacing,
+ *                radius) — too sparse, the model keeps original materials
+ * - "grayscale": desaturated in place + dot grid — the old production
+ *                paint marking; invites colorize-restore behaviour
+ * - "solid":     opaque magenta fill — the remove-flow marking
+ */
+export async function buildMarkedComposite(source, mask, options = {}) {
+  const { variant = "checker", ...rest } = options;
+  if (variant === "grayscale") return buildPaintComposite(source, mask, rest);
+  if (variant === "solid") return buildSolidComposite(source, mask);
+
+  const { width, height } = await imageSize(source);
+  const pattern =
+    variant === "dots"
+      ? await dotGrid(width, height, rest)
+      : await checkerPattern(width, height, rest);
+  const marked = await sharp(source)
+    .composite([{ input: pattern }])
+    .png()
+    .toBuffer();
+  return compositeMasked(source, marked, mask);
 }
 
 /**

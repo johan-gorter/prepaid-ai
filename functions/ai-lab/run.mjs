@@ -8,12 +8,24 @@ import { parseArgs } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const LAB_DIR = path.dirname(fileURLToPath(import.meta.url));
-const APPROACHES = ["current", "reference", "two-step", "custom"];
+const APPROACHES = [
+  "paint",
+  "current",
+  "reference",
+  "two-step",
+  "paint-everything",
+  "custom",
+];
 
 const USAGE = `Usage: node functions/ai-lab/run.mjs <approach> [options]
 
 Approaches:
-  current    Replicate the production paint pipeline: dotted-grayscale
+  paint      One-shot masked repaint on nano banana 2 (the 2026-06-12
+             experiment winner): magenta checker composite (50% coverage)
+             + tinted reference room, with a tweakable marking variant
+             (--variant/--cell/--coverage/--spacing/--radius) and colour
+             lightening (--lighten).
+  current    Replicate the old production paint pipeline: dotted-grayscale
              composite + whole-image colour/material reference (paint
              multiplied over the clean source), one generation.
   reference  Like current, but the colour reference comes from the bundled
@@ -22,6 +34,10 @@ Approaches:
              dim lighting).
   two-step   Step 1 fills the marked area with the flat target colour;
              step 2 harmonises lighting/texture against the original photo.
+  paint-everything
+             No mask: clean source + flat swatch, model paints every surface
+             in the scene with the one colour (step 1 of the global-paint
+             then cut-out idea).
   custom     Send an arbitrary prompt + images as-is.
 
 Options:
@@ -35,11 +51,20 @@ Options:
   --prompt <text>     Override the approach's default prompt (current),
                       or the prompt to send (custom)
   --image <file>      Image to send, repeatable, in order (custom)
-  --model <id>        Gemini model override (default gemini-2.5-flash-image)
+  --model <id>        Gemini model override (default gemini-2.5-flash-image;
+                      the paint approach defaults to gemini-3-pro-image-preview)
+  --variant <name>    Marking variant for paint: checker | dots | grayscale |
+                      solid (default checker)
+  --cell <px>         Checker cell size (default 10)
+  --coverage <name>   Checker coverage: half (50%) | quarter (25%)
+                      (default half)
   --spacing <px>      Dot grid spacing (default 15)
   --radius <px>       Dot radius (default 2.5)
+  --lighten <0..1>    Lighten the colour sent to the model (prompt +
+                      reference) toward white (paint; default 0)
 
 Examples:
+  node functions/ai-lab/run.mjs paint --source room.jpg --mask ceiling-mask.png --color "#887360" --lighten 0.2
   node functions/ai-lab/run.mjs current --source room.jpg --mask ceiling-mask.png --color "#213529"
   node functions/ai-lab/run.mjs current --source room.jpg --composite composite.webp --color "#213529"
   node functions/ai-lab/run.mjs reference --source room.jpg --mask ceiling-mask.png --color "#213529"
@@ -64,8 +89,12 @@ const { values, positionals } = parseArgs({
     prompt: { type: "string" },
     image: { type: "string", multiple: true },
     model: { type: "string" },
+    variant: { type: "string" },
+    cell: { type: "string" },
+    coverage: { type: "string" },
     spacing: { type: "string" },
     radius: { type: "string" },
+    lighten: { type: "string" },
     help: { type: "boolean", short: "h" },
   },
 });

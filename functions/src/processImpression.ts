@@ -5,7 +5,7 @@ import { dummyProcess, geminiProcess, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
 import { imageGenerationCredits } from "./credits.js";
 import { FUNCTIONS_REGION } from "./region.js";
-import { hexToRgb, storagePathFromUrl } from "./utils.js";
+import { storagePathFromUrl } from "./utils.js";
 
 export const processImpression = onDocumentCreated(
   {
@@ -13,7 +13,8 @@ export const processImpression = onDocumentCreated(
       "users/{userId}/renovations/{renovationId}/impressions/{impressionId}",
     region: FUNCTIONS_REGION,
     secrets: ["GEMINI_API_KEY", "AI_BACKEND", "AI_REGION"],
-    timeoutSeconds: 120,
+    // Paint mode runs on the slower gemini-3-pro-image-preview model.
+    timeoutSeconds: 300,
     memory: "512MiB",
   },
   async (event) => {
@@ -61,26 +62,12 @@ export const processImpression = onDocumentCreated(
         storagePathFromUrl(sourceImageUrl ?? "");
       const [fileBuffer] = await bucket.file(imagePath).download();
 
-      // Paint mode: the composite already shows the masked area desaturated
-      // in place (old colour removed, forms and lighting kept). Gemini
-      // additionally gets a flat swatch of the chosen paint colour. Kept
-      // in-memory only.
-      let paint: { color: Buffer; hex: string } | undefined;
-      if (mode === "paint" && paintColor) {
-        const color = Buffer.from(
-          await sharp({
-            create: {
-              width: 256,
-              height: 256,
-              channels: 3,
-              background: hexToRgb(paintColor),
-            },
-          })
-            .webp({ lossless: true })
-            .toBuffer(),
-        );
-        paint = { color, hex: paintColor };
-      }
+      // Paint mode: the composite already shows the masked area covered by
+      // the magenta checkerboard. geminiProcess builds the colour reference
+      // (tinted reference room) from the hex and switches to the paint
+      // model.
+      const paint =
+        mode === "paint" && paintColor ? { hex: paintColor } : undefined;
 
       let resultBuffer: Buffer;
       const backend = getAiBackend();

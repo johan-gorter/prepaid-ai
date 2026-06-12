@@ -9,8 +9,10 @@ export default async function custom(args) {
   const outDir = await makeOutDir("custom");
 
   const images = [];
-  for (const file of args.image ?? []) {
-    images.push(await loadImage(file));
+  for (const [i, file] of (args.image ?? []).entries()) {
+    const image = await loadImage(file);
+    images.push(image);
+    await save(outDir, `image-${i + 1}.png`, image);
   }
   await save(outDir, "prompt.txt", args.prompt);
 

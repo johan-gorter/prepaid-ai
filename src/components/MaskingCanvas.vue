@@ -339,20 +339,16 @@ function getOriginalBlob(): Promise<Blob> {
 const CHECKER_CELL = 10;
 // Opaque magenta, a color that almost never appears in natural scenes.
 const CHECKER_COLOR = "rgb(255, 0, 255)";
-// Dot grid for the paint ("grayscale") variant: 5px circles every 15px.
-const DOT_SPACING = 15;
-const DOT_RADIUS = 2.5;
 
-// The AI-facing composite marks the masked area in one of three ways:
-// - "checker": magenta checkerboard (free-prompt "Anders" flow)
+// The AI-facing composite marks the masked area in one of two ways:
+// - "checker": magenta checkerboard over the original colours — the paint
+//   and free-prompt ("Anders") flows. The 50% coverage is deliberate: it
+//   forces the model to repaint every marked surface (sparser markings let
+//   it keep the original materials) while the geometry stays readable
+//   between the squares.
 // - "solid": opaque magenta fill — the remove flow uses this so Gemini sees
 //   a clean "magenta stain" with nothing of the old content showing through
-// - "grayscale": the area is desaturated in place and overlaid with a grid
-//   of small magenta dots — the paint flow uses this so the old colour is
-//   gone and the area is clearly marked even on near-white surfaces (a
-//   plain desaturated ceiling is invisible as a marker), while forms,
-//   materials and lighting stay visible between the dots
-export type CompositeVariant = "checker" | "solid" | "grayscale";
+export type CompositeVariant = "checker" | "solid";
 
 function getCompositeBlob(
   variant: CompositeVariant = "checker",
@@ -374,8 +370,7 @@ function getCompositeBlob(
     }
     ctx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 2) Build the marker layer (magenta or desaturated source), sized to
-    // the image region.
+    // 2) Build the magenta marker layer, sized to the image region.
     const overlay = document.createElement("canvas");
     overlay.width = CANVAS_SIZE;
     overlay.height = CANVAS_SIZE;
@@ -384,39 +379,16 @@ function getCompositeBlob(
       reject(new Error("Overlay context unavailable"));
       return;
     }
-    if (variant === "grayscale") {
-      // Manual luminance conversion — ctx.filter = "grayscale(1)" is not
-      // available on older Safari.
-      overlayCtx.drawImage(sourceImage, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      const img = overlayCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const lum = 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!;
-        d[i] = d[i + 1] = d[i + 2] = lum;
-      }
-      overlayCtx.putImageData(img, 0, 0);
-      // Magenta dot grid so the marked area is visible even where the
-      // desaturated pixels look identical to the original (white ceilings).
-      overlayCtx.fillStyle = CHECKER_COLOR;
-      for (let y = DOT_SPACING / 2; y < CANVAS_SIZE; y += DOT_SPACING) {
-        for (let x = DOT_SPACING / 2; x < CANVAS_SIZE; x += DOT_SPACING) {
-          overlayCtx.beginPath();
-          overlayCtx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-          overlayCtx.fill();
-        }
-      }
+    overlayCtx.fillStyle = CHECKER_COLOR;
+    if (variant === "solid") {
+      overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
     } else {
-      overlayCtx.fillStyle = CHECKER_COLOR;
-      if (variant === "solid") {
-        overlayCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      } else {
-        for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
-          for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
-            const cellX = Math.floor(x / CHECKER_CELL);
-            const cellY = Math.floor(y / CHECKER_CELL);
-            if ((cellX + cellY) % 2 === 0) {
-              overlayCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
-            }
+      for (let y = 0; y < CANVAS_SIZE; y += CHECKER_CELL) {
+        for (let x = 0; x < CANVAS_SIZE; x += CHECKER_CELL) {
+          const cellX = Math.floor(x / CHECKER_CELL);
+          const cellY = Math.floor(y / CHECKER_CELL);
+          if ((cellX + cellY) % 2 === 0) {
+            overlayCtx.fillRect(x, y, CHECKER_CELL, CHECKER_CELL);
           }
         }
       }
