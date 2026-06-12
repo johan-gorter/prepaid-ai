@@ -103,7 +103,6 @@ const en = {
     },
   },
   about: {
-    breadcrumb: "About",
     title: "About payasyougo.app",
     intro:
       "payasyougo.app helps you visualize renovation ideas by combining your photos with AI-powered image editing. Upload a photo of your space, highlight the area you want to change, describe your vision, and receive an AI-generated preview of the result.",
@@ -253,8 +252,6 @@ const en = {
     downloadConvAria: "Download conversation",
   },
   checkoutSuccess: {
-    breadcrumbBalance: "Balance",
-    breadcrumbTitle: "Purchase complete",
     paymentSuccess: "Payment successful!",
     creditsAppear:
       "Your credits will appear in your balance within a few seconds.",

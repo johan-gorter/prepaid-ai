@@ -50,7 +50,7 @@ async function onSend() {
 </script>
 
 <template>
-  <AppBar :title="$t('sendCredits.title')" />
+  <AppBar />
 
   <main
     class="responsive"
@@ -60,6 +60,8 @@ async function onSend() {
       padding-top: var(--app-bar-clearance);
     "
   >
+    <h4>{{ $t("sendCredits.title") }}</h4>
+
     <!-- Confirmation -->
     <div v-if="sent" class="center-align" style="padding-top: 3rem">
       <i class="extra" style="font-size: 3rem; color: var(--primary)"

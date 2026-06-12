@@ -1,24 +1,13 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
-import UserMenu from "../components/UserMenu.vue";
+import AppBar from "../components/AppBar.vue";
 
 const route = useRoute();
 const sessionId = route.query.session_id as string | undefined;
 </script>
 
 <template>
-  <header class="fixed">
-    <nav>
-      <router-link to="/" class="breadcrumb-root">payasyougo</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <router-link to="/balance" class="breadcrumb-root">{{
-        $t("checkoutSuccess.breadcrumbBalance")
-      }}</router-link>
-      <span class="breadcrumb-sep">&gt;</span>
-      <h1 class="max">{{ $t("checkoutSuccess.breadcrumbTitle") }}</h1>
-      <UserMenu />
-    </nav>
-  </header>
+  <AppBar />
 
   <main
     class="responsive center-align"
@@ -42,21 +31,3 @@ const sessionId = route.query.session_id as string | undefined;
     </p>
   </main>
 </template>
-
-<style scoped>
-.breadcrumb-root {
-  text-decoration: underline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: inherit;
-  min-width: 0;
-}
-
-.breadcrumb-sep {
-  margin: 0 0.25rem;
-  flex-shrink: 0;
-}
-</style>

@@ -293,7 +293,7 @@ async function handleCancel() {
 
 <template>
   <div class="page-layout">
-    <AppBar :title="$t('crop.title')" />
+    <AppBar />
 
     <main
       class="responsive"
@@ -313,6 +313,7 @@ async function handleCancel() {
         </button>
       </div>
       <template v-else>
+        <h5 class="center-align no-margin">{{ $t("crop.title") }}</h5>
         <p class="center-align small-text">
           {{ $t("crop.dragHint") }}
         </p>

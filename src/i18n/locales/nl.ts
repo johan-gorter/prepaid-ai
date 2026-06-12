@@ -104,7 +104,6 @@ const nl: MessageSchema = {
     },
   },
   about: {
-    breadcrumb: "Over",
     title: "Over payasyougo.app",
     intro:
       "payasyougo.app helpt je je make-over te visualiseren. Combineer je eigen foto's met slimme AI-beeldbewerking. Upload een foto van je ruimte, markeer wat je wilt veranderen, beschrijf je idee en zie meteen het resultaat.",
@@ -253,8 +252,6 @@ const nl: MessageSchema = {
     downloadConvAria: "Gesprek downloaden",
   },
   checkoutSuccess: {
-    breadcrumbBalance: "Saldo",
-    breadcrumbTitle: "Aankoop voltooid",
     paymentSuccess: "Betaling geslaagd!",
     creditsAppear: "Je credits verschijnen binnen enkele seconden in je saldo.",
     viewBalance: "Saldo bekijken",

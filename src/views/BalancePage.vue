@@ -13,7 +13,7 @@ function reasonLabel(key: TransactionReasonKey) {
 </script>
 
 <template>
-  <AppBar :title="$t('balance.title')" />
+  <AppBar />
 
   <main
     class="responsive"
@@ -23,6 +23,8 @@ function reasonLabel(key: TransactionReasonKey) {
       padding-top: var(--app-bar-clearance);
     "
   >
+    <h4>{{ $t("balance.title") }}</h4>
+
     <div v-if="loading" class="center-align" style="padding-top: 4rem">
       <progress class="circle"></progress>
     </div>

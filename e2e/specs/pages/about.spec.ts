@@ -36,7 +36,7 @@ test.describe("About Page", () => {
     ).toBeVisible();
   });
 
-  test("shows breadcrumb and back link", async ({ page }) => {
+  test("shows app-bar logo and back link", async ({ page }) => {
     await page.goto("/about");
 
     await expect(page.getByTestId("app-logo")).toBeVisible();

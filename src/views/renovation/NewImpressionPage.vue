@@ -116,7 +116,7 @@ const sharePending = ref(false);
 // rather than the half-broken preview shell.
 const shareError = ref<string | null>(null);
 
-const headerTitle = computed(() => {
+const pageTitle = computed(() => {
   if (stage.value === "prompt") return t("newImpression.titleDescribe");
   if (stage.value === "processing") return t("newImpression.titleProcessing");
   if (stage.value === "preview") return t("newImpression.titleImpression");
@@ -695,12 +695,16 @@ async function onShare() {
 
 <template>
   <div class="page-layout">
-    <AppBar :title="headerTitle" />
+    <AppBar />
 
     <main
       class="responsive wizard-main"
       :class="{ 'wizard-main--prompt': stage === 'prompt' }"
     >
+      <h5 v-if="!shareError" class="center-align no-margin wizard-title">
+        {{ pageTitle }}
+      </h5>
+
       <article
         v-if="shareError"
         class="border large-padding center-align share-error-card"
@@ -1030,6 +1034,10 @@ async function onShare() {
 
 .inert-canvas :deep(.masking-wrapper) {
   pointer-events: none;
+}
+
+.wizard-title {
+  padding: 0 1rem;
 }
 
 .step-hint {

@@ -6,7 +6,7 @@ const { currentUser } = useAuth();
 </script>
 
 <template>
-  <AppBar :title="$t('about.breadcrumb')" />
+  <AppBar />
 
   <main
     class="responsive"

@@ -201,7 +201,7 @@ function buyCustom() {
 </script>
 
 <template>
-  <AppBar :title="$t('buyCredits.title')" />
+  <AppBar />
 
   <main
     class="responsive"

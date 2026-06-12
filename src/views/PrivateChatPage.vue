@@ -251,11 +251,12 @@ function continueChat() {
 </script>
 
 <template>
-  <AppBar :title="$t('chat.title')" />
+  <AppBar />
 
   <main class="chat-page">
     <!-- Chat messages -->
     <div class="chat-messages">
+      <h4 class="no-margin">{{ $t("chat.title") }}</h4>
       <div
         v-if="messages.length === 0"
         class="center-align"
