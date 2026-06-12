@@ -57,6 +57,13 @@ sharp can read; it is resized to the source dimensions.
   `--reference` additionally sends the tinted reference room as a second
   image (the pre-2026-06-12 production behaviour).
 
+  **This approach is the lab replica of production** (`geminiProcess()` in
+  `functions/src/ai.ts`) — keep prompt, marking and model in sync when either
+  side changes. One deliberate difference: `--lighten` is a flat factor you
+  pass by hand, while production ramps the factor with the colour's
+  luminance (`paintLightenFactor`: 0 at luminance ≤50 up to 0.2 at ≥120) —
+  compute the ramp yourself to reproduce production for a given colour.
+
 - **`current`** — baseline; replicates the old production paint pipeline:
   dotted-grayscale composite + a whole-image colour/material reference (the
   paint colour multiplied over the clean source, so the model sees the colour
@@ -95,6 +102,25 @@ sharp can read; it is resized to the source dimensions.
   ```bash
   node functions/ai-lab/run.mjs custom --prompt "Repaint the ceiling #213529" --image room.jpg --image swatch.png
   ```
+
+## Tools
+
+Quantitative result checks, so runs can be compared by numbers instead of
+eyeballing thumbnails:
+
+```bash
+node functions/ai-lab/tools/verify.mjs out/paint-<ts>/result.webp \
+  --source in/in-beams.png --mask in/mask-beams.png --target "#887360"
+node functions/ai-lab/tools/diffmap.mjs out/paint-<ts>/result.webp \
+  --source in/in-beams.png --mask in/mask-beams.png
+```
+
+- **`tools/verify.mjs`** — mean abs diff outside the mask (preservation; ~5
+  is regeneration noise, >10 means something visibly changed), mean diff +
+  mean colour inside the mask (vs `--target`), leftover-magenta count, and a
+  mask-bounding-box crop of the result for close inspection.
+- **`tools/diffmap.mjs`** — heatmap PNG of changes: red = outside-mask
+  change (paint spill, hallucinated objects, tone shifts), grey = inside.
 
 ## Adding an approach
 
