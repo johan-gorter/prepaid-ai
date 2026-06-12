@@ -226,6 +226,7 @@ If you change application code, update affected tests to match. If you change te
 - If you change Storage runtime caching, make sure the service worker still matches both production Firebase Storage URLs and emulator Storage URLs.
 - Cached image bytes plus the persisted path-to-URL mapping are what allow image rendering after a full offline refresh. If either side changes, re-check the PWA image-loading behavior.
 - The `GEMINI_API_KEY` is server-side only (Cloud Functions) and must never be exposed in client code.
+- **Before changing anything in the renovation funnel** (landing card, photo/mask/choose/paint wizard, buy-credits, login timing, result page, sharing), read [docs/viral-flow.md](docs/viral-flow.md) — it records deliberate product decisions and invariants that must not be "fixed" in passing.
 - **Before changing AI prompts or region markings** (paint / remove / free-prompt flows in `functions/src/ai.ts` and `src/components/MaskingCanvas.vue`), read [docs/nano-banana-prompting.md](docs/nano-banana-prompting.md) — it records proven and failed approaches so they aren't re-discovered. Iterate with the local harness `functions/ai-lab` (one Vertex call per run, results + inputs saved per run, quantitative checks in `functions/ai-lab/tools/`) instead of deploying to test.
 - Java must be installed for Firebase Emulators to run.
 - Tracked service logs and PID files are written under `logs/services/`.
