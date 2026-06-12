@@ -328,14 +328,14 @@ test.describe("Share impression", () => {
         await recipientPage.getByRole("button", { name: "Generate" }).click();
 
         // Lands on the preview stage of a brand-new renovation owned by
-        // the recipient, with a generated result image.
+        // the recipient, with a generated result image. The URL change is
+        // the Cloud-Function-gated wait; the result image after it only
+        // needs the default timeout.
         await recipientPage.waitForURL(
           /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
           { timeout: 60_000 },
         );
-        await expect(recipientPage.getByAltText("Result")).toBeVisible({
-          timeout: 45_000,
-        });
+        await expect(recipientPage.getByAltText("Result")).toBeVisible();
         // The recipient is now an owner of the new impression — Share
         // button is available to them too.
         await expect(
