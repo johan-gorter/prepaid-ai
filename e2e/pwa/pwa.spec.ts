@@ -9,7 +9,7 @@ import {
   signInTestUser,
 } from "../helpers/auth";
 import { EMULATOR_URLS } from "../helpers/emulator-config";
-import { chooseFreePrompt } from "../helpers/renovation";
+import { chooseFreePrompt, waitForPreviewResult } from "../helpers/renovation";
 
 async function signInOnPage(
   page: import("@playwright/test").Page,
@@ -248,14 +248,9 @@ test.describe("PWA Requirements", () => {
       await expect(promptInput).toBeVisible();
       await promptInput.fill("verify cached image survives refresh");
 
-      // Click Generate
+      // Click Generate, then wait out the Cloud Function round-trip
       await page.getByRole("button", { name: "Generate" }).click();
-
-      // Wait for three-button bar and result image
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
-      await expect(page.getByAltText("Result")).toBeVisible({ timeout: 30000 });
+      await waitForPreviewResult(page);
 
       // Navigate to renovations list via Renovation Details → back
       await page.getByRole("button", { name: "Renovation Details" }).click();

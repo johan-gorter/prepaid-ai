@@ -4,6 +4,7 @@ import {
   chooseFreePrompt,
   createRenovationAndWaitForResult,
   drawMaskStroke,
+  waitForPreviewResult,
 } from "../../helpers/renovation";
 
 test.describe("New Impression Page", () => {
@@ -116,24 +117,17 @@ test.describe("New Impression Page", () => {
       await expect(promptInput).toBeVisible();
       await promptInput.fill("second change in chain");
 
-      // Generate
+      // Generate → preview stage after Cloud Function completion
       await page.getByRole("button", { name: "Generate" }).click();
+      await waitForPreviewResult(page);
 
-      // Preview stage after completion — three-button bar visible
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
+      // Three-button bar visible
       await expect(
         page.getByRole("button", { name: "Trash" }),
       ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "Next Change" }),
       ).toBeVisible();
-
-      // Result image visible
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 45_000,
-      });
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -205,10 +199,7 @@ test.describe("New Impression Page", () => {
       await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("chained impression");
       await page.getByRole("button", { name: "Generate" }).click();
-
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
+      await waitForPreviewResult(page);
 
       // Click Renovation Details → timeline
       await page.getByRole("button", { name: "Renovation Details" }).click();
@@ -243,10 +234,7 @@ test.describe("New Impression Page", () => {
       await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("second change");
       await page.getByRole("button", { name: "Generate" }).click();
-
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 45_000,
-      });
+      await waitForPreviewResult(page);
 
       // --- Third impression chained off the second ---
       await page.getByRole("button", { name: "Next Change" }).click();
@@ -259,10 +247,7 @@ test.describe("New Impression Page", () => {
       await chooseFreePrompt(page);
       await page.getByTestId("prompt").fill("third change");
       await page.getByRole("button", { name: "Generate" }).click();
-
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 45_000,
-      });
+      await waitForPreviewResult(page);
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -329,12 +314,7 @@ test.describe("New Impression Page", () => {
       // processing, then land on the preview stage with a result image.
       await page.getByTestId("choose-remove").click();
       await expect(page.getByTestId("prompt")).toHaveCount(0);
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 45_000,
-      });
+      await waitForPreviewResult(page);
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -403,12 +383,7 @@ test.describe("New Impression Page", () => {
 
       // Skips the prompt screen, processes, lands on preview with a result.
       await expect(page.getByTestId("prompt")).toHaveCount(0);
-      await expect(
-        page.getByRole("button", { name: "Renovation Details" }),
-      ).toBeVisible();
-      await expect(page.getByAltText("Result")).toBeVisible({
-        timeout: 45_000,
-      });
+      await waitForPreviewResult(page);
     } finally {
       rmSync(grayPngPath, { force: true });
     }

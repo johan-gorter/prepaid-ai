@@ -1,6 +1,10 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
-import { chooseFreePrompt, createGrayPng } from "../../helpers/renovation";
+import {
+  chooseFreePrompt,
+  createGrayPng,
+  waitForPreviewResult,
+} from "../../helpers/renovation";
 
 // Run only on chromium — this integration test uses shared emulator state
 // and cannot safely run in parallel across multiple browser projects.
@@ -60,9 +64,7 @@ test.describe("Impression processing", () => {
       await page.getByRole("button", { name: "Generate" }).click();
 
       // 5. Result step: three-button bar and Cloud Function output
-      await expect(page.getByRole("button", { name: "Renovation Details" })).toBeVisible();
-      const resultImage = page.getByAltText("Result");
-      await expect(resultImage).toBeVisible({ timeout: 30000 });
+      await waitForPreviewResult(page);
 
       // 6. Navigate to timeline and verify the result appears there too
       await page.getByRole("button", { name: "Renovation Details" }).click();
