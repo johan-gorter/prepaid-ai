@@ -14,16 +14,19 @@ const USAGE = `Usage: node functions/ai-lab/run.mjs <approach> [options]
 
 Approaches:
   current    Replicate the production paint pipeline: dotted-grayscale
-             composite + colour swatch, one generation.
+             composite + whole-image colour/material reference (paint
+             multiplied over the clean source), one generation.
   two-step   Step 1 fills the marked area with the flat target colour;
              step 2 harmonises lighting/texture against the original photo.
   custom     Send an arbitrary prompt + images as-is.
 
 Options:
-  --source <file>     Clean source photo (current, two-step)
+  --source <file>     Clean source photo (current, two-step). Required for
+                      current — the colour reference is built from it.
   --mask <file>       Mask image: white = repaint area, black = keep
-  --composite <file>  Pre-built composite (current; skips --source/--mask,
-                      e.g. one downloaded from the Storage emulator)
+  --composite <file>  Pre-built composite (current; skips --mask, still
+                      needs --source, e.g. one downloaded from the Storage
+                      emulator)
   --color <hex>       Target paint colour (default "#213529", RAL 6009)
   --prompt <text>     Override the approach's default prompt (current),
                       or the prompt to send (custom)
@@ -34,7 +37,7 @@ Options:
 
 Examples:
   node functions/ai-lab/run.mjs current --source room.jpg --mask ceiling-mask.png --color "#213529"
-  node functions/ai-lab/run.mjs current --composite composite.webp --color "#213529"
+  node functions/ai-lab/run.mjs current --source room.jpg --composite composite.webp --color "#213529"
   node functions/ai-lab/run.mjs two-step --source room.jpg --mask ceiling-mask.png --color "#213529"
   node functions/ai-lab/run.mjs custom --prompt "Describe this image" --image room.jpg
 

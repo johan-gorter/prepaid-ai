@@ -38,11 +38,14 @@ sharp can read; it is resized to the source dimensions.
 ### Approaches
 
 - **`current`** — baseline; replicates the production paint pipeline:
-  dotted-grayscale composite + colour swatch, one generation. Builds the
-  composite from `--source` + `--mask`, or sends an existing one via
+  dotted-grayscale composite + a whole-image colour/material reference (the
+  paint colour multiplied over the clean source, so the model sees the colour
+  in multiple natural ways under the room's lighting), one generation. Builds
+  the composite from `--source` + `--mask`, or sends an existing one via
   `--composite` (e.g. downloaded from the Storage emulator before the
-  Cloud Function deletes it). `--prompt` overrides the production prompt
-  for quick prompt-only experiments.
+  Cloud Function deletes it). `--source` is always required — the colour
+  reference is built from the clean source. `--prompt` overrides the
+  production prompt for quick prompt-only experiments.
 
   ```bash
   node functions/ai-lab/run.mjs current --source in/in-beams.png --mask in/mask-beams.png --color "#887360"
@@ -72,6 +75,8 @@ the utilities from `lib.mjs`:
   `{ image, text }`
 - `buildPaintComposite(source, mask, { spacing, radius })` /
   `buildSolidComposite(source, mask)` — the production composite variants
+- `buildColorReference(source, hex)` — the production whole-image colour
+  reference: the paint colour multiplied over the clean source
 - `grayscale`, `colorSwatch`, `dotGrid`, `compositeMasked` — primitives to
   build new variants
 - `makeOutDir(name)` / `save(dir, name, data)` — run output

@@ -123,6 +123,26 @@ export const colorSwatch = (hex, width = 256, height = 256) =>
     .png()
     .toBuffer();
 
+/**
+ * Whole-image colour/material reference: multiply the paint colour over the
+ * CLEAN source so the model sees how the colour reads under the room's
+ * lighting, shadows and texture — the paint shown in multiple natural ways
+ * rather than as one flat value. Mirrors the production paint pipeline
+ * (processImpression.ts).
+ */
+export async function buildColorReference(source, hex) {
+  const { width, height } = await imageSize(source);
+  return sharp(source)
+    .composite([
+      {
+        input: { create: { width, height, channels: 3, background: hex } },
+        blend: "multiply",
+      },
+    ])
+    .png()
+    .toBuffer();
+}
+
 /** Transparent layer with a grid of filled circles. */
 export async function dotGrid(
   width,
