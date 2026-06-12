@@ -189,6 +189,7 @@ const nl: MessageSchema = {
     back: "Terug",
     generate: "Genereren",
     processingFailed: "Verwerking mislukt",
+    processingTimeout: "Het duurt langer dan verwacht. Probeer het opnieuw.",
     unknownError: "Onbekende fout",
     failedShareLink: "Deellink aanmaken mislukt",
     deleteRenovationConfirm: "Deze make-over en alle bijbehorende impressies verwijderen?",

@@ -484,6 +484,14 @@ async function onTrash() {
   }
 }
 
+/**
+ * Safety ceiling for the Cloud Function round-trip. If the function never
+ * reports back (crashed, not deployed, emulator down), fail the wait so the
+ * user gets an error and their retry buttons back instead of an eternal
+ * processing spinner. Generations normally finish well within this.
+ */
+const COMPLETION_TIMEOUT_MS = 90_000;
+
 function waitForCompletion(
   uid: string,
   renoId: string,
@@ -499,15 +507,21 @@ function waitForCompletion(
       "impressions",
       impId,
     );
+    const timer = setTimeout(() => {
+      unsub();
+      reject(new Error(t("newImpression.processingTimeout")));
+    }, COMPLETION_TIMEOUT_MS);
     const unsub = onSnapshot(
       docRef,
       (snap) => {
         const data = snap.data();
         if (!data) return;
         if (data.status === "completed" && data.resultImagePath) {
+          clearTimeout(timer);
           unsub();
           resolve(data.resultImagePath as string);
         } else if (data.status === "failed") {
+          clearTimeout(timer);
           unsub();
           reject(
             new Error(
@@ -518,6 +532,7 @@ function waitForCompletion(
         }
       },
       (err) => {
+        clearTimeout(timer);
         unsub();
         reject(err);
       },

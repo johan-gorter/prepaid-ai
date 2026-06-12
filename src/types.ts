@@ -33,7 +33,8 @@ export interface Share {
 export interface UserProfile {
   displayName: string;
   email: string;
-  createdAt: Timestamp;
+  /** Rewritten by the sign-in upsert on every sign-in (useAuth.ts). */
+  lastSignIn: Timestamp;
   lastActivity?: Timestamp;
   balance?: number;
 }

@@ -189,6 +189,7 @@ const en = {
     back: "Back",
     generate: "Generate",
     processingFailed: "Processing failed",
+    processingTimeout: "This is taking longer than expected. Please try again.",
     unknownError: "Unknown error",
     failedShareLink: "Failed to create share link",
     deleteRenovationConfirm: "Delete this renovation and all its impressions?",

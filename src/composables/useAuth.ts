@@ -16,14 +16,16 @@ import("firebase/auth").then(({ getAuth, onAuthStateChanged }) => {
     loading.value = false;
 
     if (user) {
-      // Upsert user profile in Firestore
+      // Upsert user profile in Firestore. Written on every sign-in, so the
+      // timestamp is named for what it is — not `createdAt`, which a
+      // merge-upsert would silently rewrite each time.
       const userRef = doc(db, "users", user.uid);
       await setDoc(
         userRef,
         {
           displayName: user.displayName ?? "",
           email: user.email ?? "",
-          createdAt: serverTimestamp(),
+          lastSignIn: serverTimestamp(),
         },
         { merge: true },
       );
