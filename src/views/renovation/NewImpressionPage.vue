@@ -558,16 +558,39 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
 }
 
 .step-hint {
-  height: 24px;
+  /* min-height (not a fixed height) so the instruction can grow without the
+     canvas overlapping it. The #85 copy fits one line at 320px, but a longer
+     translation or larger font must push the canvas down, never hide behind
+     it. */
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0.25rem 1rem;
   font-size: 0.875rem;
   text-align: center;
 }
 
 .canvas-area--hidden {
   display: none;
+}
+
+/* Edge-to-edge photo on phones (viral-flow invariant #9): every pixel of
+   canvas width helps finger precision when masking. Break the canvas out of
+   the responsive container to the full viewport width and drop the rounded
+   corners so it meets both screen edges. Desktop keeps the centred 544px max. */
+@media (max-width: 599px) {
+  .canvas-area {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .canvas-area :deep(.masking-wrapper) {
+    max-width: 100%;
+    border-radius: 0;
+  }
 }
 
 .result-marker {

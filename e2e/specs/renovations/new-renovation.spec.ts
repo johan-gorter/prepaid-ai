@@ -110,7 +110,7 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("clear mask button clears the drawn area", async ({
+    test("undo button clears the drawn area", async ({
       authenticatedPage: page,
     }) => {
       const grayPngPath = await createGrayPng();
@@ -119,7 +119,7 @@ test.describe("New Renovation Page", () => {
 
         await expect(page.locator("canvas")).toBeVisible();
         await expect(
-          page.getByRole("button", { name: "Clear Mask" }),
+          page.getByRole("button", { name: "Undo" }),
         ).toBeVisible();
 
         // Draw something, then clear
@@ -135,8 +135,8 @@ test.describe("New Renovation Page", () => {
           await page.mouse.up();
         }
 
-        // Clear mask — just verify button is clickable
-        await page.getByRole("button", { name: "Clear Mask" }).click();
+        // Undo — just verify button is clickable
+        await page.getByRole("button", { name: "Undo" }).click();
       } finally {
         rmSync(grayPngPath, { force: true });
       }
