@@ -229,6 +229,42 @@ test.describe("New Impression Page", () => {
     }
   });
 
+  test("choose-action: shows the masked photo, every option's price, and the anchor", async ({
+    authenticatedPage: page,
+  }) => {
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "base for choose-action layout",
+    );
+
+    try {
+      await clickNextChange(page);
+      await paintMask(page);
+      await advanceToChooseAction(page);
+
+      // The masked photo stays visible while the user chooses an action (#86).
+      await expect(page.locator("canvas")).toBeVisible();
+
+      // Guidance note + price anchor.
+      await expect(page.getByTestId("choose-guidance")).toBeVisible();
+      await expect(page.getByTestId("choose-price-anchor")).toHaveText(
+        "1 credit = $0.01",
+      );
+
+      // Every option shows its credit price (remove 5, colour 10, other 10).
+      await expect(page.getByTestId("choose-remove")).toContainText("5");
+      await expect(page.getByTestId("choose-paint")).toContainText("10");
+      await expect(page.getByTestId("choose-other")).toContainText("10");
+
+      // Renamed colour-change label.
+      await expect(page.getByTestId("choose-paint")).toContainText(
+        "Change colour",
+      );
+    } finally {
+      rmSync(grayPngPath, { force: true });
+    }
+  });
+
   test("choose-action: Verwijderen runs generate without showing the prompt screen", async ({
     authenticatedPage: page,
   }) => {
