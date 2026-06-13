@@ -62,7 +62,9 @@ test.describe("Home Page", () => {
     await page.getByRole("button", { name: "User menu" }).click();
     await page.getByText("Sign out").click();
     await page.waitForURL(/\/login/);
-    await expect(page.getByText("Reimagine your space with AI")).toBeVisible();
+    await expect(
+      page.getByText("An account is free — it keeps your credits and your work safe."),
+    ).toBeVisible();
   });
 });
 

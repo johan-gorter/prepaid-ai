@@ -75,7 +75,7 @@ async function handleDevLogin() {
     <article class="large-elevate border">
       <div class="center-align">
         <h4>payasyougo.app</h4>
-        <p class="small-text">{{ $t("login.reimagineYourSpace") }}</p>
+        <p class="small-text">{{ $t("login.accountReassurance") }}</p>
       </div>
 
       <div class="space"></div>
@@ -132,6 +132,9 @@ async function handleDevLogin() {
       >
         <template #terms>
           <router-link to="/about">{{ $t("login.termsLink") }}</router-link>
+        </template>
+        <template #privacy>
+          <router-link to="/about">{{ $t("login.privacyLink") }}</router-link>
         </template>
       </i18n-t>
 
