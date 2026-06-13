@@ -276,7 +276,8 @@ Copy `.env.example` to `.env` for production credentials. The `.env.emulator` fi
 
 ```
 src/
-  composables/        Vue composables (useAuth, useRenovations)
+  composables/        Vue composables (useAuth, useRenovationsList)
+  data/               Plain Firestore/Storage repos (renovationRepo)
   router/             Vue Router config with auth guards
   views/              Page components
   firebase.ts         Firebase SDK init + emulator wiring

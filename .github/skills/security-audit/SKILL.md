@@ -106,7 +106,7 @@ Select-String -Path functions/src/index.ts -Pattern 'users/\{userId\}'
    - All routes except `/login` have `meta: { requiresAuth: true }`
    - `beforeEach` guard redirects unauthenticated users
 2. **Composables** — verify each composable that accesses Firestore/Storage:
-   - `useRenovations.ts`: all collection paths include `currentUser.value.uid`
+   - `useRenovationsList.ts` / `data/renovationRepo.ts`: all collection paths include the user's `uid`
    - `useImpressions.ts`: all collection paths include `user.uid`
    - `useStorageUrl.ts`: uses authenticated Storage SDK (tokens auto-attached)
 3. **Views** — verify page components:

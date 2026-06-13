@@ -11,14 +11,16 @@ import {
   clearImpressionMask,
   clearImpressionSource,
 } from "../../composables/useImpressionStore";
-import { useRenovations } from "../../composables/useRenovations";
+import {
+  deleteRenovation,
+  setAfterImpression,
+} from "../../data/renovationRepo";
 import { db } from "../../firebase";
 import type { Renovation } from "../../types";
 
 const route = useRoute();
 const router = useRouter();
 const { currentUser } = useAuth();
-const { setAfterImpression, deleteRenovation } = useRenovations();
 
 const renovationId = computed(() => route.params.id as string);
 const renovationIdRef = ref(renovationId.value);
@@ -111,6 +113,7 @@ watch(
 );
 
 async function handleStar(impressionId: string) {
+  if (!currentUser.value) return;
   const previousAfterImpressionId = renovation.value?.afterImpressionId;
 
   if (renovation.value) {
@@ -118,7 +121,11 @@ async function handleStar(impressionId: string) {
   }
 
   try {
-    await setAfterImpression(renovationId.value, impressionId);
+    await setAfterImpression(
+      currentUser.value.uid,
+      renovationId.value,
+      impressionId,
+    );
   } catch (error) {
     if (renovation.value) {
       renovation.value = {
@@ -270,7 +277,8 @@ function handleResultImageClick(event: MouseEvent, impressionId: string) {
 
 async function handleDeleteRenovation() {
   showDeleteDialog.value = false;
-  await deleteRenovation(renovationId.value);
+  if (!currentUser.value) return;
+  await deleteRenovation(currentUser.value.uid, renovationId.value);
   router.push("/renovations");
 }
 

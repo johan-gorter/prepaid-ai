@@ -57,7 +57,7 @@ export const db = initializeFirestore(firebaseApp, {
 });
 ```
 
-All `onSnapshot` listeners in `useRenovations` and `useImpressions` return data from the IndexedDB cache immediately, then update reactively when the network delivers fresher data. Writes are queued locally and synced when connectivity is restored.
+All `onSnapshot` listeners in `useRenovationsList` and `useImpressions` return data from the IndexedDB cache immediately, then update reactively when the network delivers fresher data. Writes are queued locally and synced when connectivity is restored.
 
 ### 3. Firebase Storage image runtime caching (service worker)
 

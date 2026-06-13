@@ -16,10 +16,10 @@ import { useRoute, useRouter } from "vue-router";
 import type { User } from "firebase/auth";
 import { useBalance } from "./useBalance";
 import { getImpressionSource, setImpressionSource } from "./useImpressionStore";
-import { useRenovations } from "./useRenovations";
 import { resolveStorageUrl } from "./useStorageUrl";
 import { track } from "./useTrack";
 import { ACTION_CREDITS, type RenovationAction } from "../credits";
+import { createImpression, createRenovation } from "../data/renovationRepo";
 import { db, storage } from "../firebase";
 import type { Source, Stage } from "../views/renovation/wizard/wizardTypes";
 
@@ -72,8 +72,6 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
   const route = useRoute();
   const router = useRouter();
   const { balance, waitForLoad: waitForBalance } = useBalance();
-  const { createRenovation, createImpression } = useRenovations();
-
   const canGenerate = computed(() => prompt.value.trim().length > 0);
 
   // The per-action credit price (docs/viral-flow.md §10): remove = 5,
@@ -193,7 +191,7 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           if (!sourceBlob) throw new Error("Source image missing");
           const originalImagePath = `users/${uid}/originals/${ts}.webp`;
           await uploadBytes(storageRef(storage, originalImagePath), sourceBlob);
-          renovationId = await createRenovation({ originalImagePath });
+          renovationId = await createRenovation(uid, { originalImagePath });
           sourceImagePath = originalImagePath;
         } else if (source === "original") {
           if (!renovationId) throw new Error("Renovation ID missing");
@@ -237,7 +235,7 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           compositeBlob,
         );
 
-        const newImpressionId = await createImpression(renovationId!, {
+        const newImpressionId = await createImpression(uid, renovationId!, {
           sourceImagePath,
           compositeImagePath,
           prompt: prompt.value.trim(),
