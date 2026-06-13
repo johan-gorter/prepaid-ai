@@ -8,11 +8,15 @@ import StorageImage from "../../components/StorageImage.vue";
 import { useAuth } from "../../composables/useAuth";
 import { idbSet } from "../../composables/useIdbStorage";
 import { updateLastActivity } from "../../composables/useLastActivity";
-import { useRenovations } from "../../composables/useRenovations";
+import { useRenovationsList } from "../../composables/useRenovationsList";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
 import { db } from "../../firebase";
 
-const { renovations, loading: renovationsLoading, error } = useRenovations();
+const {
+  renovations,
+  loading: renovationsLoading,
+  error,
+} = useRenovationsList();
 const { currentUser } = useAuth();
 const router = useRouter();
 const cardDataUrls = ref<Record<string, string>>({});

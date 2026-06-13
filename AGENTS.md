@@ -17,7 +17,8 @@ This file contains instructions for AI coding agents working on the payasyougo.a
 
 ```
 src/                    # Vue application source
-  composables/          # Vue composables (useAuth, useRenovations)
+  composables/          # Vue composables (useAuth, useRenovationsList)
+  data/                 # Plain Firestore/Storage repos (renovationRepo)
   router/               # Vue Router config with auth guards
   views/                # Page components (HomePage, LoginPage, NewRenovationPage)
   firebase.ts           # Firebase SDK init + emulator wiring

@@ -16,7 +16,10 @@ import {
   getImpressionSource,
   setImpressionSource,
 } from "../../composables/useImpressionStore";
-import { useRenovations } from "../../composables/useRenovations";
+import {
+  deleteImpression,
+  deleteRenovation,
+} from "../../data/renovationRepo";
 import { useShareHydration } from "../../composables/useShareHydration";
 import { track } from "../../composables/useTrack";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
@@ -39,7 +42,6 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { currentUser } = useAuth();
-const { deleteImpression, deleteRenovation } = useRenovations();
 
 const stage = ref<Stage>("preview");
 const sourceObjectUrl = ref<string | null>(null);
@@ -392,9 +394,13 @@ async function onTrash() {
     // Trashing a generated result shortly after creating it is our
     // dissatisfaction proxy until a satisfaction meter exists (measurement.md).
     track("impression_trashed");
-    if (renovationParam.value && impressionParam.value) {
+    if (currentUser.value && renovationParam.value && impressionParam.value) {
       try {
-        await deleteImpression(renovationParam.value, impressionParam.value);
+        await deleteImpression(
+          currentUser.value.uid,
+          renovationParam.value,
+          impressionParam.value,
+        );
       } catch {
         // ignore deletion errors — the user is leaving anyway
       }
@@ -407,10 +413,10 @@ async function onTrash() {
       router.replace("/renovations");
     }
   } else if (source === "original") {
-    if (!renovationParam.value) return;
+    if (!currentUser.value || !renovationParam.value) return;
     if (!confirm(t("newImpression.deleteRenovationConfirm"))) return;
     try {
-      await deleteRenovation(renovationParam.value);
+      await deleteRenovation(currentUser.value.uid, renovationParam.value);
     } catch {
       // ignore
     }
