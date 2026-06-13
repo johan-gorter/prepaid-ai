@@ -1,3 +1,5 @@
+import { test as baseTest, expect as baseExpect } from "@playwright/test";
+import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import { expect, test } from "../../fixtures";
 
 test.describe("Main Page", () => {
@@ -57,4 +59,59 @@ test.describe("Main Page", () => {
 
     await expect(page.getByRole("heading", { name: "Balance" })).toBeVisible();
   });
+});
+
+baseTest.describe("Feedback anonymous → login flow", () => {
+  baseTest.beforeEach(async ({}, testInfo) => {
+    baseTest.skip(testInfo.project.name !== "chromium", "chromium only");
+  });
+
+  baseTest(
+    "restores feedback draft after anonymous submit → login round-trip",
+    async ({ page }) => {
+      // Pre-create the user server-side (parallel-safe). The user signs in
+      // mid-test, simulating an anonymous → authenticated transition.
+      const user = await createTestUser(createRandomTestUser());
+
+      const message = "Please add a wallpaper preview tool!";
+
+      // 1. Anonymous visitor lands on the main page and types feedback.
+      await page.goto("/");
+      await baseExpect(page.getByTestId("feedback-input")).toBeVisible();
+      await page.getByTestId("feedback-input").fill(message);
+
+      // 2. Pressing send while signed out persists the draft and redirects
+      //    to /login with the main page as the post-login target.
+      await page.getByTestId("feedback-submit").click();
+      await page.waitForURL(/\/login\?/);
+      const loginUrl = new URL(page.url());
+      baseExpect(loginUrl.searchParams.get("redirect")).toBe("/");
+
+      // 3. Sign in and follow the redirect, mirroring LoginPage.handleSignIn.
+      await page.waitForFunction(
+        () => typeof (window as any).__testSignIn === "function",
+      );
+      await page.evaluate(
+        async (creds) => {
+          await (window as any).__testSignIn(creds.email, creds.password);
+        },
+        { email: user.email, password: user.password },
+      );
+      await page.waitForFunction(() =>
+        (window as any)
+          .__testAuthReady?.()
+          .then((uid: string | null) => uid != null),
+      );
+      await page.goto("/");
+
+      // 4. The draft is restored into the textarea so the user can re-send.
+      await baseExpect(page.getByTestId("feedback-input")).toHaveValue(message);
+
+      // 5. Pressing send now lands the feedback in the `feedback` collection.
+      await page.getByTestId("feedback-submit").click();
+      await baseExpect(
+        page.getByText("Thanks for your feedback!"),
+      ).toBeVisible();
+    },
+  );
 });
