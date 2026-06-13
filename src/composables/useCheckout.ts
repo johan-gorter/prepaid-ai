@@ -127,11 +127,18 @@ export function useCheckout() {
     return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
-  async function startCheckout(credits: number) {
+  async function startCheckout(
+    credits: number,
+    opts?: { waiverAccepted?: boolean },
+  ) {
     track("amount_chosen");
     // Persist the intent first so a sign-in detour or a tab refresh after
     // the user picks an amount can resume from the same place.
-    await setPendingPurchase({ credits, redirect: redirectTo.value });
+    await setPendingPurchase({
+      credits,
+      redirect: redirectTo.value,
+      waiverAccepted: opts?.waiverAccepted ?? false,
+    });
     await runCheckout(credits, redirectTo.value);
   }
 

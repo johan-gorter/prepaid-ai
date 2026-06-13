@@ -24,16 +24,22 @@ const buyCredits: BuyCreditsMessages = {
   },
   buyCredits: {
     title: "Credits kopen",
-    costExact:
-      "Deze bewerking kost {credits} credits (${usd}). Je moet credits kopen om door te gaan.",
-    costRange:
-      "Deze bewerking kost tussen {lo} en {hi} credits (${loUsd} – ${hiUsd}). Je moet credits kopen om door te gaan.",
-    chooseAmount: "Kies een bedrag",
-    creditsLabel: "credits",
-    customAmountTitle: "Of kies een eigen bedrag",
+    contextExact: "Deze actie kost {credits} credits (${usd}).",
+    contextRange: "Deze actie kost {lo}–{hi} credits (${loUsd}–${hiUsd}).",
+    contextReassurance:
+      "Je werk blijft bewaard — na het betalen ga je direct verder.",
+    optionLabel: "{credits} credits — ${usd}",
+    presetHint75: "≈ 7 acties",
+    customOption: "Eigen aantal",
     customAmountAria: "Eigen creditbedrag",
-    buyAmount: "Koop {credits} credits (${usd})",
+    trustLine1:
+      "Geen abonnement · je credits verlopen nooit · veilig betalen via Stripe",
+    trustLine2: "Minimaal 75 credits vanwege transactiekosten.",
     betweenHint: "Tussen {min} en {max} credits.",
+    waiverLabel:
+      "Ik ga akkoord met directe levering en zie af van mijn 14-dagen herroepingsrecht.",
+    ctaPay: "Verder naar betalen — ${usd}",
+    ctaLoginHint: "Je logt eerst even in.",
     startingCheckout: "Bezig met afrekenen...",
     errorGeneric: "Afrekenen starten mislukt",
   },

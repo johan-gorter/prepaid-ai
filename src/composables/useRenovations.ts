@@ -14,6 +14,7 @@ import {
 import { deleteObject, ref as storageRef } from "firebase/storage";
 import { ref, watchEffect } from "vue";
 import { db, storage } from "../firebase";
+import type { RenovationAction } from "../credits";
 import type { Impression, Renovation } from "../types";
 import { useAuth } from "./useAuth";
 import { deleteShareForImpression } from "./useShare";
@@ -89,6 +90,7 @@ export function useRenovations() {
       compositeImagePath?: string;
       paintColor?: string;
       mode?: string;
+      action?: RenovationAction;
     },
   ): Promise<string> {
     if (!currentUser.value) throw new Error("Not authenticated");
@@ -119,6 +121,11 @@ export function useRenovations() {
     if (data.mode) {
       docData.mode = data.mode;
     }
+    // Persist the action so the Cloud Function charges the per-action price
+    // (remove = 5, colour change = 10, free edit = 10) rather than a flat rate.
+    if (data.action) {
+      docData.action = data.action;
+    }
     const docRef = await addDoc(impressionsRef, docData);
 
     // Auto-star: if renovation has no afterImpressionId, set it
@@ -147,10 +154,10 @@ export function useRenovations() {
   ): Promise<void> {
     if (!currentUser.value) throw new Error("Not authenticated");
     const uid = currentUser.value.uid;
-    await updateDoc(
-      doc(db, "users", uid, "renovations", renovationId),
-      { afterImpressionId: impressionId, updatedAt: serverTimestamp() },
-    );
+    await updateDoc(doc(db, "users", uid, "renovations", renovationId), {
+      afterImpressionId: impressionId,
+      updatedAt: serverTimestamp(),
+    });
   }
 
   async function deleteImpression(
@@ -177,7 +184,9 @@ export function useRenovations() {
       const pathsToDelete = [
         data.sourceImagePath,
         data.resultImagePath,
-        (data as unknown as Record<string, unknown>).compositeImagePath as string | undefined,
+        (data as unknown as Record<string, unknown>).compositeImagePath as
+          | string
+          | undefined,
       ].filter(Boolean) as string[];
       await Promise.allSettled(
         pathsToDelete.map((p) => deleteObject(storageRef(storage, p))),
@@ -241,7 +250,9 @@ export function useRenovations() {
       const pathsToDelete = [
         data.sourceImagePath,
         data.resultImagePath,
-        (data as unknown as Record<string, unknown>).compositeImagePath as string | undefined,
+        (data as unknown as Record<string, unknown>).compositeImagePath as
+          | string
+          | undefined,
       ].filter(Boolean) as string[];
       await Promise.allSettled(
         pathsToDelete.map((p) => deleteObject(storageRef(storage, p))),
