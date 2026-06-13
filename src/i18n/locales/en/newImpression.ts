@@ -77,6 +77,9 @@ const newImpression = {
     paintGroupPink: "Pink",
     paintGroupBrown: "Brown",
     paintPrompt: "Paint the marked area {color}",
+    fullscreenOpen: "View fullscreen",
+    fullscreenClose: "Close fullscreen",
+    fullscreenAlt: "Enlarged impression",
   },
   renovationDetail: {
     title: "Renovation Details",

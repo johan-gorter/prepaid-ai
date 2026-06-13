@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../../components/AppBar.vue";
+import FullscreenImageViewer from "../../components/FullscreenImageViewer.vue";
 import MaskingCanvas from "../../components/MaskingCanvas.vue";
 import { useAuth } from "../../composables/useAuth";
 import { useGenerateImpression } from "../../composables/useGenerateImpression";
@@ -248,8 +249,46 @@ watch(
   },
 );
 
-function onCanvasArea() {
-  if (stage.value === "preview") stage.value = "mask";
+// Fullscreen result viewer (#90). Opened from the expand icon or by pinching
+// the inline result photo; the inline page itself never zooms.
+const viewerOpen = ref(false);
+
+// Tracks active pointers on the preview photo so we can tell a single-finger
+// tap (the power-loop "edit on the result" gesture, viral-flow invariant #6)
+// from a two-finger pinch (open the fullscreen viewer).
+let previewPointerCount = 0;
+let previewTapStartedMask = false;
+
+function onCanvasPointerDown() {
+  if (stage.value !== "preview") return;
+  previewPointerCount++;
+  if (previewPointerCount === 1) {
+    // First finger: keep the power loop — tapping the result starts a new
+    // mask directly on the canvas.
+    previewTapStartedMask = true;
+    stage.value = "mask";
+  } else if (previewPointerCount === 2) {
+    // Second finger arrived → this is a pinch, not a paint. Undo the stage
+    // switch + the stray first-finger stroke and hand off to the viewer.
+    openResultViewer(true);
+  }
+}
+
+function onCanvasPointerUp() {
+  if (previewPointerCount > 0) previewPointerCount--;
+  if (previewPointerCount === 0) previewTapStartedMask = false;
+}
+
+async function openResultViewer(fromPinch = false) {
+  if (fromPinch && previewTapStartedMask) {
+    // Cancel the accidental power-loop stroke the first finger began.
+    maskingRef.value?.cancelDrawing();
+    await clearMaskEverywhere();
+    stage.value = "preview";
+  }
+  previewPointerCount = 0;
+  previewTapStartedMask = false;
+  viewerOpen.value = true;
 }
 
 async function clearMaskEverywhere() {
@@ -378,6 +417,11 @@ const showShareButton = computed(
     !!impressionParam.value,
 );
 const showTrashButton = computed(() => sourceParam.value !== "share");
+// The expand-to-fullscreen affordance only makes sense once a result image is
+// on screen — i.e. the preview stage with a loaded source.
+const showFullscreenButton = computed(
+  () => stage.value === "preview" && !!sourceObjectUrl.value,
+);
 </script>
 
 <template>
@@ -424,7 +468,9 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
           'canvas-area--collapsed': stage === 'prompt',
           'canvas-area--hidden': stage === 'paint',
         }"
-        @pointerdown="onCanvasArea"
+        @pointerdown="onCanvasPointerDown"
+        @pointerup="onCanvasPointerUp"
+        @pointercancel="onCanvasPointerUp"
       >
         <MaskingCanvas
           v-if="sourceObjectUrl"
@@ -432,6 +478,21 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
           :image-url="sourceObjectUrl"
           :initial-mask="initialMask"
         />
+
+        <!-- Expand-to-fullscreen affordance (#90): discoverable entry point
+             for users who never think to pinch. Stops propagation so it never
+             triggers the power-loop tap-to-mask underneath it. -->
+        <button
+          v-if="showFullscreenButton"
+          type="button"
+          class="fullscreen-open circle transparent"
+          data-testid="fullscreen-open"
+          :aria-label="$t('newImpression.fullscreenOpen')"
+          @pointerdown.stop
+          @click.stop="openResultViewer()"
+        >
+          <i aria-hidden="true">fullscreen</i>
+        </button>
 
         <!-- Hidden marker so E2E `getByAltText('Result')` can detect a
              completed impression on the wizard page. Opacity 0 keeps it
@@ -497,6 +558,14 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
       @trash="onTrash"
       @next-change="onNextChange"
       @error="errorMessage = $event"
+    />
+
+    <FullscreenImageViewer
+      :open="viewerOpen"
+      :src="sourceObjectUrl"
+      :alt="$t('newImpression.fullscreenAlt')"
+      :close-label="$t('newImpression.fullscreenClose')"
+      @close="viewerOpen = false"
     />
   </div>
 </template>
@@ -597,6 +666,15 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
     max-width: 100%;
     border-radius: 0;
   }
+}
+
+.fullscreen-open {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .result-marker {
