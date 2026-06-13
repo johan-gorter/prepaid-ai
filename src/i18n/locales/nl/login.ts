@@ -2,15 +2,16 @@ import type { LoginMessages } from "../en/login";
 
 const login: LoginMessages = {
   login: {
-    reimagineYourSpace: "Geef je ruimte opnieuw vorm met AI",
-    withGoogle: "Inloggen met Google",
-    withMicrosoft: "Inloggen met Microsoft",
-    withApple: "Inloggen met Apple",
+    accountReassurance: "Een account is gratis — zo blijven je tegoed en je werk bewaard.",
+    withGoogle: "Doorgaan met Google",
+    withMicrosoft: "Doorgaan met Microsoft",
+    withApple: "Doorgaan met Apple",
     errorAccountExists:
       "Er bestaat al een account met dit e-mailadres via een andere inlogmethode. Log in met de methode die je oorspronkelijk hebt gebruikt.",
     errorGeneric: "Inloggen mislukt. Probeer het opnieuw.",
-    termsPrefix: "Door in te loggen ga je akkoord met onze {terms}.",
+    termsPrefix: "Door verder te gaan, ga je akkoord met onze {terms} en {privacy}.",
     termsLink: "Servicevoorwaarden",
+    privacyLink: "Privacyverklaring",
     devMode: "Dev- / emulatormodus",
     devSeedHint: "Voer {command} één keer uit om deze gebruiker aan te maken.",
     devLogin: "Dev-login ({email})",

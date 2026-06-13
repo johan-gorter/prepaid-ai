@@ -5,19 +5,30 @@ test.describe("Login Page", () => {
     await page.goto("/login");
 
     await expect(page.getByText("payasyougo.app")).toBeVisible();
-    await expect(page.getByText("Reimagine your space with AI")).toBeVisible();
+    await expect(
+      page.getByText("An account is free — it keeps your credits and your work safe."),
+    ).toBeVisible();
 
     await expect(
-      page.getByRole("button", { name: /Sign in with Google/ }),
+      page.getByRole("button", { name: /Continue with Google/ }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Sign in with Microsoft/ }),
+      page.getByRole("button", { name: /Continue with Microsoft/ }),
     ).toBeVisible();
     // Apple sign-in is temporarily disabled until Apple credentials are
     // configured — the button is commented out in LoginPage.vue.
     await expect(
-      page.getByRole("button", { name: /Sign in with Apple/ }),
+      page.getByRole("button", { name: /Continue with Apple/ }),
     ).toHaveCount(0);
+
+    // Terms and privacy links are required (privacy link is mandated by
+    // Google sign-in policies) and must be tappable.
+    await expect(
+      page.getByRole("link", { name: "Terms of Service" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Privacy Policy" }),
+    ).toBeVisible();
   });
 
   test("redirects to login when accessing protected route unauthenticated", async ({

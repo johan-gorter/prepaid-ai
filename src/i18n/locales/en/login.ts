@@ -1,15 +1,16 @@
 // Authentication: the login page and the account/danger-zone page.
 const login = {
   login: {
-    reimagineYourSpace: "Reimagine your space with AI",
-    withGoogle: "Sign in with Google",
-    withMicrosoft: "Sign in with Microsoft",
-    withApple: "Sign in with Apple",
+    accountReassurance: "An account is free — it keeps your credits and your work safe.",
+    withGoogle: "Continue with Google",
+    withMicrosoft: "Continue with Microsoft",
+    withApple: "Continue with Apple",
     errorAccountExists:
       "An account already exists with this email address using a different sign-in method. Please sign in with the method you used originally.",
     errorGeneric: "Sign-in failed. Please try again.",
-    termsPrefix: "By signing in, you agree to our {terms}.",
+    termsPrefix: "By continuing, you agree to our {terms} and {privacy}.",
     termsLink: "Terms of Service",
+    privacyLink: "Privacy Policy",
     devMode: "Dev / Emulator mode",
     devSeedHint: "Run {command} once to create this user.",
     devLogin: "Dev Login ({email})",
