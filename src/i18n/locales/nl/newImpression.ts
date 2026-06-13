@@ -77,6 +77,9 @@ const newImpression: NewImpressionMessages = {
     paintGroupPink: "Roze",
     paintGroupBrown: "Bruin",
     paintPrompt: "Schilder het gemarkeerde gebied {color}",
+    fullscreenOpen: "Volledig scherm",
+    fullscreenClose: "Volledig scherm sluiten",
+    fullscreenAlt: "Vergrote impressie",
   },
   renovationDetail: {
     title: "Make-over details",

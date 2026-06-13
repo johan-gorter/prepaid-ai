@@ -26,6 +26,7 @@ let sourceImage: HTMLImageElement | null = null;
 let fullWidth = 0;
 let fullHeight = 0;
 let isDrawing = false;
+let capturedPointerId: number | null = null;
 
 async function loadImage(url: string) {
   const img = new Image();
@@ -293,7 +294,11 @@ function updateBorder(cx: number, cy: number) {
 function onPointerDown(e: PointerEvent) {
   const canvas = canvasRef.value;
   if (!canvas) return;
+  // Only the primary button draws. Right- and middle-click (button 1/2) must
+  // not start a stroke; touch and pen always report button 0.
+  if (e.button !== 0) return;
   canvas.setPointerCapture(e.pointerId);
+  capturedPointerId = e.pointerId;
   isDrawing = true;
   const coords = getCanvasCoords(e);
   if (coords) paintAt(coords.x, coords.y);
@@ -310,6 +315,26 @@ function onPointerUp(e: PointerEvent) {
   if (canvas && canvas.hasPointerCapture(e.pointerId)) {
     canvas.releasePointerCapture(e.pointerId);
   }
+  if (capturedPointerId === e.pointerId) capturedPointerId = null;
+  isDrawing = false;
+}
+
+/**
+ * Abort an in-progress stroke and release the captured pointer. Used by the
+ * preview stage when a second finger turns a power-loop tap into a pinch:
+ * the page hands the gesture off to the fullscreen viewer (#90), so this
+ * canvas must stop painting and let go of the first finger.
+ */
+function cancelDrawing() {
+  const canvas = canvasRef.value;
+  if (
+    canvas &&
+    capturedPointerId !== null &&
+    canvas.hasPointerCapture(capturedPointerId)
+  ) {
+    canvas.releasePointerCapture(capturedPointerId);
+  }
+  capturedPointerId = null;
   isDrawing = false;
 }
 
@@ -490,6 +515,7 @@ async function loadMaskFromBlob(blob: Blob): Promise<void> {
 
 defineExpose({
   clearMask,
+  cancelDrawing,
   getOriginalBlob,
   getCompositeBlob,
   getMaskBlob,
