@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * Preview stage: the result-view footer (Renovation Details | Share | Trash |
- * Next Change) and the share-link dialog. The result image itself is the
- * shared canvas / result-marker owned by the page. (#90 adds the fullscreen
- * viewer here; #91 reorders this footer.)
+ * Preview stage: the result-view footer (Overview | Trash | Share | Next
+ * Change) and the share-link dialog. The result image itself is the shared
+ * canvas / result-marker owned by the page. (#90 adds the fullscreen viewer
+ * here; #91 reordered this footer to the app-wide convention — back action
+ * far left, next action far right, destructive Trash never adjacent to the
+ * primary Next Change.)
  */
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -54,7 +56,9 @@ async function onShare() {
 </script>
 
 <template>
-  <!-- Preview stage footer: Renovation Details | [Share] | [Trash] | Next Change -->
+  <!-- Preview stage footer (#91): Overview | [Trash] | [Share] | Next Change.
+       Back action (Overview) far left, next action (Next Change) far right;
+       the destructive Trash button is kept away from the primary Next Change. -->
   <StickyFooter>
     <button
       class="max small-round"
@@ -63,6 +67,14 @@ async function onShare() {
     >
       <i aria-hidden="true">timeline</i>
       <span>{{ $t("newImpression.renovationDetails") }}</span>
+    </button>
+    <button
+      v-if="showTrashButton"
+      class="max small-round error"
+      @click="$emit('trash')"
+    >
+      <i aria-hidden="true">delete</i>
+      <span>{{ $t("newImpression.trash") }}</span>
     </button>
     <button
       v-if="showShareButton"
@@ -74,14 +86,6 @@ async function onShare() {
     >
       <i aria-hidden="true">share</i>
       <span>{{ $t("newImpression.share") }}</span>
-    </button>
-    <button
-      v-if="showTrashButton"
-      class="max small-round error"
-      @click="$emit('trash')"
-    >
-      <i aria-hidden="true">delete</i>
-      <span>{{ $t("newImpression.trash") }}</span>
     </button>
     <button
       class="max small-round"

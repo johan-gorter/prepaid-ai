@@ -67,7 +67,7 @@ test.describe("Impression processing", () => {
       await waitForPreviewResult(page);
 
       // 6. Navigate to timeline and verify the result appears there too
-      await page.getByRole("button", { name: "Renovation Details" }).click();
+      await page.getByRole("button", { name: "Overview" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await expect(page.getByRole("heading", { name: "Renovation Details" })).toBeVisible();
       const timelineResultImage = page.getByAltText("Result");

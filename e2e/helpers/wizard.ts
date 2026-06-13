@@ -102,13 +102,13 @@ export async function fillPrompt(page: Page, promptText: string): Promise<void> 
  * Wait for the wizard to land on the preview stage after a Generate click.
  *
  * The wizard stays on the processing stage until the processImpression Cloud
- * Function writes `status: "completed"`. The footer's "Renovation Details"
- * button is the first element gated on the Cloud Function and must carry the
- * long timeout; the result-image check that follows needs no extended timeout.
+ * Function writes `status: "completed"`. The footer's "Overview" button is the
+ * first element gated on the Cloud Function and must carry the long timeout;
+ * the result-image check that follows needs no extended timeout.
  */
 export async function waitForPreviewResult(page: Page): Promise<void> {
   await expect(
-    page.getByRole("button", { name: "Renovation Details" }),
+    page.getByRole("button", { name: "Overview" }),
   ).toBeVisible({ timeout: CLOUD_FUNCTION_TIMEOUT });
   await expect(page.getByAltText("Result")).toBeVisible();
 }
@@ -137,10 +137,10 @@ export async function clickNextChange(page: Page): Promise<void> {
 }
 
 /**
- * Click "Renovation Details" and wait for the renovation timeline URL.
+ * Click the "Overview" footer button and wait for the renovation timeline URL.
  */
 export async function goToRenovationDetails(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Renovation Details" }).click();
+  await page.getByRole("button", { name: "Overview" }).click();
   await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
 }
 

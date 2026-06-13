@@ -44,7 +44,7 @@ const newImpression = {
     undo: "Undo",
     creating: "Creating your impression...",
     goHome: "Go to home",
-    renovationDetails: "Renovation Details",
+    renovationDetails: "Overview",
     share: "Share",
     trash: "Trash",
     nextChange: "Next Change",
