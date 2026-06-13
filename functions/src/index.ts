@@ -10,3 +10,4 @@ export { getStripeConfig } from "./stripe.js";
 export { purchaseCredits } from "./purchaseCredits.js";
 export { sendCreditTransfer } from "./sendCreditTransfer.js";
 export { stripeWebhook } from "./stripeWebhook.js";
+export { trackEvent } from "./trackEvent.js";

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, START_LOCATION } from "vue-router";
 import { getCurrentUser } from "../composables/useAuth";
 import { idbGetFast } from "../composables/useIdbStorage";
+import { setTrackSource } from "../composables/useTrack";
 
 // Pages the user can be resumed to on a cold app start. Keyed by the value
 // each page writes to the "lastPage" IndexedDB key in its onMounted hook.
@@ -124,6 +125,16 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from) => {
+  // Capture the first-touch viral/marketing source from the URL so the whole
+  // funnel a visitor walks is attributed to where they came from. A
+  // `/share/:token` link implies "share"; everything else honours `?src=`.
+  // setTrackSource locks on the first valid value (see docs/measurement.md).
+  if (to.name === "share") {
+    setTrackSource("share");
+  } else if (typeof to.query.src === "string") {
+    setTrackSource(to.query.src);
+  }
+
   const currentUser = await getCurrentUser();
 
   if (to.meta.requiresAuth && !currentUser) {

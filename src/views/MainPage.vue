@@ -6,6 +6,7 @@ import FeedbackCard from "../components/FeedbackCard.vue";
 import { useAuth } from "../composables/useAuth";
 import { idbSet } from "../composables/useIdbStorage";
 import { updateLastActivity } from "../composables/useLastActivity";
+import { track } from "../composables/useTrack";
 
 const { currentUser } = useAuth();
 const router = useRouter();
@@ -24,9 +25,20 @@ function openCard(event: MouseEvent, to: string) {
   void router.push(to);
 }
 
+// Renovation card: the top of the viral funnel. Count the entry click here
+// (cta_click) for both the card body and its CTA link, then navigate. The
+// link's own @click handles the link case; this body handler bails when the
+// click came from the link so the step is counted exactly once.
+function openRenovations(event: MouseEvent) {
+  if ((event.target as HTMLElement).closest("a")) return;
+  track("cta_click");
+  void router.push(renovationsTarget.value);
+}
+
 onMounted(() => {
   void idbSet("lastPage", "main");
   void updateLastActivity();
+  track("landing_view");
 });
 </script>
 
@@ -54,7 +66,7 @@ onMounted(() => {
     <article
       class="border medium-text tappable"
       data-testid="renovations-card"
-      @click="openCard($event, renovationsTarget)"
+      @click="openRenovations($event)"
     >
       <div class="card-media">
         <img
@@ -76,6 +88,7 @@ onMounted(() => {
         :to="renovationsTarget"
         class="button responsive small-round card-cta"
         style="margin-top: 4px"
+        @click="track('cta_click')"
       >
         <span>{{
           currentUser ? $t("main.yourRenovations") : $t("main.testYourIdea")

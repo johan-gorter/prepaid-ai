@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
+import { track } from "../composables/useTrack";
 import { firebaseApp } from "../firebase";
 
 const { t } = useI18n();
@@ -25,6 +26,7 @@ async function handleSignIn(provider: "google" | "microsoft" | "apple") {
     else if (provider === "microsoft") await signInWithMicrosoft();
     else await signInWithApple();
 
+    track("login_done");
     const redirect =
       (router.currentRoute.value.query.redirect as string) || "/";
     router.push(redirect);
@@ -57,6 +59,7 @@ async function handleDevLogin() {
       DEV_EMAIL,
       DEV_PASSWORD,
     );
+    track("login_done");
     const redirect =
       (router.currentRoute.value.query.redirect as string) || "/";
     router.push(redirect);
