@@ -1,5 +1,13 @@
 // ---------------------------------------------------------------------------
 // Tariffs — update these constants when pricing changes
+//
+// The canonical table lives in `shared/pricing.json` (the code home of
+// docs/viral-flow.md §10). These numbers are duplicated here — and in
+// `src/credits.ts` — rather than imported, because the Cloud Functions
+// `node16` build, the Vite client build, and the Firebase deploy boundary
+// (only `functions/` is uploaded) make a single runtime-shared module awkward.
+// `ct/pricing-parity.ct.ts` fails when any copy drifts from the JSON, so the
+// duplication is guarded, never silent. Update all three together.
 // ---------------------------------------------------------------------------
 
 /** Price per 1 M input tokens — Gemini 2.5 Pro (prompts ≤ 200 k tokens). */
@@ -23,6 +31,19 @@ export const AI_BUDGET_RATIO = 0.8;
 
 /** 1 credit = this many USD of AI budget. */
 export const CREDIT_AI_USD = CREDIT_VALUE_USD * AI_BUDGET_RATIO; // 0.008
+
+/** Minimum top-up amount in credits (floor set by Stripe transaction costs). */
+export const MIN_TOPUP_CREDITS = 75;
+
+/** Per-action credit prices charged for each renovation edit. */
+export const ACTION_CREDITS = {
+  remove: 5,
+  colorChange: 10,
+  freePrompt: 10,
+} as const;
+
+/** The actions a user can pick on the choose-action step. */
+export type RenovationAction = keyof typeof ACTION_CREDITS;
 
 // ---------------------------------------------------------------------------
 // Conversion helpers

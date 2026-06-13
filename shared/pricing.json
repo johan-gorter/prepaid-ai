@@ -1,0 +1,14 @@
+{
+  "$comment": "Canonical pricing table — the code home of docs/viral-flow.md §10. The client (src/credits.ts) and Cloud Functions (functions/src/credits.ts) each keep their own typed copies of these numbers because the two TypeScript builds and the Firebase deploy boundary (only functions/ is uploaded) make a single runtime-shared module awkward. ct/pricing-parity.ct.ts fails the build if either copy drifts from this file — so the duplication is never silent.",
+  "creditValueUsd": 0.01,
+  "aiBudgetRatio": 0.8,
+  "geminiProInputPricePerM": 1.25,
+  "geminiProOutputPricePerM": 10.0,
+  "imageGenerationPriceUsd": 0.039,
+  "minTopupCredits": 75,
+  "actionCredits": {
+    "remove": 5,
+    "colorChange": 10,
+    "freePrompt": 10
+  }
+}

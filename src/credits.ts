@@ -1,6 +1,13 @@
 /**
- * Client-side mirror of pricing constants from `functions/src/credits.ts`.
- * Keep these in sync with the server when tariffs change.
+ * Client-side copy of the pricing constants.
+ *
+ * The canonical table lives in `shared/pricing.json` (the code home of
+ * docs/viral-flow.md §10). It is duplicated here — and in
+ * `functions/src/credits.ts` — rather than imported, because the Vite client
+ * build, the Cloud Functions `node16` build, and the Firebase deploy boundary
+ * (only `functions/` is uploaded) make a single runtime-shared module awkward.
+ * `ct/pricing-parity.ct.ts` fails when any copy drifts from `shared/pricing.json`,
+ * so the duplication is guarded, never silent. Update all three together.
  */
 
 /** Price per 1 M Gemini 2.5 Pro input tokens (USD). */
@@ -27,3 +34,16 @@ export function creditsToUsd(credits: number): number {
 export const IMPRESSION_CREDITS = Math.ceil(
   IMAGE_GENERATION_PRICE_USD / CREDIT_AI_USD,
 );
+
+/** Minimum top-up amount in credits (floor set by Stripe transaction costs). */
+export const MIN_TOPUP_CREDITS = 75;
+
+/** Per-action credit prices shown on the choose-action step. */
+export const ACTION_CREDITS = {
+  remove: 5,
+  colorChange: 10,
+  freePrompt: 10,
+} as const;
+
+/** The actions a user can pick on the choose-action step. */
+export type RenovationAction = keyof typeof ACTION_CREDITS;
