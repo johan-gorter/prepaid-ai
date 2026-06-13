@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
+import FeedbackCard from "../components/FeedbackCard.vue";
 import { useAuth } from "../composables/useAuth";
 import { idbSet } from "../composables/useIdbStorage";
 import { updateLastActivity } from "../composables/useLastActivity";
-import { db } from "../firebase";
 
 const { currentUser } = useAuth();
 const router = useRouter();
-const feedbackMessage = ref("");
 
 // The whole card is a tap target, but the CTA link inside stays the real
 // (focusable, announced) link — skip when the click already came from it.
@@ -18,31 +16,11 @@ function openCard(event: MouseEvent, to: string) {
   if ((event.target as HTMLElement).closest("a")) return;
   void router.push(to);
 }
-const feedbackSending = ref(false);
-const feedbackSent = ref(false);
 
 onMounted(() => {
   void idbSet("lastPage", "main");
   void updateLastActivity();
 });
-
-async function submitFeedback() {
-  const uid = currentUser.value?.uid;
-  if (!uid || !feedbackMessage.value.trim()) return;
-
-  feedbackSending.value = true;
-  try {
-    await addDoc(collection(db, "feedback"), {
-      uid,
-      message: feedbackMessage.value.trim(),
-      createdAt: serverTimestamp(),
-    });
-    feedbackMessage.value = "";
-    feedbackSent.value = true;
-  } finally {
-    feedbackSending.value = false;
-  }
-}
 </script>
 
 <template>
@@ -131,36 +109,7 @@ async function submitFeedback() {
     </nav>
 
     <!-- Feedback card -->
-    <article class="border medium-text" style="margin-top: 1.5rem">
-      <h6 class="bold">{{ $t("main.shareYourThoughts") }}</h6>
-      <p>
-        {{ $t("main.feedbackWhichToolMissing") }}
-      </p>
-      <div v-if="feedbackSent" class="medium-padding">
-        <p><i class="small">check_circle</i> {{ $t("main.thanksForFeedback") }}</p>
-      </div>
-      <div v-else>
-        <div class="field textarea border">
-          <textarea
-            v-model="feedbackMessage"
-            :placeholder="$t('main.tellUsAboutYourIdea')"
-            rows="3"
-            data-testid="feedback-input"
-            style="background-color: var(--surface-container-lowest)"
-          ></textarea>
-        </div>
-        <button
-          :disabled="!feedbackMessage.trim() || feedbackSending"
-          @click="submitFeedback"
-          data-testid="feedback-submit"
-          class="responsive small-round card-cta"
-          style="margin-top: 8px"
-        >
-          <i>send</i>
-          <span>{{ $t("main.shareYourIdea") }}</span>
-        </button>
-      </div>
-    </article>
+    <FeedbackCard />
   </main>
 </template>
 
