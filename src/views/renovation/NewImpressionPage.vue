@@ -1,41 +1,32 @@
 <script setup lang="ts">
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { ref as storageRef, uploadBytes } from "firebase/storage";
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { doc, getDoc } from "firebase/firestore";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppBar from "../../components/AppBar.vue";
 import MaskingCanvas from "../../components/MaskingCanvas.vue";
-import ShareDialog from "../../components/ShareDialog.vue";
-import StickyFooter from "../../components/StickyFooter.vue";
 import { useAuth } from "../../composables/useAuth";
-import { useBalance } from "../../composables/useBalance";
+import { useGenerateImpression } from "../../composables/useGenerateImpression";
+import { useImpressionDraft } from "../../composables/useImpressionDraft";
 import {
-  clearImpressionDraft,
   clearImpressionMask,
   clearImpressionSource,
   getImpressionDraft,
-  getImpressionMask,
   getImpressionSource,
-  setImpressionDraft,
-  setImpressionMask,
   setImpressionSource,
-  type ImpressionDraft,
 } from "../../composables/useImpressionStore";
 import { useRenovations } from "../../composables/useRenovations";
-import { createOrGetShareToken, fetchShare } from "../../composables/useShare";
+import { useShareHydration } from "../../composables/useShareHydration";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
 import { IMPRESSION_CREDITS } from "../../credits";
-import { db, storage } from "../../firebase";
-
-type Stage =
-  | "preview"
-  | "mask"
-  | "choose-action"
-  | "paint"
-  | "prompt"
-  | "processing";
-type Source = "photo" | "crop" | "original" | "impression" | "share";
+import { db } from "../../firebase";
+import ChooseActionStep from "./wizard/ChooseActionStep.vue";
+import MaskStep from "./wizard/MaskStep.vue";
+import PaintStep from "./wizard/PaintStep.vue";
+import { DEFAULT_PAINT_COLOR } from "./wizard/paintPresets";
+import PreviewStep from "./wizard/PreviewStep.vue";
+import PromptStep from "./wizard/PromptStep.vue";
+import type { Source, Stage } from "./wizard/wizardTypes";
 
 // Hard-coded prompt for the "Verwijderen" (remove) action. Paired with a
 // solid magenta composite so Gemini sees a clean "stain" and inpaints the
@@ -43,31 +34,11 @@ type Source = "photo" | "crop" | "original" | "impression" | "share";
 const REMOVE_PROMPT =
   "remove the magenta stains. There a clear clean empty piece of the photo there.";
 
-// Curated RAL swatches offered in the paint dialog (4 light + 4 dark),
-// plus a free colour picker. Values are the standard RAL approximations.
-const PAINT_PRESETS: { name: string; hex: string }[] = [
-  { name: "RAL 9010", hex: "#F4F4F0" },
-  { name: "RAL 9001", hex: "#EAE6CA" },
-  { name: "RAL 1013", hex: "#E3D9C6" },
-  { name: "RAL 7035", hex: "#C5C7C4" },
-  { name: "RAL 7016", hex: "#383E42" },
-  { name: "RAL 9005", hex: "#0A0A0A" },
-  { name: "RAL 5004", hex: "#18171C" },
-  { name: "RAL 6009", hex: "#213529" },
-];
-const DEFAULT_PAINT_COLOR = PAINT_PRESETS[0]!.hex;
-
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { currentUser } = useAuth();
-const { balance, waitForLoad: waitForBalance } = useBalance();
-const {
-  createRenovation,
-  createImpression,
-  deleteImpression,
-  deleteRenovation,
-} = useRenovations();
+const { deleteImpression, deleteRenovation } = useRenovations();
 
 const stage = ref<Stage>("preview");
 const sourceObjectUrl = ref<string | null>(null);
@@ -80,20 +51,11 @@ const initialMask = ref<Blob | null>(null);
 const useSolidMask = ref(false);
 // Paint flow: true once the user has confirmed a colour in the paint dialog.
 // Makes onGenerate write `mode: "paint"` + the chosen colour so the Cloud
-// Function asks Gemini to repaint the checkerboard-marked area in that
-// colour.
+// Function asks Gemini to repaint the checkerboard-marked area in that colour.
 const usePaintMode = ref(false);
 const paintColor = ref(DEFAULT_PAINT_COLOR);
-const paintTab = ref<"standard" | "custom">("standard");
-let restoredDraftKey: string | null = null;
-// Synchronous re-entry guard for onGenerate. Awaiting the balance load
-// before flipping stage→"processing" otherwise allows two rapid clicks
-// to both pass the guards, upload the same composite, and create two
-// impression docs (and double-bill the user).
-let generateInFlight = false;
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
-const promptInputRef = ref<HTMLTextAreaElement | null>(null);
 
 const shareToken = computed(
   () => (route.params.token as string | undefined) ?? undefined,
@@ -108,13 +70,50 @@ const impressionParam = computed(
   () => (route.query.impression as string | undefined) ?? null,
 );
 
-const shareDialogOpen = ref(false);
-const shareUrl = ref("");
-const sharePending = ref(false);
 // Set when /share/:token can't be hydrated — drives the dedicated error
-// screen so the recipient sees a polished message + Go home affordance
-// rather than the half-broken preview shell.
+// screen so the recipient sees a polished message + Go home affordance rather
+// than the half-broken preview shell.
 const shareError = ref<string | null>(null);
+
+const {
+  restoredDraftKey,
+  persistDraft,
+  clearPersistedDraft,
+  applyDraftIfMatching,
+} = useImpressionDraft({
+  prompt,
+  sourceParam,
+  renovationParam,
+  impressionParam,
+  useSolidMask,
+  usePaintMode,
+  paintColor,
+  initialMask,
+  maskingRef,
+});
+
+const { hydrateShare } = useShareHydration({
+  sourceObjectUrl,
+  shareError,
+  stage,
+});
+
+const { canGenerate, onGenerate } = useGenerateImpression({
+  currentUser,
+  prompt,
+  sourceParam,
+  renovationParam,
+  impressionParam,
+  useSolidMask,
+  usePaintMode,
+  paintColor,
+  stage,
+  errorMessage,
+  isMaskReady: () => !!maskingRef.value,
+  getCompositeBlob: (variant) => maskingRef.value!.getCompositeBlob(variant),
+  persistDraft,
+  clearPersistedDraft,
+});
 
 const pageTitle = computed(() => {
   if (stage.value === "prompt") return t("newImpression.titleDescribe");
@@ -128,8 +127,6 @@ const pageTitle = computed(() => {
 const removeCostLabel = computed(() =>
   t("newImpression.chooseRemoveCost", { credits: IMPRESSION_CREDITS }),
 );
-
-const canGenerate = computed(() => prompt.value.trim().length > 0);
 
 function revokeSourceUrl() {
   if (sourceObjectUrl.value) {
@@ -177,12 +174,6 @@ async function fetchAndCacheSource(source: Source): Promise<Blob | null> {
   return blob;
 }
 
-function draftKey(): string {
-  return `${sourceParam.value ?? ""}|${renovationParam.value ?? ""}|${
-    impressionParam.value ?? ""
-  }`;
-}
-
 async function initFromRoute(): Promise<void> {
   errorMessage.value = null;
   shareError.value = null;
@@ -191,8 +182,7 @@ async function initFromRoute(): Promise<void> {
   useSolidMask.value = false;
   usePaintMode.value = false;
   paintColor.value = DEFAULT_PAINT_COLOR;
-  paintTab.value = "standard";
-  restoredDraftKey = null;
+  restoredDraftKey.value = null;
   revokeSourceUrl();
 
   const source = sourceParam.value;
@@ -206,38 +196,16 @@ async function initFromRoute(): Promise<void> {
   // URL, and land on preview. The recipient can then Next Change → paint /
   // prompt / Generate like any other source.
   if (source === "share") {
-    const token = shareToken.value;
-    if (!token) {
+    if (!shareToken.value) {
       router.replace("/renovations");
       return;
     }
-    const share = await fetchShare(token);
-    if (!share) {
-      shareError.value = t("newImpression.shareLinkUnavailable");
-      return;
-    }
-    await Promise.all([
-      clearImpressionSource(),
-      clearImpressionMask(),
-      clearImpressionDraft(),
-    ]);
-    let blob: Blob;
-    try {
-      const res = await fetch(share.resultImageUrl);
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      blob = await res.blob();
-    } catch {
-      shareError.value = t("newImpression.shareImageUnavailable");
-      return;
-    }
-    await setImpressionSource(blob);
-    sourceObjectUrl.value = URL.createObjectURL(blob);
-    stage.value = "preview";
+    await hydrateShare(shareToken.value);
     return;
   }
 
-  // Read source + draft + mask in parallel, then assign sourceObjectUrl last
-  // so MaskingCanvas mounts with the saved mask already in props. Setting the
+  // Read source + draft in parallel, then assign sourceObjectUrl last so
+  // MaskingCanvas mounts with the saved mask already in props. Setting the
   // object URL first would race the canvas's image decode against the draft
   // IDB reads, dropping the saved mask if the decode finishes first.
   const [savedSource, draft] = await Promise.all([
@@ -254,28 +222,14 @@ async function initFromRoute(): Promise<void> {
   }
 
   // Restore prompt + mask drafts only when they match the current wizard
-  // context — otherwise stale drafts from a different renovation could leak
-  // across flows. Drafts are written when a guest hits Generate so that
-  // signing in and returning preserves their work.
-  const matches =
-    draft &&
-    (draft.source ?? "") === source &&
-    (draft.renovation ?? null) === renovationParam.value &&
-    (draft.impression ?? null) === impressionParam.value;
-  if (matches && draft) {
-    prompt.value = draft.prompt;
-    useSolidMask.value = draft.solidMask === true;
-    if (draft.paintColor) {
-      usePaintMode.value = true;
-      paintColor.value = draft.paintColor;
-    }
-    initialMask.value = await getImpressionMask();
-    restoredDraftKey = draftKey();
-  }
+  // context; otherwise stale drafts from a different renovation could leak
+  // across flows. Reads the persisted mask into `initialMask` before the
+  // object URL is assigned, preserving the decode-vs-restore ordering.
+  const matches = await applyDraftIfMatching(draft);
 
   sourceObjectUrl.value = URL.createObjectURL(blob);
 
-  if (matches && draft) {
+  if (matches) {
     // Resume the paint step (with the chosen colour) after a buy-credits /
     // sign-in detour, rather than dropping into the free-prompt screen.
     if (usePaintMode.value) {
@@ -289,45 +243,6 @@ async function initFromRoute(): Promise<void> {
   }
 }
 
-async function persistDraft(): Promise<void> {
-  const draft: ImpressionDraft = {
-    prompt: prompt.value,
-    source: sourceParam.value,
-    renovation: renovationParam.value,
-    impression: impressionParam.value,
-    solidMask: useSolidMask.value,
-    paintColor: usePaintMode.value ? paintColor.value : undefined,
-  };
-  await setImpressionDraft(draft);
-  restoredDraftKey = draftKey();
-  if (maskingRef.value) {
-    const maskBlob = await maskingRef.value.getMaskBlob();
-    if (maskBlob) await setImpressionMask(maskBlob);
-  }
-}
-
-async function clearPersistedDraft(): Promise<void> {
-  await Promise.all([clearImpressionDraft(), clearImpressionMask()]);
-  restoredDraftKey = null;
-  useSolidMask.value = false;
-  usePaintMode.value = false;
-}
-
-watch(prompt, async (val) => {
-  // Persist prompt edits whenever a draft has been established for this
-  // wizard context, so a sign-in detour preserves what the user typed.
-  if (restoredDraftKey === draftKey() && sourceParam.value) {
-    await setImpressionDraft({
-      prompt: val,
-      source: sourceParam.value,
-      renovation: renovationParam.value,
-      impression: impressionParam.value,
-      solidMask: useSolidMask.value,
-      paintColor: usePaintMode.value ? paintColor.value : undefined,
-    });
-  }
-});
-
 onMounted(initFromRoute);
 onUnmounted(revokeSourceUrl);
 
@@ -337,31 +252,6 @@ watch(
     if (newPath !== oldPath) initFromRoute();
   },
 );
-
-watch(stage, async (next) => {
-  if (next !== "prompt") return;
-  await nextTick();
-  const el = promptInputRef.value;
-  if (!el) return;
-  growPromptInput();
-  el.focus();
-  revealPromptInput();
-});
-
-function growPromptInput() {
-  const el = promptInputRef.value;
-  if (!el) return;
-  el.style.height = "auto";
-  el.style.height = `${el.scrollHeight}px`;
-}
-
-function revealPromptInput() {
-  const el = promptInputRef.value;
-  if (!el) return;
-  el.scrollIntoView({ block: "nearest" });
-  // VisualViewport resize can land after focus on mobile, especially iOS.
-  window.setTimeout(() => el.scrollIntoView({ block: "center" }), 250);
-}
 
 function onCanvasArea() {
   if (stage.value === "preview") stage.value = "mask";
@@ -400,12 +290,7 @@ async function onChooseRemove() {
 }
 
 function onChoosePaint() {
-  paintTab.value = "standard";
   stage.value = "paint";
-}
-
-function selectPaintColor(hex: string) {
-  paintColor.value = hex;
 }
 
 function onPaintBack() {
@@ -484,195 +369,6 @@ async function onTrash() {
   }
 }
 
-/**
- * Safety ceiling for the Cloud Function round-trip. If the function never
- * reports back (crashed, not deployed, emulator down), fail the wait so the
- * user gets an error and their retry buttons back instead of an eternal
- * processing spinner. Generations normally finish well within this.
- */
-const COMPLETION_TIMEOUT_MS = 90_000;
-
-function waitForCompletion(
-  uid: string,
-  renoId: string,
-  impId: string,
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const docRef = doc(
-      db,
-      "users",
-      uid,
-      "renovations",
-      renoId,
-      "impressions",
-      impId,
-    );
-    const timer = setTimeout(() => {
-      unsub();
-      reject(new Error(t("newImpression.processingTimeout")));
-    }, COMPLETION_TIMEOUT_MS);
-    const unsub = onSnapshot(
-      docRef,
-      (snap) => {
-        const data = snap.data();
-        if (!data) return;
-        if (data.status === "completed" && data.resultImagePath) {
-          clearTimeout(timer);
-          unsub();
-          resolve(data.resultImagePath as string);
-        } else if (data.status === "failed") {
-          clearTimeout(timer);
-          unsub();
-          reject(
-            new Error(
-              (data.error as string | undefined) ??
-                t("newImpression.processingFailed"),
-            ),
-          );
-        }
-      },
-      (err) => {
-        clearTimeout(timer);
-        unsub();
-        reject(err);
-      },
-    );
-  });
-}
-
-async function onGenerate() {
-  // Synchronous guard — must come before any await so a double-click can't
-  // get two invocations through to upload + createImpression.
-  if (generateInFlight) return;
-  if (!canGenerate.value) return;
-  if (!maskingRef.value) {
-    errorMessage.value = t("newImpression.maskNotReady");
-    return;
-  }
-  generateInFlight = true;
-  try {
-    // Make sure we know the user's actual balance before deciding whether
-    // to redirect to /buy-credits — otherwise the initial Firestore snapshot
-    // race would bounce a user with funds straight to the purchase page.
-    if (currentUser.value) await waitForBalance();
-    if (!currentUser.value || balance.value < IMPRESSION_CREDITS) {
-      // Persist the in-progress mask + prompt so the buy-credits / sign-in
-      // detour leaves the wizard exactly where the user left off.
-      await persistDraft();
-      router.push({
-        path: "/buy-credits",
-        query: {
-          min: String(IMPRESSION_CREDITS),
-          max: String(IMPRESSION_CREDITS),
-          redirect: route.fullPath,
-        },
-      });
-      return;
-    }
-
-    errorMessage.value = null;
-    stage.value = "processing";
-
-    try {
-      const uid = currentUser.value.uid;
-      const ts = Date.now();
-      const source = sourceParam.value!;
-
-      let renovationId = renovationParam.value;
-      let sourceImagePath: string;
-
-      if (source === "photo" || source === "crop" || source === "share") {
-        // Upload the IDB blob as the new renovation's original
-        const sourceBlob = await getImpressionSource();
-        if (!sourceBlob) throw new Error("Source image missing");
-        const originalImagePath = `users/${uid}/originals/${ts}.webp`;
-        await uploadBytes(storageRef(storage, originalImagePath), sourceBlob);
-        renovationId = await createRenovation({ originalImagePath });
-        sourceImagePath = originalImagePath;
-      } else if (source === "original") {
-        if (!renovationId) throw new Error("Renovation ID missing");
-        const snap = await getDoc(
-          doc(db, "users", uid, "renovations", renovationId),
-        );
-        if (!snap.exists()) throw new Error("Renovation not found");
-        sourceImagePath = snap.data().originalImagePath;
-      } else {
-        // impression
-        if (!renovationId || !impressionParam.value) {
-          throw new Error("Renovation/impression IDs missing");
-        }
-        const snap = await getDoc(
-          doc(
-            db,
-            "users",
-            uid,
-            "renovations",
-            renovationId,
-            "impressions",
-            impressionParam.value,
-          ),
-        );
-        if (!snap.exists()) throw new Error("Source impression not found");
-        const path = snap.data().resultImagePath;
-        if (!path) throw new Error("Source impression has no result image");
-        sourceImagePath = path;
-      }
-
-      const compositeImagePath = `users/${uid}/composites/${ts}.webp`;
-      // Paint and the free-prompt flow mark the masked area with the magenta
-      // checkerboard (50% coverage forces a full repaint while the geometry
-      // stays readable between the squares); remove hides it under solid
-      // magenta.
-      const compositeBlob = await maskingRef.value.getCompositeBlob(
-        useSolidMask.value ? "solid" : "checker",
-      );
-      await uploadBytes(storageRef(storage, compositeImagePath), compositeBlob);
-
-      const newImpressionId = await createImpression(renovationId!, {
-        sourceImagePath,
-        compositeImagePath,
-        prompt: prompt.value.trim(),
-        ...(usePaintMode.value
-          ? { paintColor: paintColor.value, mode: "paint" }
-          : {}),
-      });
-
-      const resultPath = await waitForCompletion(
-        uid,
-        renovationId!,
-        newImpressionId,
-      );
-
-      const resultUrl = await resolveStorageUrl(resultPath);
-      const resultBlob = await fetch(resultUrl).then((r) => r.blob());
-      await setImpressionSource(resultBlob);
-      await clearPersistedDraft();
-
-      router.replace({
-        path: "/new-impression",
-        query: {
-          source: "impression",
-          renovation: renovationId!,
-          impression: newImpressionId,
-        },
-      });
-    } catch (err) {
-      errorMessage.value =
-        err instanceof Error ? err.message : t("newImpression.unknownError");
-      // The Verwijderen and Schilder flows skip the free-prompt screen, so on
-      // failure fall back to their own step instead: paint returns to the
-      // colour picker (keeping the selection), remove to choose-action.
-      stage.value = usePaintMode.value
-        ? "paint"
-        : useSolidMask.value
-          ? "choose-action"
-          : "prompt";
-    }
-  } finally {
-    generateInFlight = false;
-  }
-}
-
 const showRetake = computed(
   () => stage.value === "mask" && sourceParam.value === "photo",
 );
@@ -687,25 +383,6 @@ const showShareButton = computed(
     !!impressionParam.value,
 );
 const showTrashButton = computed(() => sourceParam.value !== "share");
-
-async function onShare() {
-  if (sharePending.value) return;
-  if (!renovationParam.value || !impressionParam.value) return;
-  sharePending.value = true;
-  try {
-    const token = await createOrGetShareToken(
-      renovationParam.value,
-      impressionParam.value,
-    );
-    shareUrl.value = `${location.origin}/share/${token}`;
-    shareDialogOpen.value = true;
-  } catch (err) {
-    errorMessage.value =
-      err instanceof Error ? err.message : t("newImpression.failedShareLink");
-  } finally {
-    sharePending.value = false;
-  }
-}
 </script>
 
 <template>
@@ -775,230 +452,55 @@ async function onShare() {
         </div>
       </div>
 
-      <div v-if="stage === 'prompt'" class="prompt-flex">
-        <div class="field textarea label border round prompt-field">
-          <textarea
-            id="prompt-input"
-            ref="promptInputRef"
-            data-testid="prompt"
-            v-model="prompt"
-            placeholder=" "
-            @focus="revealPromptInput"
-            @input="growPromptInput"
-          ></textarea>
-          <label for="prompt-input">{{ $t("newImpression.promptLabel") }}</label>
-        </div>
-      </div>
+      <PromptStep
+        v-if="stage === 'prompt'"
+        v-model="prompt"
+        :can-generate="canGenerate"
+        @back="onPromptBack"
+        @generate="onGenerate"
+      />
 
-      <div
+      <ChooseActionStep
         v-if="stage === 'choose-action'"
-        class="choose-action-grid"
-        data-testid="choose-action"
-      >
-        <button
-          class="small-round choose-action-button"
-          data-testid="choose-remove"
-          @click="onChooseRemove"
-        >
-          <i aria-hidden="true">delete_sweep</i>
-          <span>{{ $t("newImpression.chooseRemove") }}</span>
-          <span class="choose-action-cost">{{ removeCostLabel }}</span>
-        </button>
-        <button
-          class="small-round choose-action-button"
-          data-testid="choose-paint"
-          @click="onChoosePaint"
-        >
-          <i aria-hidden="true">format_paint</i>
-          <span>{{ $t("newImpression.choosePaint") }}</span>
-        </button>
-        <button
-          class="small-round choose-action-button"
-          data-testid="choose-other"
-          @click="onChooseOther"
-        >
-          <i aria-hidden="true">tune</i>
-          <span>{{ $t("newImpression.chooseOther") }}</span>
-        </button>
-      </div>
+        :remove-cost-label="removeCostLabel"
+        @remove="onChooseRemove"
+        @paint="onChoosePaint"
+        @other="onChooseOther"
+        @back="onChooseBack"
+      />
 
-      <div v-if="stage === 'paint'" class="paint-step" data-testid="paint-step">
-        <div class="tabs">
-          <a
-            :class="{ active: paintTab === 'standard' }"
-            data-testid="paint-tab-standard"
-            @click="paintTab = 'standard'"
-          >
-            <i aria-hidden="true">palette</i>
-            <span>{{ $t("newImpression.paintTabStandard") }}</span>
-          </a>
-          <a
-            :class="{ active: paintTab === 'custom' }"
-            data-testid="paint-tab-custom"
-            @click="paintTab = 'custom'"
-          >
-            <i aria-hidden="true">colorize</i>
-            <span>{{ $t("newImpression.paintTabCustom") }}</span>
-          </a>
-        </div>
+      <PaintStep
+        v-if="stage === 'paint'"
+        v-model="paintColor"
+        @back="onPaintBack"
+        @generate="onPaintGenerate"
+      />
 
-        <div
-          v-if="paintTab === 'standard'"
-          class="paint-swatch-grid"
-          data-testid="paint-standard"
-        >
-          <button
-            v-for="preset in PAINT_PRESETS"
-            :key="preset.hex"
-            type="button"
-            class="paint-swatch"
-            :class="{ 'paint-swatch--active': paintColor === preset.hex }"
-            :style="{ backgroundColor: preset.hex }"
-            :title="preset.name"
-            :aria-label="preset.name"
-            :aria-pressed="paintColor === preset.hex"
-            :data-testid="`paint-swatch-${preset.hex}`"
-            @click="selectPaintColor(preset.hex)"
-          ></button>
-        </div>
-
-        <div
-          v-else
-          class="paint-custom"
-          data-testid="paint-custom"
-        >
-          <input
-            type="color"
-            v-model="paintColor"
-            class="paint-color-input"
-            data-testid="paint-color"
-            :aria-label="$t('newImpression.paintColorLabel')"
-          />
-          <span class="paint-hex">{{ paintColor.toUpperCase() }}</span>
-        </div>
-      </div>
-
-      <button
+      <MaskStep
         v-if="stage === 'mask'"
-        class="transparent small-round center-block"
-        @click="clearMaskEverywhere"
-      >
-        <i aria-hidden="true">delete_sweep</i>
-        <span>{{ $t("newImpression.clearMask") }}</span>
-      </button>
+        :show-retake="showRetake"
+        @clear-mask="clearMaskEverywhere"
+        @retake="onRetake"
+        @trash="onTrash"
+        @next="onMaskNext"
+      />
 
       <p v-if="errorMessage" class="error-text center-align">
         {{ errorMessage }}
       </p>
     </main>
 
-    <!-- Preview stage footer: Trash | Next Change -->
-    <StickyFooter v-if="stage === 'preview' && !shareError">
-      <button
-        class="max small-round"
-        @click="onBack"
-        :aria-label="$t('newImpression.renovationDetails')"
-      >
-        <i aria-hidden="true">timeline</i>
-        <span>{{ $t("newImpression.renovationDetails") }}</span>
-      </button>
-      <button
-        v-if="showShareButton"
-        class="max small-round"
-        :disabled="sharePending"
-        data-testid="share-button"
-        @click="onShare"
-        :aria-label="$t('newImpression.share')"
-      >
-        <i aria-hidden="true">share</i>
-        <span>{{ $t("newImpression.share") }}</span>
-      </button>
-      <button
-        v-if="showTrashButton"
-        class="max small-round error"
-        @click="onTrash"
-      >
-        <i aria-hidden="true">delete</i>
-        <span>{{ $t("newImpression.trash") }}</span>
-      </button>
-      <button
-        class="max small-round"
-        @click="onNextChange"
-        :aria-label="$t('newImpression.nextChange')"
-      >
-        <i aria-hidden="true">edit</i>
-        <span>{{ $t("newImpression.nextChange") }}</span>
-      </button>
-    </StickyFooter>
-
-    <ShareDialog
-      :open="shareDialogOpen"
-      :url="shareUrl"
-      @close="shareDialogOpen = false"
+    <PreviewStep
+      v-if="stage === 'preview' && !shareError"
+      :renovation-id="renovationParam"
+      :impression-id="impressionParam"
+      :show-share-button="showShareButton"
+      :show-trash-button="showTrashButton"
+      @renovation-details="onBack"
+      @trash="onTrash"
+      @next-change="onNextChange"
+      @error="errorMessage = $event"
     />
-
-    <!-- Mask stage footer: [Retake] | Trash | Next -->
-    <StickyFooter v-if="stage === 'mask'">
-      <button
-        v-if="showRetake"
-        class="max border small-round"
-        @click="onRetake"
-      >
-        <i aria-hidden="true">photo_camera</i>
-        <span>{{ $t("newImpression.retake") }}</span>
-      </button>
-      <button class="max small-round error" @click="onTrash">
-        <i aria-hidden="true">delete</i>
-        <span>{{ $t("newImpression.trash") }}</span>
-      </button>
-      <button class="max small-round" @click="onMaskNext">
-        <i aria-hidden="true">arrow_forward</i>
-        <span>{{ $t("newImpression.next") }}</span>
-      </button>
-    </StickyFooter>
-
-    <!-- Choose-action stage footer: Back -->
-    <StickyFooter v-if="stage === 'choose-action'">
-      <button class="max border small-round" @click="onChooseBack">
-        <i aria-hidden="true">arrow_back</i>
-        <span>{{ $t("newImpression.back") }}</span>
-      </button>
-    </StickyFooter>
-
-    <!-- Paint stage footer: Back | Generate -->
-    <StickyFooter v-if="stage === 'paint'">
-      <button class="max border small-round" @click="onPaintBack">
-        <i aria-hidden="true">arrow_back</i>
-        <span>{{ $t("newImpression.back") }}</span>
-      </button>
-      <div class="small-space"></div>
-      <button
-        class="max small-round"
-        data-testid="paint-generate"
-        @click="onPaintGenerate"
-      >
-        <i aria-hidden="true">auto_awesome</i>
-        <span>{{ $t("newImpression.generate") }}</span>
-      </button>
-    </StickyFooter>
-
-    <!-- Prompt stage footer: Back | Generate -->
-    <StickyFooter v-if="stage === 'prompt'">
-      <button class="max border small-round" @click="onPromptBack">
-        <i aria-hidden="true">arrow_back</i>
-        <span>{{ $t("newImpression.back") }}</span>
-      </button>
-      <div class="small-space"></div>
-      <button
-        class="max small-round"
-        :disabled="!canGenerate"
-        @click="onGenerate"
-      >
-        <i aria-hidden="true">auto_awesome</i>
-        <span>{{ $t("newImpression.generate") }}</span>
-      </button>
-    </StickyFooter>
-
   </div>
 </template>
 
@@ -1064,38 +566,6 @@ async function onShare() {
   text-align: center;
 }
 
-.center-block {
-  display: block;
-  margin: 0.5rem auto 0;
-}
-
-.choose-action-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: 544px;
-  margin: 1rem auto 0;
-  padding: 0 1rem;
-  box-sizing: border-box;
-}
-
-/* Beer CSS buttons default to `box-sizing: content-box`, so `width: 100%` +
-   padding overflows the parent on narrow viewports. Force border-box here so
-   the buttons fit within the grid's content area on mobile. */
-.choose-action-button {
-  width: 100%;
-  padding: 1rem;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 0;
-}
-
-.choose-action-cost {
-  margin-left: 0.5rem;
-  font-weight: 600;
-  opacity: 0.9;
-}
-
 .canvas-area--hidden {
   display: none;
 }
@@ -1109,30 +579,6 @@ async function onShare() {
   pointer-events: none;
 }
 
-.prompt-flex {
-  padding: 0.5rem;
-  width: 100%;
-  max-width: 544px;
-  margin: 0 auto;
-  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
-}
-
-.prompt-field {
-  width: 100%;
-  background: var(--surface, #fff);
-}
-
-.prompt-field textarea {
-  min-height: clamp(
-    14rem,
-    calc(100dvh - var(--app-bar-clearance) - 12rem),
-    28rem
-  );
-  overflow-y: hidden;
-  resize: none;
-  scroll-margin-bottom: calc(var(--kb-inset, 0px) + 6rem);
-}
-
 .processing-overlay {
   position: absolute;
   inset: 0;
@@ -1143,60 +589,5 @@ async function onShare() {
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-}
-
-.paint-step {
-  max-width: 544px;
-  margin: 1rem auto 0;
-  padding: 0 1rem;
-  box-sizing: border-box;
-}
-
-.paint-step .tabs {
-  margin-bottom: 1rem;
-}
-
-.paint-swatch-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-}
-
-.paint-swatch {
-  aspect-ratio: 1;
-  width: 100%;
-  padding: 0;
-  border: 2px solid var(--outline, rgba(0, 0, 0, 0.2));
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.paint-swatch--active {
-  border-color: var(--primary, #6750a4);
-  box-shadow: 0 0 0 2px var(--primary, #6750a4);
-}
-
-.paint-custom {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 0;
-}
-
-.paint-color-input {
-  width: 100%;
-  max-width: 240px;
-  height: 8rem;
-  padding: 0;
-  border: 1px solid var(--outline, rgba(0, 0, 0, 0.2));
-  border-radius: 0.75rem;
-  background: none;
-  cursor: pointer;
-}
-
-.paint-hex {
-  font-family: monospace;
-  font-size: 1.1rem;
 }
 </style>
