@@ -112,7 +112,7 @@ onMounted(() => {
       </div>
       <router-link to="/chat" class="button responsive small-round card-cta">
         <span>{{ $t("main.startChatting") }}</span>
-        <i>public</i>
+        <i>forum</i>
       </router-link>
     </article>
 

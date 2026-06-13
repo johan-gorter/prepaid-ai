@@ -13,7 +13,7 @@ test.describe("Main Page", () => {
 
     await expect(page.getByTestId("renovations-card-heading")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Secure Private Chat" }),
+      page.getByRole("heading", { name: "Chat privately with AI" }),
     ).toBeVisible();
   });
 
