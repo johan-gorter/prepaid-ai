@@ -338,7 +338,7 @@ test.describe("New Impression Page", () => {
       // Open the paint step, pick a curated RAL swatch, then Generate.
       await page.getByTestId("choose-paint").click();
       await expect(page.getByTestId("paint-step")).toBeVisible();
-      await page.getByTestId("paint-swatch-#213529").click();
+      await page.getByTestId("paint-swatch-#27352A").click();
       await page.getByTestId("paint-generate").click();
 
       // Skips the prompt screen, processes, lands on preview with a result.

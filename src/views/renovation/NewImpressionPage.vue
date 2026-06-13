@@ -386,7 +386,10 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
 
     <main
       class="responsive wizard-main"
-      :class="{ 'wizard-main--prompt': stage === 'prompt' }"
+      :class="{
+        'wizard-main--prompt': stage === 'prompt',
+        'wizard-main--paint': stage === 'paint',
+      }"
     >
       <h5 v-if="!shareError" class="center-align no-margin wizard-title">
         {{ pageTitle }}
@@ -524,6 +527,15 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
 
 .wizard-main--prompt {
   min-height: 100dvh;
+}
+
+/* Paint stage: grow the main column to the full viewport so PaintStep's custom
+   picker can stretch its preview down to just above the fixed footer (#87). */
+.wizard-main--paint {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .canvas-area {
