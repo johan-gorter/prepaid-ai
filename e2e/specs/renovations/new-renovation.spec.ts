@@ -170,7 +170,7 @@ test.describe("New Renovation Page", () => {
       try {
         // Three-button bar is visible
         await expect(
-          page.getByRole("button", { name: "Renovation Details" }),
+          page.getByRole("button", { name: "Overview" }),
         ).toBeVisible();
         await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
         await expect(

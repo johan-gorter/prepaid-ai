@@ -44,7 +44,7 @@ const newImpression: NewImpressionMessages = {
     undo: "Opnieuw",
     creating: "Je impressie wordt gemaakt...",
     goHome: "Naar startpagina",
-    renovationDetails: "Make-over details",
+    renovationDetails: "Overzicht",
     share: "Delen",
     trash: "Verwijderen",
     nextChange: "Volgende wijziging",
