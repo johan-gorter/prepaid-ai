@@ -41,6 +41,8 @@ const common = {
     close: "Close",
     copy: "Copy",
     copied: "Copied",
+    // Message that accompanies the link in the native OS share sheet.
+    shareText: "Made with AI on payasyougo.app",
   },
 };
 

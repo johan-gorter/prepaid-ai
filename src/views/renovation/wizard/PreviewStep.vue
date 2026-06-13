@@ -45,7 +45,24 @@ async function onShare() {
     );
     // Wow-to-share — the start of the viral loop (measurement.md).
     track("share_created");
-    shareUrl.value = `${location.origin}/share/${token}`;
+    const url = `${location.origin}/share/${token}`;
+    shareUrl.value = url;
+
+    // Prefer the OS share sheet (Android Chrome, iOS Safari, Windows Edge):
+    // more native, one tap to WhatsApp/Messages/etc. Fall back to the
+    // copy-link dialog where navigator.share is unavailable or the share
+    // can't be performed. A user-cancelled share (AbortError) is a no-op.
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ text: t("share.shareText"), url });
+        return;
+      } catch (shareErr) {
+        if (shareErr instanceof DOMException && shareErr.name === "AbortError") {
+          return;
+        }
+        // Any other failure: fall through to the copy-link dialog.
+      }
+    }
     shareDialogOpen.value = true;
   } catch (err) {
     emit(

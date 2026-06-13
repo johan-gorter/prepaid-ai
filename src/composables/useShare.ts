@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { getDownloadURL, ref as storageRef } from "firebase/storage";
 import { db, storage } from "../firebase";
+import { i18n } from "../i18n";
 import type { Share } from "../types";
 import { useAuth } from "./useAuth";
 
@@ -58,6 +59,8 @@ export async function createOrGetShareToken(
     ownerUid: uid,
     resultImageUrl,
     createdAt: serverTimestamp(),
+    // Stored so the shareOg Cloud Function can localize the link-preview card.
+    locale: i18n.global.locale.value,
   });
   await updateDoc(impressionRef, { shareToken: token });
   return token;

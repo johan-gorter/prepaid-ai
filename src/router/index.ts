@@ -112,6 +112,17 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    // SPA share viewer. In production the canonical `/share/:token` link is
+    // served by the `shareOg` Cloud Function (for OG crawlers); human visitors
+    // are handed off here. Behaves identically to `/share/:token` — same token
+    // param, same share hydration — it just isn't shadowed by the hosting
+    // rewrite, so it never loops back to the function.
+    path: "/s/:token",
+    name: "share-viewer",
+    component: () => import("../views/renovation/NewImpressionPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/renovation/:id",
     name: "renovation-detail",
     component: () => import("../views/renovation/RenovationDetailPage.vue"),
@@ -127,9 +138,10 @@ const router = createRouter({
 router.beforeEach(async (to, from) => {
   // Capture the first-touch viral/marketing source from the URL so the whole
   // funnel a visitor walks is attributed to where they came from. A
-  // `/share/:token` link implies "share"; everything else honours `?src=`.
-  // setTrackSource locks on the first valid value (see docs/measurement.md).
-  if (to.name === "share") {
+  // `/share/:token` (and its `/s/:token` handoff) imply "share"; everything
+  // else honours `?src=`. setTrackSource locks on the first valid value (see
+  // docs/measurement.md).
+  if (to.name === "share" || to.name === "share-viewer") {
     setTrackSource("share");
   } else if (typeof to.query.src === "string") {
     setTrackSource(to.query.src);
