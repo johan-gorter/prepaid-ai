@@ -18,6 +18,7 @@ import {
 } from "../../composables/useImpressionStore";
 import { useRenovations } from "../../composables/useRenovations";
 import { useShareHydration } from "../../composables/useShareHydration";
+import { track } from "../../composables/useTrack";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
 import { db } from "../../firebase";
 import ChooseActionStep from "./wizard/ChooseActionStep.vue";
@@ -197,6 +198,9 @@ async function initFromRoute(): Promise<void> {
       return;
     }
     await hydrateShare(shareToken.value);
+    // A successful hydrate (no error screen) means an anonymous visitor landed
+    // on a share link — the start of the viral loop's recipient side.
+    if (!shareError.value) track("share_visit");
     return;
   }
 
@@ -236,6 +240,10 @@ async function initFromRoute(): Promise<void> {
   } else {
     stage.value =
       source === "original" || source === "impression" ? "preview" : "mask";
+    // A fresh photo/crop arrival landing on the mask stage means the visitor
+    // has committed a photo — the funnel's photo_chosen step. The draft-match
+    // branch above is a buy-credits/sign-in resume, not a new photo.
+    if (source === "photo" || source === "crop") track("photo_chosen");
   }
 }
 
@@ -307,6 +315,7 @@ async function clearMaskEverywhere() {
 }
 
 async function onNextChange() {
+  track("next_edit");
   await clearMaskEverywhere();
   useSolidMask.value = false;
   usePaintMode.value = false;
@@ -315,6 +324,7 @@ async function onNextChange() {
 }
 
 function onMaskNext() {
+  track("mask_done");
   stage.value = "choose-action";
 }
 
@@ -323,6 +333,7 @@ function onChooseBack() {
 }
 
 async function onChooseRemove() {
+  track("action_chosen");
   prompt.value = REMOVE_PROMPT;
   useSolidMask.value = true;
   usePaintMode.value = false;
@@ -330,6 +341,7 @@ async function onChooseRemove() {
 }
 
 function onChoosePaint() {
+  track("action_chosen");
   stage.value = "paint";
 }
 
@@ -347,6 +359,7 @@ async function onPaintGenerate() {
 }
 
 function onChooseOther() {
+  track("action_chosen");
   // Clear any leftover state from a previous Verwijderen / Schilder attempt so
   // the user gets the standard checkerboard + free-prompt flow.
   useSolidMask.value = false;
@@ -376,6 +389,9 @@ function onBack() {
 async function onTrash() {
   const source = sourceParam.value;
   if (source === "impression") {
+    // Trashing a generated result shortly after creating it is our
+    // dissatisfaction proxy until a satisfaction meter exists (measurement.md).
+    track("impression_trashed");
     if (renovationParam.value && impressionParam.value) {
       try {
         await deleteImpression(renovationParam.value, impressionParam.value);

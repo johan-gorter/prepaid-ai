@@ -1,10 +1,33 @@
 # Measurement — funnel & viral-loop metrics without a consent banner
 
-Status: **plan, not yet implemented.** This document defines what we measure,
-how we measure it without cookie consent, and which decisions are still open.
-This must exist before unknown users are invited (see the tracking issue):
-without these numbers, every marketing effort and every funnel change is blind,
-and the viral loop in [viral-flow.md](viral-flow.md) cannot be tuned.
+Status: **implemented** (issue #93, first cut). This document defines what we
+measure, how we measure it without cookie consent, and records the decisions
+behind the implementation. This must exist before unknown users are invited
+(see the tracking issue): without these numbers, every marketing effort and
+every funnel change is blind, and the viral loop in
+[viral-flow.md](viral-flow.md) cannot be tuned.
+
+## Where it lives in the code
+
+- `src/composables/useTrack.ts` — the `track(event)` client beacon, the fixed
+  `TRACK_EVENTS` enum, and the in-memory URL source attribution
+  (`setTrackSource`).
+- `src/router/index.ts` — captures the first-touch source from `?src=` (or a
+  `/share/:token` link → `share`) on every navigation.
+- `functions/src/trackEvent.ts` — the `onCall` counter endpoint. Validates the
+  enum + source and atomically increments one `metrics/{day}__{source}__{event}`
+  doc (`{ event, source, day, count, updatedAt }`). Stores **no uid, IP, or
+  user agent**.
+- `firestore.rules` — the `metrics` collection is locked to clients (`read,
+  write: if false`); only the Cloud Function's Admin SDK writes it.
+- Funnel call sites: `MainPage.vue` (landing_view, cta_click),
+  `NewImpressionPage.vue` (photo_chosen, mask_done, action_chosen, next_edit,
+  impression_trashed, share_visit), `useGenerateImpression.ts` (generate_click,
+  result_view, generate_fail), `useCheckout.ts` (paywall_view, amount_chosen,
+  payment_done), `LoginPage.vue` (login_done), `PreviewStep.vue` (share_created).
+
+To read the counters: the Firebase console on the `metrics` collection, or query
+docs where `day == "YYYY-MM-DD"`. Each doc id is `${day}__${source}__${event}`.
 
 ## Principles
 
@@ -88,7 +111,35 @@ device storage needed.
 - Session stitching choices below move along this line: in-memory = clearly
   fine, sessionStorage = grey zone, persistent ID = consent territory.
 
-## Open decisions (PO to decide before implementation)
+## Decisions (resolved for the issue #93 implementation)
+
+The eight open decisions below were resolved as the documented default
+recommendations; the implementation follows them. Revisit any of these when the
+numbers justify the extra cost.
+
+1. **Tooling:** own Firestore counters via the `trackEvent` Cloud Function.
+2. **Session stitching:** none beyond pure per-step counters. Aggregate
+   `{event, source, day}` counts need no session id, so none is stored — the
+   cleanest, most clearly consent-free option. Upgrade to an opt-in cohort id
+   later if funnel-stitching questions demand it.
+3. **Consent trigger:** the line is *"any identifier that survives the browser
+   session or links events across visits."* Nothing in this implementation
+   crosses it — the source label is in-memory only and lost on reload.
+4. **Signed-in attribution:** **no** uid on events. Events stay anonymous;
+   revenue/retention reporting derives from first-party account data in
+   Firestore (balances, transactions), not from the counters.
+5. **Source attribution convention:** a single `?src=` URL param, separate from
+   the wizard's internal `?source=` routing. Allowed values: `share` (also
+   implied by a `/share/:token` link) and `inv-<code>` (`[a-z0-9]{1,32}`, for
+   future invite/influencer codes). Everything else is bucketed as `direct`.
+   First-touch wins and is held in memory for the visit.
+6. **Retention:** daily aggregates kept indefinitely (anonymous). No raw event
+   log exists — the function only increments counters.
+7. **Web-vitals beacon:** **no.** Counters stay pure counts; no numeric values.
+8. **Opt-in placement:** deferred. No opt-in is built yet; if user-level
+   cohorts are ever wanted it lives at account creation (never a cookie wall).
+
+## Open decisions (original PO list, now resolved above)
 
 1. **Tooling:** own Firestore counters via a Cloud Function (default per this
    doc) vs self-hosted Plausible-style tool vs paid EU-hosted SaaS. Default

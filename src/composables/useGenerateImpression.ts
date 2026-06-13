@@ -18,6 +18,7 @@ import { useBalance } from "./useBalance";
 import { getImpressionSource, setImpressionSource } from "./useImpressionStore";
 import { useRenovations } from "./useRenovations";
 import { resolveStorageUrl } from "./useStorageUrl";
+import { track } from "./useTrack";
 import { ACTION_CREDITS, type RenovationAction } from "../credits";
 import { db, storage } from "../firebase";
 import type { Source, Stage } from "../views/renovation/wizard/wizardTypes";
@@ -152,6 +153,9 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
       return;
     }
     generateInFlight = true;
+    // The user committed to a generation. Counted before the balance gate so
+    // the generate_click → paywall_view drop is measurable (measurement.md).
+    track("generate_click");
     try {
       // Make sure we know the user's actual balance before deciding whether
       // to redirect to /buy-credits — otherwise the initial Firestore snapshot
@@ -249,6 +253,10 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           newImpressionId,
         );
 
+        // The generation completed and the result is about to be shown — the
+        // funnel's wow moment and the start of the share decision.
+        track("result_view");
+
         const resultUrl = await resolveStorageUrl(resultPath);
         const resultBlob = await fetch(resultUrl).then((r) => r.blob());
         await setImpressionSource(resultBlob);
@@ -263,6 +271,10 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           },
         });
       } catch (err) {
+        // A failed first edit kills the viral loop — track it as a health
+        // proxy (measurement.md). Fires for upload, Cloud Function, and
+        // timeout failures alike.
+        track("generate_fail");
         errorMessage.value =
           err instanceof Error ? err.message : t("newImpression.unknownError");
         // The Verwijderen and Schilder flows skip the free-prompt screen, so on

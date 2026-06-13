@@ -63,5 +63,13 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
       allow update: if false;
     }
+
+    // Measurement counters (issue #93) — anonymous aggregate `{event, source,
+    // day}` docs written ONLY by the trackEvent Cloud Function via the Admin
+    // SDK (which bypasses these rules). No client may read or write them: they
+    // hold no per-user data and exist purely for funnel/viral-loop trends.
+    match /metrics/{id} {
+      allow read, write: if false;
+    }
   }
 }

@@ -12,6 +12,7 @@ import { useI18n } from "vue-i18n";
 import StickyFooter from "../../../components/StickyFooter.vue";
 import ShareDialog from "../../../components/ShareDialog.vue";
 import { createOrGetShareToken } from "../../../composables/useShare";
+import { track } from "../../../composables/useTrack";
 
 const props = defineProps<{
   renovationId: string | null;
@@ -42,6 +43,8 @@ async function onShare() {
       props.renovationId,
       props.impressionId,
     );
+    // Wow-to-share — the start of the viral loop (measurement.md).
+    track("share_created");
     shareUrl.value = `${location.origin}/share/${token}`;
     shareDialogOpen.value = true;
   } catch (err) {
