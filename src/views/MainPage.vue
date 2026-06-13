@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import FeedbackCard from "../components/FeedbackCard.vue";
@@ -9,6 +9,13 @@ import { updateLastActivity } from "../composables/useLastActivity";
 
 const { currentUser } = useAuth();
 const router = useRouter();
+
+// Signed-in visitors go to their gallery; signed-out first-timers get the
+// first-renovation walkthrough (see #83). The signed-in label/target pairing
+// keeps the CTA honest about where it leads.
+const renovationsTarget = computed(() =>
+  currentUser.value ? "/renovations" : "/first-renovation",
+);
 
 // The whole card is a tap target, but the CTA link inside stays the real
 // (focusable, announced) link — skip when the click already came from it.
@@ -47,7 +54,7 @@ onMounted(() => {
     <article
       class="border medium-text tappable"
       data-testid="renovations-card"
-      @click="openCard($event, '/renovations')"
+      @click="openCard($event, renovationsTarget)"
     >
       <div class="card-media">
         <img
@@ -66,7 +73,7 @@ onMounted(() => {
         </p>
       </div>
       <router-link
-        to="/renovations"
+        :to="renovationsTarget"
         class="button responsive small-round card-cta"
         style="margin-top: 4px"
       >

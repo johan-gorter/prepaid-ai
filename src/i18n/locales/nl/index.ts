@@ -8,6 +8,7 @@ import common from "./common";
 import main from "./main";
 import chat from "./chat";
 import newImpression from "./newImpression";
+import firstRenovation from "./firstRenovation";
 import buyCredits from "./buyCredits";
 import login from "./login";
 import about from "./about";
@@ -17,6 +18,7 @@ const nl: MessageSchema = {
   ...main,
   ...chat,
   ...newImpression,
+  ...firstRenovation,
   ...buyCredits,
   ...login,
   ...about,
