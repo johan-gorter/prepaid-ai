@@ -8,11 +8,16 @@ import {
   type TestUser,
 } from "../../helpers/auth";
 import { EMULATOR_URLS, PROJECT_ID } from "../../helpers/emulator-config";
+import { createRenovationAndWaitForResult } from "../../helpers/renovation";
 import {
+  advanceToChooseAction,
   chooseFreePrompt,
-  createRenovationAndWaitForResult,
-  drawMaskStroke,
-} from "../../helpers/renovation";
+  clickNextChange,
+  fillPrompt,
+  goToRenovationDetails,
+  paintMask,
+  waitForPreviewResult,
+} from "../../helpers/wizard";
 
 const TOKEN_RE = /\/share\/([0-9a-f]{32})$/;
 
@@ -137,16 +142,13 @@ test.describe("Share impression", () => {
         await expect(anonPage.getByTestId("share-button")).toHaveCount(0);
 
         // Next Change → mask stage
-        await anonPage.getByRole("button", { name: "Next Change" }).click();
-        await expect(
-          anonPage.getByText("Paint the area you want to change"),
-        ).toBeVisible();
+        await clickNextChange(anonPage);
 
         // Paint a mask, advance to prompt, type, hit Generate
-        await drawMaskStroke(anonPage);
-        await anonPage.getByRole("button", { name: "Next" }).click();
+        await paintMask(anonPage);
+        await advanceToChooseAction(anonPage);
         await chooseFreePrompt(anonPage);
-        await anonPage.getByTestId("prompt").fill("my own change");
+        await fillPrompt(anonPage, "my own change");
         await anonPage.getByRole("button", { name: "Generate" }).click();
 
         // Anonymous → redirected through buy-credits (existing flow). The
@@ -254,8 +256,7 @@ test.describe("Share impression", () => {
       // Navigate to the renovation timeline so the original image is in
       // view, then delete the renovation via the wizard's source=original
       // Trash flow (which uses confirm() — accept the dialog).
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
       await page.getByAltText("Original").click();
       await page.waitForURL(/\/new-impression\?source=original&renovation=/);
 
@@ -313,18 +314,11 @@ test.describe("Share impression", () => {
         });
 
         // Next Change → paint → prompt → Generate (Cloud Function runs).
-        await recipientPage
-          .getByRole("button", { name: "Next Change" })
-          .click();
-        await expect(
-          recipientPage.getByText("Paint the area you want to change"),
-        ).toBeVisible();
-        await drawMaskStroke(recipientPage);
-        await recipientPage.getByRole("button", { name: "Next" }).click();
+        await clickNextChange(recipientPage);
+        await paintMask(recipientPage);
+        await advanceToChooseAction(recipientPage);
         await chooseFreePrompt(recipientPage);
-        await recipientPage
-          .getByTestId("prompt")
-          .fill("recipient remix from share");
+        await fillPrompt(recipientPage, "recipient remix from share");
         await recipientPage.getByRole("button", { name: "Generate" }).click();
 
         // Lands on the preview stage of a brand-new renovation owned by

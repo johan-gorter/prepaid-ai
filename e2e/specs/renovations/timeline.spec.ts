@@ -1,11 +1,16 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
+import { createRenovationAndWaitForResult } from "../../helpers/renovation";
 import {
+  advanceToChooseAction,
+  chainImpression,
   chooseFreePrompt,
-  createRenovationAndWaitForResult,
-  drawMaskStroke,
-  waitForPreviewResult,
-} from "../../helpers/renovation";
+  clickNextChange,
+  fillPrompt,
+  generateAndWait,
+  goToRenovationDetails,
+  paintMask,
+} from "../../helpers/wizard";
 
 test.describe("Renovation Details Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -23,8 +28,7 @@ test.describe("Renovation Details Page", () => {
 
     try {
       // Navigate to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Header
       await expect(
@@ -54,8 +58,7 @@ test.describe("Renovation Details Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       const afterStar = page.getByTestId("after-image-star");
       await expect(afterStar).toBeVisible();
@@ -93,8 +96,7 @@ test.describe("Renovation Details Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       await expect(page.getByAltText("Original")).toBeVisible();
       await page.getByAltText("Original").click();
@@ -119,8 +121,7 @@ test.describe("Renovation Details Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       await expect(page.getByAltText("Result")).toBeVisible();
       await page.getByAltText("Result").click();
@@ -145,8 +146,7 @@ test.describe("Renovation Details Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Verify impression is visible
       await expect(page.getByAltText("Result")).toBeVisible();
@@ -162,7 +162,6 @@ test.describe("Renovation Details Page", () => {
   test("star toggle switches between impressions", async ({
     authenticatedPage: page,
   }) => {
-    // Create first renovation and go to result
     const { grayPngPath } = await createRenovationAndWaitForResult(
       page,
       "first change",
@@ -170,8 +169,7 @@ test.describe("Renovation Details Page", () => {
 
     try {
       // Go to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       const impressions = page.locator("article.impression-item");
 
@@ -187,31 +185,12 @@ test.describe("Renovation Details Page", () => {
         /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
       );
 
-      // Preview stage — canvas visible, mask helper hidden. Click Next
-      // Change to transition to the mask stage.
+      // Preview stage — click Next Change to transition to the mask stage.
       await expect(page.locator("canvas")).toBeVisible();
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      // Draw mask
-      await drawMaskStroke(page);
-
-      // Go through choose-action → prompt
-      await page.getByRole("button", { name: "Next" }).click();
-      await chooseFreePrompt(page);
-      const promptInput = page.getByTestId("prompt");
-      await expect(promptInput).toBeVisible();
-      await promptInput.fill("second change");
-
-      // Generate
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
+      await chainImpression(page, "second change");
 
       // Go back to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Should see two Result images without prompt captions
       await expect(page.getByAltText("Result")).toHaveCount(2);
@@ -253,8 +232,7 @@ test.describe("Renovation Details Page", () => {
 
     try {
       // Navigate to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Wait for result image to appear
       await expect(page.getByAltText("Result")).toBeVisible();
@@ -265,30 +243,17 @@ test.describe("Renovation Details Page", () => {
         /\/new-impression\?source=impression&renovation=[a-zA-Z0-9]+&impression=[a-zA-Z0-9]+/,
       );
 
-      // Preview stage — canvas visible. Click Next Change to reach mask.
+      // Preview stage — canvas visible. Chain a second impression.
       await expect(page.locator("canvas")).toBeVisible();
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      // Draw mask stroke
-      await drawMaskStroke(page);
-
-      // Advance through choose-action → prompt step
-      await page.getByRole("button", { name: "Next" }).click();
+      await clickNextChange(page);
+      await paintMask(page);
+      await advanceToChooseAction(page);
       await chooseFreePrompt(page);
-      const promptInput = page.getByTestId("prompt");
-      await expect(promptInput).toBeVisible();
-      await promptInput.fill("chained from result");
-
-      // Generate → preview stage with the chained result image
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
+      await fillPrompt(page, "chained from result");
+      await generateAndWait(page);
 
       // Navigate back to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Two result images present without prompt captions
       await expect(page.getByAltText("Result")).toHaveCount(2);

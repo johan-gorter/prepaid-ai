@@ -3,12 +3,21 @@ import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
 import { createRandomTestUser, createTestUser } from "../../helpers/auth";
 import {
-  chooseFreePrompt,
   createGrayPng,
   createRenovationAndWaitForResult,
   fillNewRenovationForm,
-  waitForPreviewResult,
 } from "../../helpers/renovation";
+import {
+  advanceToChooseAction,
+  chainImpression,
+  chooseFreePrompt,
+  clickNextChange,
+  fillPrompt,
+  generateAndWait,
+  goToRenovationDetails,
+  paintMask,
+  uploadSourceImage,
+} from "../../helpers/wizard";
 
 test.describe("New Renovation Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -21,14 +30,8 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
-        await expect(
-          page.getByText("Paint the area you want to change"),
-        ).toBeVisible();
         await expect(page.locator("canvas")).toBeVisible();
 
         // No title field
@@ -44,10 +47,7 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         await expect(
           page.getByRole("button", { name: "Retake" }),
@@ -64,10 +64,7 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
@@ -84,14 +81,10 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         // Advance to choose-action stage
-        await page.getByRole("button", { name: "Next" }).click();
-        await expect(page.getByTestId("choose-action")).toBeVisible();
+        await advanceToChooseAction(page);
 
         // Pick Other → prompt stage
         await chooseFreePrompt(page);
@@ -122,10 +115,7 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         await expect(page.locator("canvas")).toBeVisible();
         await expect(
@@ -157,10 +147,7 @@ test.describe("New Renovation Page", () => {
     }) => {
       const grayPngPath = await createGrayPng();
       try {
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         await page.getByRole("button", { name: "Trash" }).click();
         await page.waitForURL("/renovations");
@@ -208,8 +195,7 @@ test.describe("New Renovation Page", () => {
       );
 
       try {
-        await page.getByRole("button", { name: "Renovation Details" }).click();
-        await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+        await goToRenovationDetails(page);
         await expect(
           page.getByRole("heading", { name: "Renovation Details" }),
         ).toBeVisible();
@@ -249,13 +235,10 @@ test.describe("New Renovation Page", () => {
       );
 
       try {
-        await page.getByRole("button", { name: "Next Change" }).click();
+        await clickNextChange(page);
 
         // Same URL — stage transition only
         await expect(page).toHaveURL(/\/new-impression\?source=impression&/);
-        await expect(
-          page.getByText("Paint the area you want to change"),
-        ).toBeVisible();
       } finally {
         rmSync(grayPngPath, { force: true });
       }
@@ -269,35 +252,10 @@ test.describe("New Renovation Page", () => {
 
       try {
         // First Generate
-        await page.getByRole("button", { name: "Generate" }).click();
-        await waitForPreviewResult(page);
+        await generateAndWait(page);
 
-        // Chain via Next Change → mask stage in-place, draw mask, generate
-        await page.getByRole("button", { name: "Next Change" }).click();
-        await expect(
-          page.getByText("Paint the area you want to change"),
-        ).toBeVisible();
-
-        const canvas = page.locator("canvas");
-        const box = await canvas.boundingBox();
-        if (box) {
-          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-          await page.mouse.down();
-          await page.mouse.move(
-            box.x + box.width / 2 + 30,
-            box.y + box.height / 2 + 30,
-          );
-          await page.mouse.up();
-        }
-
-        await page.getByRole("button", { name: "Next" }).click();
-        await chooseFreePrompt(page);
-        const promptInput = page.getByTestId("prompt");
-        await expect(promptInput).toBeVisible();
-        await promptInput.fill("second attempt");
-
-        await page.getByRole("button", { name: "Generate" }).click();
-        await waitForPreviewResult(page);
+        // Chain a second impression
+        await chainImpression(page, "second attempt");
       } finally {
         rmSync(grayPngPath, { force: true });
       }
@@ -329,29 +287,13 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
         // 1. Anonymous user lands on /renovations and uploads a photo.
         await page.goto("/renovations");
         await baseExpect(page.getByTestId("new-renovation-card")).toBeVisible();
-        await page
-          .locator('[data-testid="camera-input"]')
-          .setInputFiles(grayPngPath);
-        await page.waitForURL("/new-impression?source=photo");
+        await uploadSourceImage(page, grayPngPath);
 
         // 2. Draw a mask stroke and advance to the prompt step.
-        const canvas = page.locator("canvas");
-        await baseExpect(canvas).toBeVisible();
-        const box = await canvas.boundingBox();
-        if (!box) throw new Error("canvas has no bounding box");
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await page.mouse.down();
-        await page.mouse.move(
-          box.x + box.width / 2 + 50,
-          box.y + box.height / 2 + 50,
-        );
-        await page.mouse.up();
-
-        await page.getByRole("button", { name: "Next" }).click();
+        await paintMask(page);
+        await advanceToChooseAction(page);
         await chooseFreePrompt(page);
-        const promptInput = page.getByTestId("prompt");
-        await baseExpect(promptInput).toBeVisible();
-        await promptInput.fill(promptText);
+        await fillPrompt(page, promptText);
 
         // 3. Generate while anonymous → redirects to /buy-credits.
         await page.getByRole("button", { name: "Generate" }).click();
@@ -397,8 +339,7 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
         // 7. Generate now succeeds — the user has the seeded balance plus
         //    the 200 credits just purchased, so the wizard runs the real
         //    impression pipeline and a result image appears.
-        await page.getByRole("button", { name: "Generate" }).click();
-        await waitForPreviewResult(page);
+        await generateAndWait(page);
       } finally {
         rmSync(grayPngPath, { force: true });
         await context.close();

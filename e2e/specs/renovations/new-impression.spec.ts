@@ -1,11 +1,15 @@
 import { rmSync } from "node:fs";
 import { expect, test } from "../../fixtures";
+import { createRenovationAndWaitForResult } from "../../helpers/renovation";
 import {
+  advanceToChooseAction,
+  chainImpression,
   chooseFreePrompt,
-  createRenovationAndWaitForResult,
-  drawMaskStroke,
+  clickNextChange,
+  goToRenovationDetails,
+  paintMask,
   waitForPreviewResult,
-} from "../../helpers/renovation";
+} from "../../helpers/wizard";
 
 test.describe("New Impression Page", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -22,8 +26,7 @@ test.describe("New Impression Page", () => {
 
     try {
       // Go to timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       // Click original image → wizard preview stage with source=original
       await page.getByAltText("Original").click();
@@ -48,8 +51,7 @@ test.describe("New Impression Page", () => {
 
     try {
       // Go to timeline, click result image
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       await expect(page.getByAltText("Result")).toBeVisible();
       await page.getByAltText("Result").click();
@@ -76,14 +78,10 @@ test.describe("New Impression Page", () => {
       // After Generate we land on preview stage with source=impression
       await page.waitForURL(/\/new-impression\?source=impression&/);
 
-      // Mask helper text is hidden in preview stage
-      await page.getByRole("button", { name: "Next Change" }).click();
+      await clickNextChange(page);
 
       // Same URL — stage transitions in-place to mask
       await expect(page).toHaveURL(/\/new-impression\?source=impression&/);
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
@@ -100,26 +98,8 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      // Already in preview stage after first Generate. Click Next Change to
-      // transition to the mask stage in-place.
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      // Draw mask
-      await drawMaskStroke(page);
-
-      // Go to prompt stage via choose-action → Other
-      await page.getByRole("button", { name: "Next" }).click();
-      await chooseFreePrompt(page);
-      const promptInput = page.getByTestId("prompt");
-      await expect(promptInput).toBeVisible();
-      await promptInput.fill("second change in chain");
-
-      // Generate → preview stage after Cloud Function completion
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
+      // Chain a second impression
+      await chainImpression(page, "second change in chain");
 
       // Three-button bar visible
       await expect(
@@ -142,10 +122,7 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      // Already on preview stage with renovation in query — the Renovation
-      // Details footer button goes to the renovation timeline.
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
       await expect(
         page.getByRole("heading", { name: "Renovation Details" }),
       ).toBeVisible();
@@ -189,21 +166,10 @@ test.describe("New Impression Page", () => {
 
     try {
       // Chain a second impression via Next Change
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await chooseFreePrompt(page);
-      await page.getByTestId("prompt").fill("chained impression");
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
+      await chainImpression(page, "chained impression");
 
       // Click Renovation Details → timeline
-      await page.getByRole("button", { name: "Renovation Details" }).click();
-      await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
+      await goToRenovationDetails(page);
 
       await expect(page.getByAltText("Result")).toHaveCount(2);
       await expect(page.getByText("base for chaining")).not.toBeVisible();
@@ -223,31 +189,8 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      // --- Second impression ---
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await chooseFreePrompt(page);
-      await page.getByTestId("prompt").fill("second change");
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
-
-      // --- Third impression chained off the second ---
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await chooseFreePrompt(page);
-      await page.getByTestId("prompt").fill("third change");
-      await page.getByRole("button", { name: "Generate" }).click();
-      await waitForPreviewResult(page);
+      await chainImpression(page, "second change");
+      await chainImpression(page, "third change");
     } finally {
       rmSync(grayPngPath, { force: true });
     }
@@ -262,14 +205,10 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
+      await clickNextChange(page);
 
       // Advance to choose-action stage
-      await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByTestId("choose-action")).toBeVisible();
+      await advanceToChooseAction(page);
 
       // Pick Other → prompt stage
       await chooseFreePrompt(page);
@@ -301,14 +240,9 @@ test.describe("New Impression Page", () => {
 
     try {
       // Chain a second impression via Next Change → mask → choose-action.
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByTestId("choose-action")).toBeVisible();
+      await clickNextChange(page);
+      await paintMask(page);
+      await advanceToChooseAction(page);
 
       // Click Remove — should skip the prompt screen and go straight to
       // processing, then land on the preview stage with a result image.
@@ -329,14 +263,9 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByTestId("choose-action")).toBeVisible();
+      await clickNextChange(page);
+      await paintMask(page);
+      await advanceToChooseAction(page);
 
       // Click Paint — paint step appears, prompt screen does not.
       await page.getByTestId("choose-paint").click();
@@ -366,14 +295,9 @@ test.describe("New Impression Page", () => {
     );
 
     try {
-      await page.getByRole("button", { name: "Next Change" }).click();
-      await expect(
-        page.getByText("Paint the area you want to change"),
-      ).toBeVisible();
-
-      await drawMaskStroke(page);
-      await page.getByRole("button", { name: "Next" }).click();
-      await expect(page.getByTestId("choose-action")).toBeVisible();
+      await clickNextChange(page);
+      await paintMask(page);
+      await advanceToChooseAction(page);
 
       // Open the paint step, pick a curated RAL swatch, then Generate.
       await page.getByTestId("choose-paint").click();
