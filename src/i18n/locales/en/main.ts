@@ -10,9 +10,9 @@ const main = {
     renovationPreviewAlt: "Renovation preview",
     testYourIdea: "TRY WITH YOUR PHOTO",
     yourRenovations: "YOUR RENOVATIONS",
-    securePrivateChat: "Secure Private Chat",
+    securePrivateChat: "Chat privately with AI",
     chatExplainInPlainLanguage:
-      "Complex contract or tricky document? Let our assistant explain it to you instantly in plain language. Your data remains 100% private.",
+      "A tricky letter from your municipality, a medical result full of jargon, or help writing a good e-mail? Ask your question and get a clear answer right away. Your documents stay private.",
     startChatting: "START CHATTING",
     checkCredits: "Check Credits",
     viewUsageTerms: "View Usage Terms",
