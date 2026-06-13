@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useRoute } from "vue-router";
 import AppBar from "../components/AppBar.vue";
+import { track } from "../composables/useTrack";
 
 const route = useRoute();
 const sessionId = route.query.session_id as string | undefined;
+
+onMounted(() => {
+  track("payment_done");
+});
 </script>
 
 <template>
