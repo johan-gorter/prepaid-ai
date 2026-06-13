@@ -118,9 +118,7 @@ test.describe("New Renovation Page", () => {
         await uploadSourceImage(page, grayPngPath);
 
         await expect(page.locator("canvas")).toBeVisible();
-        await expect(
-          page.getByRole("button", { name: "Undo" }),
-        ).toBeVisible();
+        await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
 
         // Draw something, then clear
         const canvas = page.locator("canvas");
@@ -302,8 +300,11 @@ baseTest.describe("New Renovation anonymous → buy → login flow", () => {
           page.getByTestId("buy-credits-cost-message"),
         ).toBeVisible();
 
-        // 4. Pick a preset → not signed in, redirects to /login.
-        await page.getByTestId("buy-credits-preset-200").click();
+        // 4. Pick a preset, accept the waiver, confirm → not signed in,
+        //    redirects to /login.
+        await page.getByTestId("buy-credits-preset-200").check();
+        await page.getByTestId("buy-credits-waiver").check();
+        await page.getByTestId("buy-credits-submit").click();
         await page.waitForURL(/\/login\?/);
 
         const loginUrl = new URL(page.url());

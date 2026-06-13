@@ -15,13 +15,10 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import type { User } from "firebase/auth";
 import { useBalance } from "./useBalance";
-import {
-  getImpressionSource,
-  setImpressionSource,
-} from "./useImpressionStore";
+import { getImpressionSource, setImpressionSource } from "./useImpressionStore";
 import { useRenovations } from "./useRenovations";
 import { resolveStorageUrl } from "./useStorageUrl";
-import { IMPRESSION_CREDITS } from "../credits";
+import { ACTION_CREDITS, type RenovationAction } from "../credits";
 import { db, storage } from "../firebase";
 import type { Source, Stage } from "../views/renovation/wizard/wizardTypes";
 
@@ -77,6 +74,19 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
   const { createRenovation, createImpression } = useRenovations();
 
   const canGenerate = computed(() => prompt.value.trim().length > 0);
+
+  // The per-action credit price (docs/viral-flow.md §10): remove = 5,
+  // colour change = 10, free edit = 10. The balance gate, the buy-credits
+  // min/max params, and the server-side charge all key off this so a user
+  // is never sent to buy too few credits for the action they picked.
+  const action = computed<RenovationAction>(() =>
+    usePaintMode.value
+      ? "colorChange"
+      : useSolidMask.value
+        ? "remove"
+        : "freePrompt",
+  );
+  const actionCredits = computed(() => ACTION_CREDITS[action.value]);
 
   // Synchronous re-entry guard for onGenerate. Awaiting the balance load
   // before flipping stage→"processing" otherwise allows two rapid clicks to
@@ -147,15 +157,15 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
       // to redirect to /buy-credits — otherwise the initial Firestore snapshot
       // race would bounce a user with funds straight to the purchase page.
       if (currentUser.value) await waitForBalance();
-      if (!currentUser.value || balance.value < IMPRESSION_CREDITS) {
+      if (!currentUser.value || balance.value < actionCredits.value) {
         // Persist the in-progress mask + prompt so the buy-credits / sign-in
         // detour leaves the wizard exactly where the user left off.
         await persistDraft();
         router.push({
           path: "/buy-credits",
           query: {
-            min: String(IMPRESSION_CREDITS),
-            max: String(IMPRESSION_CREDITS),
+            min: String(actionCredits.value),
+            max: String(actionCredits.value),
             redirect: route.fullPath,
           },
         });
@@ -178,10 +188,7 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           const sourceBlob = await getImpressionSource();
           if (!sourceBlob) throw new Error("Source image missing");
           const originalImagePath = `users/${uid}/originals/${ts}.webp`;
-          await uploadBytes(
-            storageRef(storage, originalImagePath),
-            sourceBlob,
-          );
+          await uploadBytes(storageRef(storage, originalImagePath), sourceBlob);
           renovationId = await createRenovation({ originalImagePath });
           sourceImagePath = originalImagePath;
         } else if (source === "original") {
@@ -230,6 +237,7 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           sourceImagePath,
           compositeImagePath,
           prompt: prompt.value.trim(),
+          action: action.value,
           ...(usePaintMode.value
             ? { paintColor: paintColor.value, mode: "paint" }
             : {}),

@@ -3,7 +3,11 @@ import sharp from "sharp";
 import { bucket, db } from "./admin.js";
 import { dummyProcess, geminiProcess, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
-import { imageGenerationCredits } from "./credits.js";
+import {
+  ACTION_CREDITS,
+  imageGenerationCredits,
+  type RenovationAction,
+} from "./credits.js";
 import { FUNCTIONS_REGION } from "./region.js";
 import { storagePathFromUrl } from "./utils.js";
 
@@ -33,6 +37,15 @@ export const processImpression = onDocumentCreated(
       | undefined;
     const mode = impressionData.mode as string | undefined;
     const paintColor = impressionData.paintColor as string | undefined;
+    const action = impressionData.action as string | undefined;
+
+    // Charge the per-action price (docs/viral-flow.md §10): remove = 5,
+    // colour change = 10, free edit = 10. Older impression docs predate the
+    // `action` field, so fall back to the flat image-generation cost for them.
+    const requiredCredits =
+      action && action in ACTION_CREDITS
+        ? ACTION_CREDITS[action as RenovationAction]
+        : imageGenerationCredits();
 
     const impressionRef = db.doc(
       `users/${userId}/renovations/${renovationId}/impressions/${impressionId}`,
@@ -42,7 +55,6 @@ export const processImpression = onDocumentCreated(
     const userRef = db.doc(`users/${userId}`);
     const userBalanceSnap = await userRef.get();
     const currentBalance: number = userBalanceSnap.data()?.balance ?? 0;
-    const requiredCredits = imageGenerationCredits();
 
     if (currentBalance < requiredCredits) {
       await impressionRef.update({
@@ -116,15 +128,10 @@ export const processImpression = onDocumentCreated(
 
       // Deduct credits for image generation
       try {
-        await deductCredits(
-          userId,
-          imageGenerationCredits(),
-          "image_generation",
-          {
-            renovationId,
-            impressionId,
-          },
-        );
+        await deductCredits(userId, requiredCredits, "image_generation", {
+          renovationId,
+          impressionId,
+        });
       } catch (balanceErr: unknown) {
         console.warn(
           "Balance deduction failed (processing still succeeded):",

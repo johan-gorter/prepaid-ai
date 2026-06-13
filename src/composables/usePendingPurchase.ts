@@ -17,6 +17,13 @@ export interface PendingPurchase {
   credits: number;
   /** Route to return to after the payment succeeds. */
   redirect: string;
+  /**
+   * Whether the user ticked the withdrawal-waiver checkbox before committing
+   * (express consent to immediate delivery + waiver of the 14-day right of
+   * withdrawal — see #81). Persisted so the confirmation is derivable from the
+   * intent that survives the login / payment detour.
+   */
+  waiverAccepted?: boolean;
 }
 
 export const setPendingPurchase = (p: PendingPurchase) => idbSet(KEY, p);

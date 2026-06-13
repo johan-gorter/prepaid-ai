@@ -24,16 +24,22 @@ const buyCredits = {
   },
   buyCredits: {
     title: "Buy credits",
-    costExact:
-      "This operation costs {credits} credits (${usd}). You must buy credits in order to proceed.",
-    costRange:
-      "This operation costs between {lo} and {hi} credits (${loUsd} – ${hiUsd}). You must buy credits in order to proceed.",
-    chooseAmount: "Choose an amount",
-    creditsLabel: "credits",
-    customAmountTitle: "Or pick a custom amount",
+    contextExact: "This action costs {credits} credits (${usd}).",
+    contextRange: "This action costs {lo}–{hi} credits (${loUsd}–${hiUsd}).",
+    contextReassurance:
+      "Your work is saved — you'll continue right after paying.",
+    optionLabel: "{credits} credits — ${usd}",
+    presetHint75: "≈ 7 actions",
+    customOption: "Custom amount",
     customAmountAria: "Custom credit amount",
-    buyAmount: "Buy {credits} credits (${usd})",
+    trustLine1:
+      "No subscription · your credits never expire · secure payment via Stripe",
+    trustLine2: "Minimum 75 credits due to transaction costs.",
     betweenHint: "Between {min} and {max} credits.",
+    waiverLabel:
+      "I agree to immediate delivery and waive my 14-day right of withdrawal.",
+    ctaPay: "Continue to payment — ${usd}",
+    ctaLoginHint: "You'll sign in first.",
     startingCheckout: "Starting checkout...",
     errorGeneric: "Failed to start checkout",
   },

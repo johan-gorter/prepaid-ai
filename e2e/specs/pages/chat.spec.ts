@@ -159,8 +159,11 @@ baseTest.describe("PrivateChatPage anonymous → buy → login flow", () => {
         page.getByTestId("buy-credits-cost-message"),
       ).toBeVisible();
 
-      // 3. Pick a preset → not signed in, redirects to /login.
-      await page.getByTestId("buy-credits-preset-200").click();
+      // 3. Pick a preset, accept the waiver, confirm → not signed in,
+      //    redirects to /login.
+      await page.getByTestId("buy-credits-preset-200").check();
+      await page.getByTestId("buy-credits-waiver").check();
+      await page.getByTestId("buy-credits-submit").click();
       await page.waitForURL(/\/login\?/);
 
       // Capture the post-login redirect target the BuyCreditsPage stashed.
