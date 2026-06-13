@@ -18,7 +18,6 @@ import {
 import { useRenovations } from "../../composables/useRenovations";
 import { useShareHydration } from "../../composables/useShareHydration";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
-import { IMPRESSION_CREDITS } from "../../credits";
 import { db } from "../../firebase";
 import ChooseActionStep from "./wizard/ChooseActionStep.vue";
 import MaskStep from "./wizard/MaskStep.vue";
@@ -123,10 +122,6 @@ const pageTitle = computed(() => {
   if (stage.value === "paint") return t("newImpression.titlePaint");
   return t("newImpression.titleMark");
 });
-
-const removeCostLabel = computed(() =>
-  t("newImpression.chooseRemoveCost", { credits: IMPRESSION_CREDITS }),
-);
 
 function revokeSourceUrl() {
   if (sourceObjectUrl.value) {
@@ -422,9 +417,9 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
         v-if="!shareError"
         class="canvas-area"
         :class="{
-          'inert-canvas': stage === 'processing',
+          'inert-canvas': stage === 'processing' || stage === 'choose-action',
           'canvas-area--collapsed': stage === 'prompt',
-          'canvas-area--hidden': stage === 'choose-action' || stage === 'paint',
+          'canvas-area--hidden': stage === 'paint',
         }"
         @pointerdown="onCanvasArea"
       >
@@ -462,7 +457,6 @@ const showTrashButton = computed(() => sourceParam.value !== "share");
 
       <ChooseActionStep
         v-if="stage === 'choose-action'"
-        :remove-cost-label="removeCostLabel"
         @remove="onChooseRemove"
         @paint="onChoosePaint"
         @other="onChooseOther"
