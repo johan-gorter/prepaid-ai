@@ -30,6 +30,15 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    // First-time, signed-out renovation experience. Signed-in users are
+    // redirected to the gallery (/renovations) in the navigation guard below,
+    // so there is no separate "has seen intro" state.
+    path: "/first-renovation",
+    name: "first-renovation",
+    component: () => import("../views/renovation/FirstRenovationPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/balance",
     name: "balance",
     component: () => import("../views/BalancePage.vue"),
@@ -124,6 +133,12 @@ router.beforeEach(async (to, from) => {
   // Redirect authenticated users away from login page
   if (to.name === "login" && currentUser) {
     return { name: "home" };
+  }
+
+  // The first-renovation page is the signed-out first-time experience. A
+  // signed-in user has a real gallery, so send them straight to it.
+  if (to.name === "first-renovation" && currentUser) {
+    return { name: "renovations" };
   }
 
   // Resume the last visited page on a cold app start (PWA/browser launch or a
