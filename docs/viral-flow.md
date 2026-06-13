@@ -125,6 +125,10 @@ superlatives. AI fallibility is admitted openly and coupled to the remedy:
 | Credit expiry       | never                                  |
 | Right of withdrawal | waived via express consent at purchase |
 
+The numeric facts above have a code home in [`shared/pricing.json`](../shared/pricing.json),
+consumed (as guarded duplicates) by `src/credits.ts` and `functions/src/credits.ts`;
+`ct/pricing-parity.ct.ts` fails the build if either copy drifts from it.
+
 ## E2E test blueprint
 
 The flow deserves one end-to-end spec that walks the whole loop and asserts the
