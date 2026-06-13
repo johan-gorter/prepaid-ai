@@ -259,8 +259,11 @@ const viewerOpen = ref(false);
 let previewPointerCount = 0;
 let previewTapStartedMask = false;
 
-function onCanvasPointerDown() {
+function onCanvasPointerDown(e: PointerEvent) {
   if (stage.value !== "preview") return;
+  // Right/middle mouse buttons must not trigger the power-loop tap-to-mask;
+  // touch and pen always report button 0.
+  if (e.button !== 0) return;
   previewPointerCount++;
   if (previewPointerCount === 1) {
     // First finger: keep the power loop — tapping the result starts a new
@@ -274,7 +277,10 @@ function onCanvasPointerDown() {
   }
 }
 
-function onCanvasPointerUp() {
+function onCanvasPointerUp(e: PointerEvent) {
+  // Mirror the down-guard so a right/middle button release can't desync the
+  // pointer count (button > 0 on release of a non-primary button).
+  if (e.button > 0) return;
   if (previewPointerCount > 0) previewPointerCount--;
   if (previewPointerCount === 0) previewTapStartedMask = false;
 }

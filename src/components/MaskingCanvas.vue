@@ -294,6 +294,9 @@ function updateBorder(cx: number, cy: number) {
 function onPointerDown(e: PointerEvent) {
   const canvas = canvasRef.value;
   if (!canvas) return;
+  // Only the primary button draws. Right- and middle-click (button 1/2) must
+  // not start a stroke; touch and pen always report button 0.
+  if (e.button !== 0) return;
   canvas.setPointerCapture(e.pointerId);
   capturedPointerId = e.pointerId;
   isDrawing = true;
