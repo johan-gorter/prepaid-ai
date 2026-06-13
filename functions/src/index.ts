@@ -9,5 +9,6 @@ export { processImpression } from "./processImpression.js";
 export { getStripeConfig } from "./stripe.js";
 export { purchaseCredits } from "./purchaseCredits.js";
 export { sendCreditTransfer } from "./sendCreditTransfer.js";
+export { shareImage, shareOg } from "./share.js";
 export { stripeWebhook } from "./stripeWebhook.js";
 export { trackEvent } from "./trackEvent.js";

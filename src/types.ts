@@ -28,6 +28,12 @@ export interface Share {
   ownerUid: string;
   resultImageUrl: string;
   createdAt: Timestamp;
+  /**
+   * The sharer's UI locale at share time, used by the `shareOg` Cloud Function
+   * to render the link-preview card copy in NL or EN. Optional for shares
+   * created before this field existed.
+   */
+  locale?: string;
 }
 
 export interface UserProfile {

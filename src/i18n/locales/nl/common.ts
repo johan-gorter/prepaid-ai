@@ -41,6 +41,8 @@ const common: CommonMessages = {
     close: "Sluiten",
     copy: "Kopiëren",
     copied: "Gekopieerd",
+    // Message that accompanies the link in the native OS share sheet.
+    shareText: "Gemaakt met AI op payasyougo.app",
   },
 };
 
