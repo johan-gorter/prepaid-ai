@@ -26,7 +26,7 @@ test.describe("Home Page", () => {
         .setInputFiles(grayPngPath);
       await page.waitForURL("/new-impression?source=photo");
       await expect(
-        page.getByText("Paint the area you want to change"),
+        page.getByText("Paint over what should change"),
       ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });

@@ -34,7 +34,7 @@ export async function uploadSourceImage(
   await page.locator('[data-testid="camera-input"]').setInputFiles(filePath);
   await page.waitForURL("/new-impression?source=photo");
   await expect(
-    page.getByText("Paint the area you want to change"),
+    page.getByText("Paint over what should change"),
   ).toBeVisible();
 }
 
@@ -132,7 +132,7 @@ export async function generateAndWait(page: Page): Promise<void> {
 export async function clickNextChange(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Next Change" }).click();
   await expect(
-    page.getByText("Paint the area you want to change"),
+    page.getByText("Paint over what should change"),
   ).toBeVisible();
 }
 

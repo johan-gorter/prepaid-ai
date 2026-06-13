@@ -36,7 +36,7 @@ test.describe("Impression processing", () => {
       await page.locator('[data-testid="camera-input"]').setInputFiles(grayPngPath);
       await page.waitForURL("/new-impression?source=photo");
       await expect(
-        page.getByText("Paint the area you want to change"),
+        page.getByText("Paint over what should change"),
       ).toBeVisible();
 
       // 2. Draw a mask stroke on the canvas

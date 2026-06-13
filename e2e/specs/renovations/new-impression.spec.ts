@@ -221,7 +221,7 @@ test.describe("New Impression Page", () => {
       // Back from choose-action → mask
       await page.getByRole("button", { name: "Back", exact: true }).click();
       await expect(
-        page.getByText("Paint the area you want to change"),
+        page.getByText("Paint over what should change"),
       ).toBeVisible();
       await expect(page.locator("canvas")).toBeVisible();
     } finally {
