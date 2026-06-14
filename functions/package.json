@@ -1,6 +1,7 @@
 {
   "name": "payasyougo-functions",
   "private": true,
+  "type": "module",
   "main": "lib/index.js",
   "engines": {
     "node": "22"
@@ -20,6 +21,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.11",
-    "typescript": "~5.7.0"
+    "typescript": "~5.9.3"
   }
 }

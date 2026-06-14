@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { admin, db } from "./admin.js";
+import { auth, db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
 import { FUNCTIONS_REGION } from "./region.js";
 
@@ -63,7 +63,7 @@ export const sendCreditTransfer = onCall(
     // delivered and the gift will auto-revert when it expires.
     let recipientUid: string | null = null;
     try {
-      const userRecord = await admin.auth().getUserByEmail(recipientEmailLower);
+      const userRecord = await auth.getUserByEmail(recipientEmailLower);
       recipientUid = userRecord.uid;
     } catch {
       recipientUid = null;

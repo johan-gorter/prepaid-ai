@@ -1,5 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { admin, db } from "./admin.js";
+import { auth, db } from "./admin.js";
 import { createGenAIClient, GEMINI_CHAT_MODEL, getAiBackend } from "./ai.js";
 import { deductCredits } from "./balance.js";
 import {
@@ -32,9 +32,7 @@ export const chat = onRequest(
     }
     let uid: string;
     try {
-      const decoded = await admin
-        .auth()
-        .verifyIdToken(authHeader.split("Bearer ")[1]);
+      const decoded = await auth.verifyIdToken(authHeader.split("Bearer ")[1]);
       uid = decoded.uid;
     } catch {
       res.status(401).send("Invalid token");

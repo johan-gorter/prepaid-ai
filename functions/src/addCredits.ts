@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { admin, db } from "./admin.js";
+import { auth, db } from "./admin.js";
 import { type TransactionReasonKey } from "./balance.js";
 import { FUNCTIONS_REGION } from "./region.js";
 import { getAdminUids } from "./utils.js";
@@ -45,7 +45,7 @@ export const addCredits = onCall(
     // 4. Look up user by email
     let targetUid: string;
     try {
-      const userRecord = await admin.auth().getUserByEmail(email);
+      const userRecord = await auth.getUserByEmail(email);
       targetUid = userRecord.uid;
     } catch {
       throw new HttpsError("not-found", `No user found with email ${email}`);
