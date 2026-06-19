@@ -76,6 +76,18 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: "/privacy",
+    name: "privacy",
+    component: () => import("../views/PrivacyPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: "/terms",
+    name: "terms",
+    component: () => import("../views/TermsPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/account",
     name: "account",
     component: () => import("../views/AccountPage.vue"),

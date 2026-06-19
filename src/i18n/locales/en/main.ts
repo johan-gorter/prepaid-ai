@@ -12,10 +12,14 @@ const main = {
     yourRenovations: "YOUR RENOVATIONS",
     securePrivateChat: "Chat privately with AI",
     chatExplainInPlainLanguage:
-      "A tricky letter from your municipality, a medical result full of jargon, or help writing a good e-mail? Ask your question and get a clear answer right away. Your documents stay private.",
+      "A tricky letter from your municipality, a medical result full of jargon, or help writing a good e-mail? Ask your question and get a clear answer right away.",
+    // Precise, defensible privacy claim replacing the former absolute "stay
+    // private" wording (#81), linking to the full privacy policy.
+    chatPrivacyNote:
+      "Your documents are not used to train AI and are not reviewed by humans.",
+    chatPrivacyLink: "Read our privacy policy",
     startChatting: "START CHATTING",
     checkCredits: "Check Credits",
-    viewUsageTerms: "View Usage Terms",
     shareYourThoughts: "Share your thoughts",
     feedbackWhichToolMissing:
       "Which feature or AI tool are you missing? Let us know what would make this app even more useful to you.",

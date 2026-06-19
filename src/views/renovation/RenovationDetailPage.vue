@@ -360,6 +360,12 @@ onMounted(() => {
       "
     >
       <h4 style="padding: 0 0.5rem">{{ $t("renovationDetail.title") }}</h4>
+      <p
+        class="small-text reno-ai-disclaimer"
+        data-testid="renovation-ai-disclaimer"
+      >
+        {{ $t("renovationDetail.aiDisclaimer") }}
+      </p>
 
       <div v-if="loading" class="center-align large-padding">
         <progress class="circle"></progress>
@@ -471,6 +477,12 @@ onMounted(() => {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+.reno-ai-disclaimer {
+  margin: 0 0 0.5rem;
+  padding: 0 0.5rem;
+  opacity: 0.6;
 }
 
 .detail-photo-feed {

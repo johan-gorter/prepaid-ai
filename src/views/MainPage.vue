@@ -3,6 +3,7 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import AppBar from "../components/AppBar.vue";
 import FeedbackCard from "../components/FeedbackCard.vue";
+import LegalFooter from "../components/LegalFooter.vue";
 import { useAuth } from "../composables/useAuth";
 import { idbSet } from "../composables/useIdbStorage";
 import { updateLastActivity } from "../composables/useLastActivity";
@@ -106,9 +107,17 @@ onMounted(() => {
       <div class="card-media">
         <i class="extra primary-text">verified_user</i>
         <h6 class="bold no-margin card-title">{{ $t("main.securePrivateChat") }}</h6>
-        <p class="card-desc">
-          {{ $t("main.chatExplainInPlainLanguage") }}
-        </p>
+        <div class="card-desc">
+          <p class="no-margin">
+            {{ $t("main.chatExplainInPlainLanguage") }}
+          </p>
+          <p class="small-text no-margin chat-privacy-note">
+            {{ $t("main.chatPrivacyNote") }}
+            <router-link to="/privacy">{{
+              $t("main.chatPrivacyLink")
+            }}</router-link>
+          </p>
+        </div>
       </div>
       <router-link to="/chat" class="button responsive small-round card-cta">
         <span>{{ $t("main.startChatting") }}</span>
@@ -116,20 +125,19 @@ onMounted(() => {
       </router-link>
     </article>
 
-    <!-- Credits & Terms -->
+    <!-- Credits -->
     <nav class="center-align wrap" style="margin-top: 1.5rem">
       <router-link to="/balance" class="transparent button small-round">
         <i>savings</i>
         <span>{{ $t("main.checkCredits") }}</span>
       </router-link>
-      <router-link to="/about" class="transparent button small-round">
-        <i>gavel</i>
-        <span>{{ $t("main.viewUsageTerms") }}</span>
-      </router-link>
     </nav>
 
     <!-- Feedback card -->
     <FeedbackCard />
+
+    <!-- Footer: legal links + business identity (#81). -->
+    <LegalFooter />
   </main>
 </template>
 
@@ -158,6 +166,12 @@ onMounted(() => {
 
 .card-media > .card-desc {
   grid-area: desc;
+}
+
+/* Precise privacy claim under the chat-card description (#81). */
+.chat-privacy-note {
+  margin-top: 0.35rem;
+  opacity: 0.75;
 }
 
 .card-media > img.card-thumb {

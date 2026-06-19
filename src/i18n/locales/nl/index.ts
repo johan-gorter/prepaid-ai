@@ -11,7 +11,7 @@ import newImpression from "./newImpression";
 import firstRenovation from "./firstRenovation";
 import buyCredits from "./buyCredits";
 import login from "./login";
-import about from "./about";
+import legal from "./legal";
 
 const nl: MessageSchema = {
   ...common,
@@ -21,7 +21,7 @@ const nl: MessageSchema = {
   ...firstRenovation,
   ...buyCredits,
   ...login,
-  ...about,
+  ...legal,
 };
 
 export default nl;

@@ -145,6 +145,12 @@ defineExpose({ focus, autoGrow, revealChatInput });
           <i>download</i>
         </button>
       </div>
+
+      <!-- Inline AI disclaimer (#81): the contract-explanation use case sits
+           close to legal advice, so the reminder stays visible while typing. -->
+      <p class="chat-disclaimer" data-testid="chat-ai-disclaimer">
+        {{ $t("chat.aiDisclaimer") }}
+      </p>
     </div>
   </div>
 </template>
@@ -209,6 +215,12 @@ defineExpose({ focus, autoGrow, revealChatInput });
   align-items: center;
   gap: 0.25rem;
   opacity: 0.8;
+}
+.chat-disclaimer {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 .coin {
   font-size: 1.1rem;

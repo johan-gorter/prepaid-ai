@@ -14,6 +14,9 @@ const chat = {
     limit: "Limit:",
     sendAria: "Send (Ctrl+Enter)",
     downloadConvAria: "Download conversation",
+    // Inline AI disclaimer shown by the composer (#81). The full version lives
+    // in the Usage Terms; this keeps the reminder visible where people ask.
+    aiDisclaimer: "Not legal advice — AI can make mistakes.",
   },
 };
 

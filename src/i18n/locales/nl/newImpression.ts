@@ -93,6 +93,8 @@ const newImpression: NewImpressionMessages = {
     pending: "In afwachting...",
     setAfterImage: "Instellen als na-afbeelding",
     afterImage: "Na-afbeelding",
+    aiDisclaimer:
+      "Dit zijn door AI gegenereerde impressies, geen bouwkundig of architectonisch advies.",
   },
 };
 
