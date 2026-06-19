@@ -15,7 +15,7 @@ const main: MainMessages = {
     chatExplainInPlainLanguage:
       "Een lastige brief van de gemeente, een medische uitslag vol vaktermen, of hulp bij een goede e-mail? Stel je vraag en krijg direct een duidelijk antwoord.",
     chatPrivacyNote:
-      "Je documenten worden niet gebruikt om AI te trainen en worden niet door mensen bekeken.",
+      "Je documenten worden nooit gebruikt om AI te trainen en worden niet door mensen bekeken.",
     chatPrivacyLink: "Lees onze privacyverklaring",
     startChatting: "START EEN GESPREK",
     checkCredits: "Credits bekijken",

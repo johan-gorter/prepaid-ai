@@ -46,7 +46,7 @@ const legal = {
     purposes:
       "We use your data only to provide the service: signing you in, generating and storing your impressions and chat answers, and processing payments. We do not sell your data and do not share it with third parties for advertising.",
     aiTitle: "AI and your content",
-    ai: "Your photos and chat content are not used to train AI models and are not reviewed by humans, except where strictly necessary to investigate abuse or to comply with the law.",
+    ai: "Your photos and chat content are never used to train AI models. They are not reviewed by humans, except where strictly necessary to investigate abuse or to comply with the law.",
     retentionTitle: "How long we keep it",
     retention:
       "Uploaded images and generated results are kept for 12 to 24 months from the date of upload. You can delete individual images from the renovation detail page, or delete your entire account at any time from the {account} page.",

@@ -16,7 +16,7 @@ const main = {
     // Precise, defensible privacy claim replacing the former absolute "stay
     // private" wording (#81), linking to the full privacy policy.
     chatPrivacyNote:
-      "Your documents are not used to train AI and are not reviewed by humans.",
+      "Your documents are never used to train AI and are not reviewed by humans.",
     chatPrivacyLink: "Read our privacy policy",
     startChatting: "START CHATTING",
     checkCredits: "Check Credits",

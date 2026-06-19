@@ -36,6 +36,11 @@ const year = computed(() => new Date().getFullYear());
 
 <style scoped>
 .legal-footer {
+  /* Neutralise Beer CSS's default <footer> styling (min-block-size: 5rem +
+     flex layout), which otherwise leaves a tall empty gap between the links
+     and the identity row. This is a plain in-flow footer that hugs content. */
+  display: block;
+  min-block-size: 0;
   margin-top: 2rem;
   padding: 1rem 0 1.5rem;
 }
@@ -54,6 +59,8 @@ const year = computed(() => new Date().getFullYear());
 
 .legal-footer-identity {
   margin: 0.5rem 0 0;
-  opacity: 0.6;
+  /* 0.7 keeps the colofon line clearly secondary while clearing WCAG AA
+     (~4.5:1) against the page background in both light and dark themes. */
+  opacity: 0.7;
 }
 </style>

@@ -41,7 +41,7 @@ const legal: LegalMessages = {
     purposes:
       "We gebruiken je gegevens alleen om de dienst te leveren: je laten inloggen, je impressies en chatantwoorden genereren en bewaren, en betalingen verwerken. We verkopen je gegevens niet en delen ze niet met derden voor advertenties.",
     aiTitle: "AI en jouw inhoud",
-    ai: "Je foto's en chatinhoud worden niet gebruikt om AI-modellen te trainen en worden niet door mensen bekeken, behalve waar dat strikt noodzakelijk is om misbruik te onderzoeken of om aan de wet te voldoen.",
+    ai: "Je foto's en chatinhoud worden nooit gebruikt om AI-modellen te trainen. Ze worden niet door mensen bekeken, behalve waar dat strikt noodzakelijk is om misbruik te onderzoeken of om aan de wet te voldoen.",
     retentionTitle: "Hoe lang we het bewaren",
     retention:
       "Geüploade afbeeldingen en gegenereerde resultaten worden 12 tot 24 maanden bewaard vanaf de uploaddatum. Je kunt afzonderlijke afbeeldingen verwijderen via de detailpagina van je make-over, of je hele account op elk moment verwijderen via de pagina {account}.",

@@ -22,12 +22,15 @@ test.describe("Login Page", () => {
     ).toHaveCount(0);
 
     // Terms and privacy links are required (privacy link is mandated by
-    // Google sign-in policies) and must be tappable.
+    // Google sign-in policies) and must be tappable. Scope to the login card:
+    // the footer (added in #81) also links to Privacy/Terms, so the bare role
+    // locator would be ambiguous. The mandated link is the one near the auth UI.
+    const card = page.getByRole("article");
     await expect(
-      page.getByRole("link", { name: "Terms of Service" }),
+      card.getByRole("link", { name: "Terms of Service" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Privacy Policy" }),
+      card.getByRole("link", { name: "Privacy Policy" }),
     ).toBeVisible();
   });
 

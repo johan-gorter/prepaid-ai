@@ -22,7 +22,7 @@ test.describe("Main Page", () => {
   }) => {
     await page.goto("/main");
     await expect(
-      page.getByText("not used to train AI and are not reviewed by humans"),
+      page.getByText("never used to train AI and are not reviewed by humans"),
     ).toBeVisible();
     const privacyLink = page.getByRole("link", {
       name: "Read our privacy policy",
