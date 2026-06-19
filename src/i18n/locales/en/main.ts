@@ -6,7 +6,7 @@ const main = {
     withoutMonthlySubscription: "without a monthly subscription",
     sketchYourRenovation: "See the result before you start",
     renovationResultInSeconds:
-      "A wall in a new colour, a different floor, that cabinet gone — or a full remodel? Take a photo of your space, describe your idea, and see the result in seconds.",
+      "A wall in a new color, a different floor, that cabinet gone — or a full remodel? Take a photo of your space, describe your idea, and see the result in seconds.",
     renovationPreviewAlt: "Renovation preview",
     testYourIdea: "TRY WITH YOUR PHOTO",
     yourRenovations: "YOUR RENOVATIONS",

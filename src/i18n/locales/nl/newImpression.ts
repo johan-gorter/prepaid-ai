@@ -62,9 +62,10 @@ const newImpression: NewImpressionMessages = {
     chooseCost: "{credits} 🪙",
     choosePaint: "Kleur veranderen",
     chooseOther: "Anders",
+    chooseOtherSubtitle: "beschrijf zelf wat er moet veranderen",
     chooseGuidance:
       "AI kan soms fouten maken — werk in kleine stappen voor het beste resultaat.",
-    choosePriceAnchor: "1 credit = $0.01",
+    choosePriceAnchor: "1 🪙 = $0.01",
     paintTabStandard: "Standaard",
     paintTabCustom: "Aangepast",
     paintColorLabel: "Eigen kleur",

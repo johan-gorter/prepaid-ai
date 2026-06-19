@@ -12,6 +12,11 @@ footer.sticky-footer {
   inset: auto 0 0 0;
   bottom: var(--kb-inset, 0px);
   z-index: 12;
+  /* Explicit opaque backing so page content scrolling underneath is never
+     visible through the footer, in any color scheme. The <600px rule below
+     forces the footer *buttons* transparent for the bottom-nav layout, so the
+     footer element itself must supply the solid surface. (#124) */
+  background-color: var(--surface-container, var(--surface, #fff));
 }
 
 .footer-nav {

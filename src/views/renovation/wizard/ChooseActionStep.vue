@@ -6,15 +6,15 @@
  * component, so the user can see the area they just marked while choosing what
  * to do with it. This component contributes, top to bottom:
  *   - a sober guidance note (AI fallibility + the remedy: work in small steps),
- *   - the Remove / Change-colour / Other menu with each option's credit price
+ *   - the step question heading ("What should happen?"),
+ *   - the Remove / Change-color / Other menu with each option's credit price
  *     right-aligned,
- *   - a small price anchor ("1 credit = $0.01"),
- *   - the Back footer.
+ *   - a small price anchor ("1 🪙 = $0.01"),
+ *   - a normal Back button below the anchor (no sticky footer on this screen).
  *
  * Prices come straight from ACTION_CREDITS (the client copy of the canonical
  * pricing table) so the reveal can never drift from what the user is charged.
  */
-import StickyFooter from "../../../components/StickyFooter.vue";
 import { ACTION_CREDITS } from "../../../credits";
 
 defineEmits<{
@@ -29,6 +29,10 @@ defineEmits<{
   <p class="choose-action-guidance" data-testid="choose-guidance">
     {{ $t("newImpression.chooseGuidance") }}
   </p>
+
+  <h2 class="choose-action-heading" data-testid="choose-heading">
+    {{ $t("newImpression.titleChoose") }}
+  </h2>
 
   <div class="choose-action-menu" data-testid="choose-action">
     <button
@@ -76,6 +80,9 @@ defineEmits<{
         <span class="choose-action-label">{{
           $t("newImpression.chooseOther")
         }}</span>
+        <span class="choose-action-subtitle">{{
+          $t("newImpression.chooseOtherSubtitle")
+        }}</span>
       </span>
       <span class="choose-action-cost">{{
         $t("newImpression.chooseCost", { credits: ACTION_CREDITS.freePrompt })
@@ -87,13 +94,18 @@ defineEmits<{
     {{ $t("newImpression.choosePriceAnchor") }}
   </p>
 
-  <!-- Choose-action stage footer: Back -->
-  <StickyFooter>
-    <button class="max border small-round" @click="$emit('back')">
+  <!-- Back is a normal button here, below the price anchor — not a sticky
+       footer (#124). Styled like the option buttons above it. -->
+  <div class="choose-action-back">
+    <button
+      class="border small-round choose-action-button choose-action-back-button"
+      data-testid="choose-back"
+      @click="$emit('back')"
+    >
       <i aria-hidden="true">arrow_back</i>
-      <span>{{ $t("newImpression.back") }}</span>
+      <span class="choose-action-label">{{ $t("newImpression.back") }}</span>
     </button>
-  </StickyFooter>
+  </div>
 </template>
 
 <style scoped>
@@ -104,6 +116,16 @@ defineEmits<{
   text-align: center;
   font-size: 0.875rem;
   opacity: 0.7;
+  box-sizing: border-box;
+}
+
+.choose-action-heading {
+  max-width: 544px;
+  margin: 0.75rem auto 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
   box-sizing: border-box;
 }
 
@@ -131,10 +153,15 @@ defineEmits<{
   height: auto;
 }
 
+/* Grow to fill the row so the cost is pushed to the right edge. The Beer CSS
+   `.max` helper on this span doesn't reliably flex-grow inside a button, so we
+   set it explicitly. min-width:0 lets a long subtitle wrap instead of shoving
+   the right-aligned cost off-screen at 320 px. */
 .choose-action-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -148,8 +175,12 @@ defineEmits<{
   text-transform: none;
 }
 
+/* margin-left:auto pins the cost flush to the button's right edge regardless of
+   how wide the label/subtitle column ends up; padding-left keeps a minimum gap
+   from a long subtitle. */
 .choose-action-cost {
-  margin-left: 0.5rem;
+  margin-left: auto;
+  padding-left: 0.5rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -162,5 +193,19 @@ defineEmits<{
   font-size: 0.75rem;
   opacity: 0.6;
   box-sizing: border-box;
+}
+
+.choose-action-back {
+  display: flex;
+  max-width: 544px;
+  margin: 0.75rem auto 0;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* Match the option buttons above, but center the icon+label since there's no
+   trailing cost to push around. */
+.choose-action-back-button {
+  justify-content: center;
 }
 </style>

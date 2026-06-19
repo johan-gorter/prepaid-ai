@@ -9,6 +9,27 @@ test.describe("StickyFooter", () => {
     await expect(component.getByRole("button", { name: "Tap me" })).toBeVisible();
   });
 
+  test("footer element has an opaque (non-transparent) background", async ({
+    mount,
+  }) => {
+    // The footer must never be see-through, or page content scrolling
+    // underneath shows through it. The <600px button-transparency rule strips
+    // the buttons' fills, so the footer element itself supplies the surface.
+    const component = await mount(StickyFooter, {
+      slots: { default: "<button>Tap me</button>" },
+    });
+    const bg = await component.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
+    // Reject fully transparent backgrounds: `transparent`, `rgba(...,0)`.
+    expect(bg).not.toBe("transparent");
+    expect(bg).not.toBe("rgba(0, 0, 0, 0)");
+    const alpha = bg.startsWith("rgba(")
+      ? Number(bg.slice(5, -1).split(",")[3])
+      : 1;
+    expect(alpha).toBeGreaterThan(0);
+  });
+
   test("destructive button text stays visible on narrow viewport", async ({
     mount,
     page,
