@@ -30,7 +30,7 @@ baseTest.describe("First renovation page (signed out)", () => {
 
       await baseExpect(page.getByText("How it works")).toBeVisible();
       await baseExpect(
-        page.getByText("Mark the area & describe your idea"),
+        page.getByText("Mark the area & choose modification"),
       ).toBeVisible();
       await baseExpect(
         page.getByTestId("first-renovation-example"),

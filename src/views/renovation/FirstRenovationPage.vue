@@ -68,10 +68,9 @@ onMounted(() => {
     <section class="how-it-works">
       <h6 class="bold no-margin">{{ $t("firstRenovation.howItWorks") }}</h6>
       <ol class="steps no-margin no-padding">
-        <li v-for="(step, index) in steps" :key="step.icon" class="step">
+        <li v-for="step in steps" :key="step.icon" class="step">
           <div class="step-icon primary-container">
             <i aria-hidden="true">{{ step.icon }}</i>
-            <span class="step-number">{{ index + 1 }}</span>
           </div>
           <div class="step-text">
             <p class="bold no-margin">{{ $t(`firstRenovation.${step.titleKey}`) }}</p>
@@ -165,7 +164,7 @@ onMounted(() => {
 }
 
 .how-it-works {
-  margin: 1.75rem 0;
+  margin: 1.75rem 0 2.75rem;
 }
 
 .steps {
@@ -183,7 +182,6 @@ onMounted(() => {
 }
 
 .step-icon {
-  position: relative;
   flex: 0 0 auto;
   width: 2.75rem;
   height: 2.75rem;
@@ -191,22 +189,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.step-number {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 0.2rem;
-  border-radius: 0.55rem;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-size: 0.7rem;
-  line-height: 1.1rem;
-  text-align: center;
-  font-weight: 700;
 }
 
 .step-text {
@@ -218,6 +200,14 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+/* Beer CSS buttons default to box-sizing: content-box with 1rem inline
+   padding, so a width:100% button would overflow the page's 1rem padding and
+   read as full-bleed. border-box keeps every action button flush with the body
+   text. */
+.actions button {
+  box-sizing: border-box;
 }
 
 .actions > button {
@@ -238,7 +228,20 @@ onMounted(() => {
   margin-top: 1.5rem;
 }
 
+/* The hint can be longer than the viewport on narrow screens, so let it wrap
+   onto multiple lines (auto height + normal white-space) and stay within the
+   page's 1rem padding instead of overflowing as a single non-wrapping pill. */
 .login-hint .button {
   color: var(--primary);
+  max-inline-size: 100%;
+  block-size: auto;
+  min-block-size: 2.5rem;
+  padding-block: 0.5rem;
+  white-space: normal;
+  text-align: center;
+}
+
+.login-hint .button span {
+  min-width: 0;
 }
 </style>

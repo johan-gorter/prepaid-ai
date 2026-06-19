@@ -5,12 +5,13 @@ const firstRenovation = {
   firstRenovation: {
     title: "See the result before you start",
     intro:
-      "Take a photo of your space, describe your idea, and see a realistic impression in seconds.",
+      "Take a photo, choose a modification, and see a realistic impression in seconds.",
     howItWorks: "How it works",
     step1Title: "Take a photo",
     step1Body: "Photograph the wall, room or object you want to change.",
-    step2Title: "Mark the area & describe your idea",
-    step2Body: "Paint over what should change and tell us what you have in mind.",
+    step2Title: "Mark the area & choose modification",
+    step2Body:
+      "Paint over what should change and choose what operation AI should perform.",
     step3Title: "See the AI impression",
     step3Body:
       "A realistic impression appears in seconds. Work in small steps for the best result.",
