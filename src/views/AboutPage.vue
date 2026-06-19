@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import AppBar from "../components/AppBar.vue";
+import LegalFooter from "../components/LegalFooter.vue";
 import { useAuth } from "../composables/useAuth";
 
 const { currentUser } = useAuth();
+
+// Published contact e-mail for the colofon (art. 3:15d BW). Kept as a constant
+// so the same address can be reused in the privacy contact copy.
+const contactEmail = "info@payasyougo.app";
 </script>
 
 <template>
@@ -19,32 +24,23 @@ const { currentUser } = useAuth();
     <h4>{{ $t("about.title") }}</h4>
     <p>{{ $t("about.intro") }}</p>
 
-    <h5>{{ $t("about.acceptableUseTitle") }}</h5>
-    <i18n-t keypath="about.acceptableUseIntro" tag="p">
-      <template #mustNot><strong>{{ $t("about.mustNot") }}</strong></template>
-    </i18n-t>
-    <ul>
-      <li>{{ $t("about.acceptableUseNoHarmfulContent") }}</li>
-      <li>{{ $t("about.acceptableUseNoPii") }}</li>
-      <li>{{ $t("about.acceptableUseNoPeopleWithoutConsent") }}</li>
-      <li>{{ $t("about.acceptableUseNoLicensePlates") }}</li>
+    <h5>{{ $t("about.colofonTitle") }}</h5>
+    <ul data-testid="about-colofon">
+      <li>{{ $t("about.colofonTradeName") }}</li>
+      <li>{{ $t("about.colofonKvk") }}</li>
+      <li>{{ $t("about.colofonEmail", { email: contactEmail }) }}</li>
+      <li>{{ $t("about.colofonCountry") }}</li>
+      <li>{{ $t("about.colofonVat") }}</li>
     </ul>
-    <p>{{ $t("about.acceptableUseOutro") }}</p>
 
-    <h5>{{ $t("about.dataRetentionTitle") }}</h5>
-    <i18n-t keypath="about.dataRetention" tag="p">
-      <template #min><strong>{{ $t("about.dataRetentionMin") }}</strong></template>
-      <template #max><strong>{{ $t("about.dataRetentionMax") }}</strong></template>
-      <template #account>
-        <router-link to="/account">{{ $t("common.account") }}</router-link>
+    <i18n-t keypath="about.moreLinks" tag="p">
+      <template #privacy>
+        <router-link to="/privacy">{{ $t("footer.privacy") }}</router-link>
+      </template>
+      <template #terms>
+        <router-link to="/terms">{{ $t("footer.terms") }}</router-link>
       </template>
     </i18n-t>
-
-    <h5>{{ $t("about.privacyTitle") }}</h5>
-    <p>{{ $t("about.privacy") }}</p>
-
-    <h5>{{ $t("about.termsTitle") }}</h5>
-    <p>{{ $t("about.terms") }}</p>
 
     <div style="padding-top: 1rem">
       <router-link :to="currentUser ? '/' : '/login'" class="button">
@@ -52,5 +48,7 @@ const { currentUser } = useAuth();
         <span>{{ $t("common.back") }}</span>
       </router-link>
     </div>
+
+    <LegalFooter />
   </main>
 </template>

@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import LegalFooter from "../components/LegalFooter.vue";
 import { useAuth } from "../composables/useAuth";
 import { track } from "../composables/useTrack";
 import { firebaseApp } from "../firebase";
@@ -134,10 +135,10 @@ async function handleDevLogin() {
         style="margin-top: 1rem"
       >
         <template #terms>
-          <router-link to="/about">{{ $t("login.termsLink") }}</router-link>
+          <router-link to="/terms">{{ $t("login.termsLink") }}</router-link>
         </template>
         <template #privacy>
-          <router-link to="/about">{{ $t("login.privacyLink") }}</router-link>
+          <router-link to="/privacy">{{ $t("login.privacyLink") }}</router-link>
         </template>
       </i18n-t>
 
@@ -154,5 +155,7 @@ async function handleDevLogin() {
         </button>
       </template>
     </article>
+
+    <LegalFooter />
   </main>
 </template>

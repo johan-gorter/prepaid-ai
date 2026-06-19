@@ -93,6 +93,9 @@ const newImpression = {
     pending: "Pending...",
     setAfterImage: "Set as after image",
     afterImage: "After image",
+    // Brief inline AI disclaimer near the results gallery (#81).
+    aiDisclaimer:
+      "These are AI-generated impressions, not construction or architectural advice.",
   },
 };
 

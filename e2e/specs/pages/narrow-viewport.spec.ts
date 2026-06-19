@@ -27,6 +27,8 @@ const pagesToCheck: Array<{
   { path: "/balance", description: "balance", ready: "Recent transactions" },
   { path: "/account", description: "account", ready: "Last Activity" },
   { path: "/about", description: "about", ready: "About payasyougo.app" },
+  { path: "/privacy", description: "privacy", ready: "Privacy Policy" },
+  { path: "/terms", description: "terms", ready: "Usage Terms" },
   {
     path: "/chat",
     description: "chat",

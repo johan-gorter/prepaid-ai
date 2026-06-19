@@ -15,6 +15,7 @@ const chat: ChatMessages = {
     limit: "Limiet:",
     sendAria: "Versturen (Ctrl+Enter)",
     downloadConvAria: "Gesprek downloaden",
+    aiDisclaimer: "Geen juridisch advies — AI kan fouten maken.",
   },
 };
 

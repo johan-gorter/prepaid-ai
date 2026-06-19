@@ -35,6 +35,11 @@ test.describe("Renovation Details Page", () => {
         page.getByRole("heading", { name: "Renovation Details" }),
       ).toBeVisible();
 
+      // Inline AI disclaimer near the results (#81)
+      await expect(
+        page.getByTestId("renovation-ai-disclaimer"),
+      ).toContainText("AI-generated impressions");
+
       // Original image pinned at top
       await expect(page.getByAltText("Original")).toBeVisible();
 

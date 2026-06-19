@@ -22,6 +22,15 @@ test.describe("PrivateChatPage", () => {
     await expect(page.getByTestId("chat-send")).toBeVisible();
   });
 
+  test("shows the inline AI / not-legal-advice disclaimer", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.goto("/chat");
+    await expect(page.getByTestId("chat-ai-disclaimer")).toContainText(
+      "Not legal advice",
+    );
+  });
+
   test("uses document scrolling for overflowing chat content", async ({
     authenticatedPage: page,
   }) => {

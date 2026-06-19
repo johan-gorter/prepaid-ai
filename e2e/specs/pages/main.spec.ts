@@ -17,6 +17,40 @@ test.describe("Main Page", () => {
     ).toBeVisible();
   });
 
+  test("shows the precise chat privacy claim linking to the policy", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.goto("/main");
+    await expect(
+      page.getByText("never used to train AI and are not reviewed by humans"),
+    ).toBeVisible();
+    const privacyLink = page.getByRole("link", {
+      name: "Read our privacy policy",
+    });
+    await expect(privacyLink).toHaveAttribute("href", "/privacy");
+  });
+
+  test("shows the footer with legal links and business identity", async ({
+    authenticatedPage: page,
+  }) => {
+    await page.goto("/main");
+    const footer = page.getByTestId("legal-footer");
+    await expect(footer).toBeVisible();
+    await expect(footer.getByTestId("footer-about")).toHaveAttribute(
+      "href",
+      "/about",
+    );
+    await expect(footer.getByTestId("footer-privacy")).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    await expect(footer.getByTestId("footer-terms")).toHaveAttribute(
+      "href",
+      "/terms",
+    );
+    await expect(footer).toContainText("KvK 94834571");
+  });
+
   test("has navigation links to renovations and chat", async ({
     authenticatedPage: page,
   }) => {

@@ -13,10 +13,12 @@ const main: MainMessages = {
     yourRenovations: "JOUW MAKE-OVERS",
     securePrivateChat: "Chat privé met AI",
     chatExplainInPlainLanguage:
-      "Een lastige brief van de gemeente, een medische uitslag vol vaktermen, of hulp bij een goede e-mail? Stel je vraag en krijg direct een duidelijk antwoord. Jouw documenten blijven privé.",
+      "Een lastige brief van de gemeente, een medische uitslag vol vaktermen, of hulp bij een goede e-mail? Stel je vraag en krijg direct een duidelijk antwoord.",
+    chatPrivacyNote:
+      "Je documenten worden nooit gebruikt om AI te trainen en worden niet door mensen bekeken.",
+    chatPrivacyLink: "Lees onze privacyverklaring",
     startChatting: "START EEN GESPREK",
     checkCredits: "Credits bekijken",
-    viewUsageTerms: "Gebruiksvoorwaarden",
     shareYourThoughts: "Denk met ons mee",
     feedbackWhichToolMissing:
       "Welke functie of AI-tool mis je nog? Laat ons weten wat deze app nóg handiger voor je zou maken.",
