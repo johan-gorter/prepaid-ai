@@ -36,7 +36,9 @@
     "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
     "test:e2e:headed": "playwright test --config=playwright.config.ts --headed",
     "test:all": "node scripts/test-all.mjs",
-    "test:pwa": "playwright test --config=playwright-pwa.config.ts"
+    "test:pwa": "playwright test --config=playwright-pwa.config.ts",
+    "playwright:install": "playwright install",
+    "interactive-browser": "node scripts/interactive.mjs"
   },
   "dependencies": {
     "beercss": "^4.0.20",
