@@ -74,23 +74,29 @@ Screenshots are your evidence. Never critique layout from imagination; look, the
 
 ### Two tools
 
-**1. Live interactive session** — `scripts/interactive.mjs` + `scripts/interactive-screenshot.mjs`.
+**1. Live interactive session** — three npm scripts (run from the project root). They are
+permission-allowlisted, so they don't prompt; raw `node …` invocations are **not** allowed —
+always go through these.
 
 - Start it (headed, mobile-emulated **376×835**, CDP on port **9222**):
-  `node scripts/interactive.mjs [url]` — run it **in the background**. It logs the user's
+  `npm run interactive-browser -- [url]` — run it **in the background**. It logs the user's
   `[nav]`, `[click]`, `[keydown]`, `[pageerror]`, `[console.error]` to stdout, so when the
   **user drives**, you follow along by reading that task output. Let them navigate; ask them
   to tell you when they're on a screen you should look at. If they killed it, restart it.
 - Grab a screenshot **without disturbing the session**:
-  `node scripts/interactive-screenshot.mjs <name>.png` → writes `temp/interactive/<name>.png`
+  `npm run interactive-screenshot -- <name>.png` → writes `temp/interactive/<name>.png`
   and prints the live URL (which tells you the exact route/state). Then **Read that PNG** to
   see it.
-- You can also drive it yourself when needed — connect via CDP to click, navigate, or
-  measure the DOM without taking over the window:
+- Drive or measure the DOM yourself — write a snippet to a file (e.g. `temp/measure.mjs`) and
+  run it **inside the page** with `npm run interactive-javascript -- temp/measure.mjs`. The
+  snippet is `page.evaluate`'d in the live browser, so it's sandboxed to the DOM (no Node, no
+  filesystem). The file is the body of an `async` function — use `await`, and `return` a
+  JSON-serialisable value, which is printed:
   ```js
-  const b = await chromium.connectOverCDP("http://localhost:9222");
-  const p = b.contexts()[0].pages().find(p => p.url().includes("localhost:5174")) ?? b.contexts()[0].pages()[0];
-  // p.evaluate(() => el.getBoundingClientRect()), getComputedStyle, p.locator(...).click(), etc.
+  // temp/measure.mjs — measure an element, or click/navigate via the DOM
+  const r = document.querySelector('[data-testid="cta"]').getBoundingClientRect();
+  // document.querySelector('button.primary').click();  // or: location.href = "/buy-credits"
+  return { x: r.x, y: r.y, w: r.width, h: r.height, cs: getComputedStyle(document.body).fontSize };
   ```
 
 **2. Multi-width responsive check** — invoke the `responsive-screenshots` skill to capture a

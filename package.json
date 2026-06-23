@@ -38,7 +38,9 @@
     "test:all": "node scripts/test-all.mjs",
     "test:pwa": "playwright test --config=playwright-pwa.config.ts",
     "playwright:install": "playwright install",
-    "interactive-browser": "node scripts/interactive.mjs"
+    "interactive-browser": "node scripts/interactive.mjs",
+    "interactive-screenshot": "node scripts/interactive-screenshot.mjs",
+    "interactive-javascript": "node scripts/interactive-javascript.mjs"
   },
   "dependencies": {
     "beercss": "^4.0.20",
