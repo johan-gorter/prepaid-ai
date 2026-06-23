@@ -1,27 +1,18 @@
 <template>
-  <span :class="['logo', `logo--${variant}`]" :style="{ fontSize: `${size}px` }">
-    <template v-if="variant === 'wide'">
-      pay<span class="logo__pp">as</span>you<span class="logo__pp">go</span><span
-        class="logo__pp"
-        >.</span
-      >app
-    </template>
-    <template v-else
-      ><span>pay</span><span class="logo__pp">as</span><span>you</span><span
-        class="logo__pp"
-        >go</span
-      ></template
-    >
-  </span>
+  <span class="logo logo--wide" :style="{ fontSize: `${size}px` }"
+    >pay<span class="logo__pp">as</span>you<span class="logo__pp">go</span><span
+      class="logo__pp"
+      >.</span
+    >app</span
+  >
 </template>
 
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    variant?: "wide" | "square";
     size?: number;
   }>(),
-  { variant: "wide", size: 28 },
+  { size: 28 },
 );
 </script>
 
@@ -33,7 +24,9 @@ withDefaults(
   letter-spacing: -0.02em;
   color: currentColor;
   user-select: none;
-  display: inline-block;
+  /* inline (not inline-block) so an ancestor's text-overflow: ellipsis can
+     truncate the wordmark when the AppBar is too narrow to fit it. */
+  display: inline;
 }
 
 .logo__pp {
@@ -43,18 +36,5 @@ withDefaults(
 .logo--wide {
   line-height: 1;
   white-space: nowrap;
-}
-
-.logo--square {
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  grid-template-rows: auto auto;
-  align-items: end;
-  justify-items: start;
-  line-height: 0.85;
-}
-
-.logo--square > span {
-  display: inline-block;
 }
 </style>

@@ -99,13 +99,6 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
     gap: 0.5rem;
   }
 
-  /* The full wordmark "payasyougo.app" is too wide at 28px on a 320px
-     viewport. Scale it down so the home AppBar still fits. The Logo
-     component sets font-size inline, so !important is required to win. */
-  header nav .logo--wide {
-    font-size: 1.125rem !important;
-  }
-
   /* Down-scale Beer CSS's heading scale on narrow screens so single long
      words don't overflow the viewport. */
   :is(main, article, section) h1,
@@ -123,5 +116,16 @@ header nav :is(h1, h2, h3, h4, h5, h6) {
   :is(main, article, section) h4,
   :is(main, article, section) .h4 {
     font-size: 1.375rem;
+  }
+}
+
+/* Logo size: the full wordmark "payasyougo.app" shows at its large 28px size
+   down to this width, then scales fluidly with the space the app-bar actions
+   leave over (1cqi = 1% of the logo box) so the whole wordmark keeps fitting
+   without truncating, down to a 16px floor. The Logo component sets font-size
+   inline, so !important is required to win. */
+@media (max-width: 431px) {
+  header nav .logo--wide {
+    font-size: clamp(1rem, 13cqi, 1.75rem) !important;
   }
 }
