@@ -1,4 +1,28 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run interactive-browser:*)",
+      "Bash(npm -s run interactive-browser:*)",
+      "Bash(npm run interactive-screenshot:*)",
+      "Bash(npm -s run interactive-screenshot:*)",
+      "Bash(npm run interactive-javascript:*)",
+      "Bash(npm -s run interactive-javascript:*)",
+      "PowerShell(npm run interactive-browser:*)",
+      "PowerShell(npm -s run interactive-browser:*)",
+      "PowerShell(npm run interactive-screenshot:*)",
+      "PowerShell(npm -s run interactive-screenshot:*)",
+      "PowerShell(npm run interactive-javascript:*)",
+      "PowerShell(npm -s run interactive-javascript:*)",
+      "Bash(npx playwright install:*)",
+      "PowerShell(npx playwright install:*)",
+      "Bash(rm -rf temp)",
+      "Bash(mkdir temp)",
+      "PowerShell(Remove-Item -Recurse -Force temp:*)",
+      "PowerShell(New-Item -ItemType Directory temp:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh run:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
