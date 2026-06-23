@@ -248,7 +248,7 @@ test.describe("New Impression Page", () => {
       // Guidance note + price anchor.
       await expect(page.getByTestId("choose-guidance")).toBeVisible();
       await expect(page.getByTestId("choose-price-anchor")).toHaveText(
-        "1 credit = $0.01",
+        "1 🪙 = $0.01",
       );
 
       // Every option shows its credit price (remove 5, colour 10, other 10).
@@ -256,9 +256,9 @@ test.describe("New Impression Page", () => {
       await expect(page.getByTestId("choose-paint")).toContainText("10");
       await expect(page.getByTestId("choose-other")).toContainText("10");
 
-      // Renamed colour-change label.
+      // Renamed color-change label.
       await expect(page.getByTestId("choose-paint")).toContainText(
-        "Change colour",
+        "Change color",
       );
     } finally {
       rmSync(grayPngPath, { force: true });
