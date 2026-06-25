@@ -74,30 +74,12 @@ Screenshots are your evidence. Never critique layout from imagination; look, the
 
 ### Two tools
 
-**1. Live interactive session** — three npm scripts (run from the project root). They are
-permission-allowlisted, so they don't prompt; raw `node …` invocations are **not** allowed —
-always go through these.
-
-- Start it (headed, mobile-emulated **376×835**, CDP on port **9222**):
-  `npm run interactive-browser -- [url]` — run it **in the background**. It logs the user's
-  `[nav]`, `[click]`, `[keydown]`, `[pageerror]`, `[console.error]` to stdout, so when the
-  **user drives**, you follow along by reading that task output. Let them navigate; ask them
-  to tell you when they're on a screen you should look at. If they killed it, restart it.
-- Grab a screenshot **without disturbing the session**:
-  `npm run interactive-screenshot -- <name>.png` → writes `temp/interactive/<name>.png`
-  and prints the live URL (which tells you the exact route/state). Then **Read that PNG** to
-  see it.
-- Drive or measure the DOM yourself — write a snippet to a file (e.g. `temp/measure.mjs`) and
-  run it **inside the page** with `npm run interactive-javascript -- temp/measure.mjs`. The
-  snippet is `page.evaluate`'d in the live browser, so it's sandboxed to the DOM (no Node, no
-  filesystem). The file is the body of an `async` function — use `await`, and `return` a
-  JSON-serialisable value, which is printed:
-  ```js
-  // temp/measure.mjs — measure an element, or click/navigate via the DOM
-  const r = document.querySelector('[data-testid="cta"]').getBoundingClientRect();
-  // document.querySelector('button.primary').click();  // or: location.href = "/buy-credits"
-  return { x: r.x, y: r.y, w: r.width, h: r.height, cs: getComputedStyle(document.body).fontSize };
-  ```
+**1. Live interactive session** — invoke the `interactive-browser` skill. It starts a
+headed, mobile-emulated session (CDP on port 9222), follows the user's clicks/navigation
+through its log so you can watch them drive a flow, grabs on-demand screenshots for you to
+Read, and runs DOM snippets to measure or drive the page (including the WSL→Windows host
+setup). That skill is the source of truth for the `interactive-browser` /
+`interactive-screenshot` / `interactive-javascript` scripts.
 
 **2. Multi-width responsive check** — invoke the `responsive-screenshots` skill to capture a
 screen at several widths at once (e.g. 320 / 360 / 412) and print each element's box. Use it
