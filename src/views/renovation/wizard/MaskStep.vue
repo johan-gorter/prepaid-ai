@@ -11,7 +11,7 @@
  */
 import StickyFooter from "../../../components/StickyFooter.vue";
 
-defineProps<{ showRetake: boolean }>();
+defineProps<{ showRetake: boolean; showTrash: boolean }>();
 
 defineEmits<{
   clearMask: [];
@@ -32,7 +32,11 @@ defineEmits<{
       <i aria-hidden="true">photo_camera</i>
       <span>{{ $t("newImpression.retake") }}</span>
     </button>
-    <button class="max small-round error" @click="$emit('trash')">
+    <button
+      v-if="showTrash"
+      class="max small-round error"
+      @click="$emit('trash')"
+    >
       <i aria-hidden="true">delete</i>
       <span>{{ $t("newImpression.trash") }}</span>
     </button>

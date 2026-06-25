@@ -39,6 +39,7 @@
     "test:pwa": "playwright test --config=playwright-pwa.config.ts",
     "playwright:install": "playwright install",
     "interactive-browser": "node scripts/interactive.mjs",
+    "interactive-browser:windows": "cmd.exe /c \"cd /d D:\\github\\prepaid-ai && node scripts/interactive.mjs\"",
     "interactive-screenshot": "node scripts/interactive-screenshot.mjs",
     "interactive-javascript": "node scripts/interactive-javascript.mjs"
   },

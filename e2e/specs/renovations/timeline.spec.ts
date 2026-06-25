@@ -12,7 +12,7 @@ import {
   paintMask,
 } from "../../helpers/wizard";
 
-test.describe("Renovation Details Page", () => {
+test.describe("Timeline Page", () => {
   test.beforeEach(async ({}, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "chromium only");
   });
@@ -32,7 +32,7 @@ test.describe("Renovation Details Page", () => {
 
       // Header
       await expect(
-        page.getByRole("heading", { name: "Renovation Details" }),
+        page.getByRole("heading", { name: "Timeline" }),
       ).toBeVisible();
 
       // Inline AI disclaimer near the results (#81)

@@ -170,7 +170,7 @@ test.describe("New Renovation Page", () => {
       try {
         // Three-button bar is visible
         await expect(
-          page.getByRole("button", { name: "Overview" }),
+          page.getByRole("button", { name: "Timeline" }),
         ).toBeVisible();
         await expect(page.getByRole("button", { name: "Trash" })).toBeVisible();
         await expect(
@@ -184,7 +184,7 @@ test.describe("New Renovation Page", () => {
       }
     });
 
-    test("Renovation Details button navigates to timeline page", async ({
+    test("Timeline button navigates to timeline page", async ({
       authenticatedPage: page,
     }) => {
       const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -195,7 +195,7 @@ test.describe("New Renovation Page", () => {
       try {
         await goToRenovationDetails(page);
         await expect(
-          page.getByRole("heading", { name: "Renovation Details" }),
+          page.getByRole("heading", { name: "Timeline" }),
         ).toBeVisible();
       } finally {
         rmSync(grayPngPath, { force: true });

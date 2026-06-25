@@ -44,7 +44,7 @@ const newImpression: NewImpressionMessages = {
     undo: "Opnieuw",
     creating: "Je impressie wordt gemaakt...",
     goHome: "Naar startpagina",
-    renovationDetails: "Overzicht",
+    renovationDetails: "Tijdlijn",
     share: "Delen",
     trash: "Verwijderen",
     nextChange: "Volgende wijziging",
@@ -83,7 +83,7 @@ const newImpression: NewImpressionMessages = {
     fullscreenAlt: "Vergrote impressie",
   },
   renovationDetail: {
-    title: "Make-over details",
+    title: "Tijdlijn",
     menuAriaLabel: "Make-over menu",
     deleteRenovation: "Make-over verwijderen",
     deleteTitle: "Make-over verwijderen",

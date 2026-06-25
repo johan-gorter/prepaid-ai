@@ -252,8 +252,8 @@ test.describe("PWA Requirements", () => {
       await page.getByRole("button", { name: "Generate" }).click();
       await waitForPreviewResult(page);
 
-      // Navigate to renovations list via Overview → back
-      await page.getByRole("button", { name: "Overview" }).click();
+      // Navigate to renovations list via Timeline → back
+      await page.getByRole("button", { name: "Timeline" }).click();
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+/);
       await page.goto("/renovations");
       await page.waitForURL("/renovations");

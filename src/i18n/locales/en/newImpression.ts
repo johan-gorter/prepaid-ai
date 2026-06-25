@@ -44,7 +44,7 @@ const newImpression = {
     undo: "Undo",
     creating: "Creating your impression...",
     goHome: "Go to home",
-    renovationDetails: "Overview",
+    renovationDetails: "Timeline",
     share: "Share",
     trash: "Trash",
     nextChange: "Next Change",
@@ -83,7 +83,7 @@ const newImpression = {
     fullscreenAlt: "Enlarged impression",
   },
   renovationDetail: {
-    title: "Renovation Details",
+    title: "Timeline",
     menuAriaLabel: "Renovation menu",
     deleteRenovation: "Delete renovation",
     deleteTitle: "Delete Renovation",

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Preview stage: the result-view footer (Overview | Trash | Share | Next
+ * Preview stage: the result-view footer (Timeline | Trash | Share | Next
  * Change) and the share-link dialog. The result image itself is the shared
  * canvas / result-marker owned by the page. (#90 adds the fullscreen viewer
  * here; #91 reordered this footer to the app-wide convention — back action
@@ -17,6 +17,7 @@ import { track } from "../../../composables/useTrack";
 const props = defineProps<{
   renovationId: string | null;
   impressionId: string | null;
+  showTimelineButton: boolean;
   showShareButton: boolean;
   showTrashButton: boolean;
 }>();
@@ -76,11 +77,12 @@ async function onShare() {
 </script>
 
 <template>
-  <!-- Preview stage footer (#91): Overview | [Trash] | [Share] | Next Change.
-       Back action (Overview) far left, next action (Next Change) far right;
+  <!-- Preview stage footer (#91): Timeline | [Trash] | [Share] | Next Change.
+       Back action (Timeline) far left, next action (Next Change) far right;
        the destructive Trash button is kept away from the primary Next Change. -->
   <StickyFooter>
     <button
+      v-if="showTimelineButton"
       class="max small-round"
       @click="$emit('renovationDetails')"
       :aria-label="$t('newImpression.renovationDetails')"

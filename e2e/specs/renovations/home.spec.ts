@@ -121,7 +121,7 @@ test.describe("Home Page with renovations", () => {
       // Should navigate to timeline
       await page.waitForURL(/\/renovation\/[a-zA-Z0-9]+$/);
       await expect(
-        page.getByRole("heading", { name: "Renovation Details" }),
+        page.getByRole("heading", { name: "Timeline" }),
       ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });

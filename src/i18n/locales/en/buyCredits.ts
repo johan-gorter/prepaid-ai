@@ -29,7 +29,7 @@ const buyCredits = {
     contextReassurance:
       "Your work is saved — you'll continue right after paying.",
     optionLabel: "{credits} credits — ${usd}",
-    presetHint75: "≈ 7 actions",
+    presetHint75: "≈ 7–15 actions",
     customOption: "Custom amount",
     customAmountAria: "Custom credit amount",
     trustLine1:
