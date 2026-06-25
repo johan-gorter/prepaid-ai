@@ -40,6 +40,37 @@ test.describe("Fullscreen result viewer", () => {
     }
   });
 
+  test("mouse wheel scroll zooms the image in", async ({
+    authenticatedPage: page,
+  }) => {
+    const { grayPngPath } = await createRenovationAndWaitForResult(
+      page,
+      "fullscreen wheel zoom",
+    );
+
+    try {
+      await page.getByTestId("fullscreen-open").click();
+      const viewer = page.getByTestId("fullscreen-viewer");
+      await expect(viewer).toBeVisible();
+
+      const image = viewer.locator("img.fsv-image");
+      const scaleOf = async () => {
+        const t = await image.evaluate((el) => el.style.transform);
+        return Number(/scale\(([^)]+)\)/.exec(t)?.[1] ?? "1");
+      };
+
+      // Starts at fit (1×).
+      expect(await scaleOf()).toBeCloseTo(1);
+
+      // Scroll up over the image → zoom in past 1×.
+      await viewer.hover();
+      await page.mouse.wheel(0, -400);
+      await expect.poll(scaleOf).toBeGreaterThan(1.1);
+    } finally {
+      rmSync(grayPngPath, { force: true });
+    }
+  });
+
   test("browser back closes the viewer instead of leaving the page", async ({
     authenticatedPage: page,
   }) => {
