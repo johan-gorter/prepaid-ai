@@ -39,12 +39,20 @@ function ensureLogsDir() {
   }
 }
 
+// Turn a service name into a filesystem-friendly stem: service names like
+// "dev:emulators" contain characters that are awkward in filenames, so replace
+// anything outside [A-Za-z0-9._-] with an underscore (e.g. "dev_emulators").
+// discoverRunning() maps these stems back to canonical names via the registry.
+function safeName(name) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
 function pidFile(name) {
-  return join(LOGS_DIR, `${encodeURIComponent(name)}.pid`);
+  return join(LOGS_DIR, `${safeName(name)}.pid`);
 }
 
 function logFile(name) {
-  return join(LOGS_DIR, `${encodeURIComponent(name)}.log`);
+  return join(LOGS_DIR, `${safeName(name)}.log`);
 }
 
 function hasLog(name) {
@@ -128,9 +136,18 @@ function countErrors(name, type) {
 export function discoverRunning() {
   if (!existsSync(LOGS_DIR)) return [];
 
+  // Map each pid file's safe stem back to its canonical registry name so the
+  // result can be passed straight to start()/stop() (which look up services[]).
+  const canonicalByStem = new Map(
+    Object.keys(services).map((name) => [safeName(name), name]),
+  );
+
   return readdirSync(LOGS_DIR)
     .filter((fileName) => fileName.endsWith(".pid"))
-    .map((fileName) => decodeURIComponent(fileName.replace(/\.pid$/, "")));
+    .map((fileName) => {
+      const stem = fileName.replace(/\.pid$/, "");
+      return canonicalByStem.get(stem) ?? stem;
+    });
 }
 
 export function start(name) {
