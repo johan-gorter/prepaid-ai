@@ -106,7 +106,7 @@ test.describe("New Impression Page", () => {
         page.getByRole("button", { name: "Trash" }),
       ).toBeVisible();
       await expect(
-        page.getByRole("button", { name: "Next Change" }),
+        page.getByRole("button", { name: "Another Change" }),
       ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
