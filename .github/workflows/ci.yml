@@ -219,17 +219,85 @@ jobs:
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa-key.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
-      # TEMP DIAGNOSTIC (remove after): inspect the materialized key file
-      # without ever printing the private key.
-      - name: DIAG inspect sa-key.json
+      # TEMP DIAGNOSTIC (remove after): the SA key authenticates fine from a
+      # local PC, so this captures how the CI runner differs — tooling/versions,
+      # network reachability, the account resolved before vs after ADC auth, and
+      # the *real* error that firebase-tools swallows into "have you run firebase
+      # login?". Never prints the private key.
+      - name: DIAG firebase auth environment
+        continue-on-error: true
         run: |
+          set +e
+
+          echo "::group::which / versions / same executable?"
+          echo "node:     $(which node) -> $(node --version)"
+          echo "npm:      $(which npm) -> $(npm --version)"
+          echo "npx:      $(which npx)"
+          echo "firebase (PATH): $(which firebase || echo '(not on PATH; using npx-resolved local bin)')"
+          echo "npx firebase --version: $(npx firebase --version 2>/dev/null)"
+          node -e "console.log('firebase-tools resolved:', require.resolve('firebase-tools/package.json')); console.log('firebase-tools version:', require('firebase-tools/package.json').version)"
+          node -e "const {createRequire}=require('module');const r=createRequire(require.resolve('firebase-tools/package.json'));console.log('google-auth-library resolved:', r.resolve('google-auth-library'));console.log('google-auth-library version:', r('google-auth-library/package.json').version)"
+          echo "::endgroup::"
+
+          echo "::group::clock (JWT iat/exp is signed against this)"
+          date -u; echo "epoch=$(date -u +%s)"
+          echo "::endgroup::"
+
+          echo "::group::key file (no private key printed)"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
           echo "size_bytes=$(wc -c < "$RUNNER_TEMP/sa-key.json")"
           echo "line_count=$(wc -l < "$RUNNER_TEMP/sa-key.json")"
           echo "first_char=$(head -c 1 "$RUNNER_TEMP/sa-key.json" | xxd -p)"
           echo "has_cr=$(grep -c $'\r' "$RUNNER_TEMP/sa-key.json" || true)"
-          node -e "const k=require(process.env.RUNNER_TEMP+'/sa-key.json'); console.log('json_ok type='+k.type+' email='+k.client_email+' pkid='+k.private_key_id+' pk_len='+(k.private_key||'').length+' pk_has_nl='+/\n/.test(k.private_key||''))"
-          echo "--- firebase auth probe (read-only) ---"
-          npx firebase projects:list 2>&1 | grep -iE "prepaid-ai-dev|error|authenticate|login" || true
+          node -e "const k=require(process.env.RUNNER_TEMP+'/sa-key.json'); console.log('json_ok type='+k.type+' project='+k.project_id+' email='+k.client_email+' pkid='+k.private_key_id+' pk_len='+(k.private_key||'').length+' token_uri='+k.token_uri)"
+          echo "::endgroup::"
+
+          echo "::group::network reachability (Google auth + deploy APIs)"
+          for h in oauth2.googleapis.com www.googleapis.com firebase.googleapis.com cloudfunctions.googleapis.com firebasehosting.googleapis.com iam.googleapis.com storage.googleapis.com; do
+            code=$(curl -sS -o /dev/null -m 15 -w "%{http_code}" "https://$h" 2>/tmp/curlerr); rc=$?
+            echo "$h -> http=$code curl_rc=$rc $( [ "$rc" -ne 0 ] && cat /tmp/curlerr )"
+          done
+          curl -sS -m 15 -o /dev/null -X POST https://oauth2.googleapis.com/token \
+            -w "POST oauth2.googleapis.com/token -> http=%{http_code} (400 = reachable)\n" \
+            || echo "token endpoint UNREACHABLE (network blocked?)"
+          echo "::endgroup::"
+
+          echo "::group::account BEFORE (firebase login state / interfering env)"
+          npx firebase login:list 2>&1 | head -20
+          echo "FIREBASE_TOKEN set? $([ -n "$FIREBASE_TOKEN" ] && echo yes || echo no)"
+          echo "GOOGLE_GHA_CREDS_PATH=${GOOGLE_GHA_CREDS_PATH:-(unset)}"
+          echo "CLOUDSDK env: $(env | grep -i '^CLOUDSDK' | cut -d= -f1 | tr '\n' ' ' || echo none)"
+          echo "::endgroup::"
+
+          echo "::group::direct ADC exchange — real error + account AFTER"
+          node -e '
+            const {createRequire}=require("module");
+            const req=createRequire(require.resolve("firebase-tools/package.json"));
+            const {GoogleAuth}=req("google-auth-library");
+            (async()=>{
+              try{
+                const auth=new GoogleAuth({scopes:["https://www.googleapis.com/auth/cloud-platform"]});
+                console.log("ADC projectId:", await auth.getProjectId().catch(e=>"(failed: "+e.message+")"));
+                const client=await auth.getClient();
+                console.log("ADC client type:", client.constructor.name);
+                const creds=await client.getCredentials().catch(e=>({_err:e.message}));
+                console.log("account AFTER (client_email):", creds.client_email||creds._err);
+                const t=await client.getAccessToken();
+                console.log("ACCESS_TOKEN_OK len="+((t&&t.token)||"").length);
+              }catch(e){
+                console.log("REAL_AUTH_ERROR name="+e.name+" message="+e.message);
+                if(e.response&&e.response.data)console.log("RESP_DATA="+JSON.stringify(e.response.data));
+                if(e.cause)console.log("CAUSE="+(e.cause.message||e.cause));
+              }
+            })();
+          '
+          echo "::endgroup::"
+
+          echo "::group::firebase projects:list --debug (surfaces the swallowed original error)"
+          npx firebase projects:list --debug 2>&1 \
+            | grep -iE "prepaid-ai|error|authenticate|firebase login|credential|invalid_grant|access ?token|client_email|account|original" \
+            | head -60
+          echo "::endgroup::"
 
       - name: Deploy to dev project
         run: |
