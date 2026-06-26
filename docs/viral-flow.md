@@ -143,23 +143,28 @@ do. The governing rule:
 | `mask`    | `photo`/`crop` (fresh)|   ✅*  |  ✅   |    —     | Undo · Next                 |
 | `mask`    | `original`/`impression` |  —   |   —   |   ✅     | Undo · Next                 |
 | `mask`    | `share`               |   —    |   —   |    —     | Undo · Next                 |
-| `preview` | `original`/`impression` |  —   |  ✅   |   ✅     | [Share†] · Another Change   |
+| `preview` | `original`            |   —    |   —   |   ✅     | Another Change              |
+| `preview` | `impression`          |   —    |  ✅   |   ✅     | [Share†] · Another Change   |
 | `preview` | `share`               |   —    |   —   |    —     | Another Change              |
 
 \* Retake shows for `photo` only, not `crop` (deliberate — a crop came from a
 photo that is still re-takable upstream, but we don't surface it twice).
 † Share button shows for `source=impression` only.
 
-The one asymmetry — `mask` of an existing renovation has **no** Trash, but
-`preview` of one **keeps** it — is intentional:
+Trash on `preview` shows for `impression` only, never for `original`:
 
-- On **`mask`** you are mid-edit. "Trash" there means deleting the parent
-  impression/renovation (`onTrash` for `original` deletes the *whole*
-  renovation) — too destructive to sit beside an in-progress mask. Offer only
-  Timeline to back out.
-- On **`preview`** you are at rest on a saved result. Deleting *this* result is
-  a primary, expected action (the dissatisfaction proxy in measurement.md), so
-  Trash and Timeline are both present and non-redundant.
+- On **`preview` of an `impression`** you are at rest on a generated result.
+  Deleting *this* result is a primary, expected action (the dissatisfaction
+  proxy in measurement.md), so Trash and Timeline are both present and
+  non-redundant.
+- On **`preview` of the `original`** there is no discardable artifact this
+  screen is *about* — the original is the renovation's base image. Deleting the
+  whole renovation is a separate, higher-level action that lives in the
+  timeline's ⋮ menu (`RenovationDetailPage`), never behind a single Trash tap on
+  the base image. So `original` preview offers only Timeline.
+- On **`mask`** of an existing renovation you are mid-edit; Trash there would
+  mean deleting the parent impression/renovation — too destructive to sit beside
+  an in-progress mask. Offer only Timeline to back out.
 
 In every row Trash is kept away from the primary Next / Another Change
 (invariant #9). A fresh photo never shows Timeline because there is no timeline

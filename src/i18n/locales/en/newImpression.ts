@@ -55,7 +55,6 @@ const newImpression = {
     processingTimeout: "This is taking longer than expected. Please try again.",
     unknownError: "Unknown error",
     failedShareLink: "Failed to create share link",
-    deleteRenovationConfirm: "Delete this renovation and all its impressions?",
     chooseRemove: "Remove",
     chooseRemoveSubtitle: "also repair and clean up",
     chooseCost: "{credits} 🪙",

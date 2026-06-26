@@ -320,7 +320,7 @@ onMounted(() => {
         >
           <i aria-hidden="true">more_vert</i>
         </button>
-        <menu v-if="showRenovationMenu" class="active right no-wrap">
+        <menu v-if="showRenovationMenu" class="active right no-wrap reno-menu">
           <li>
             <a
               @click="
@@ -477,6 +477,14 @@ onMounted(() => {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+/* Anchor the ⋮ menu's right edge to the button so a long item (e.g. "Delete
+   renovation" / NL "Make-over verwijderen") folds leftward and never spills
+   past the right viewport edge on narrow phones. */
+.reno-menu {
+  left: auto !important;
+  right: 0 !important;
 }
 
 .reno-ai-disclaimer {

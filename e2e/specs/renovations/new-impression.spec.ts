@@ -36,6 +36,14 @@ test.describe("New Impression Page", () => {
 
       // Preview stage hides the mask helper text but shows the canvas
       await expect(page.locator("canvas")).toBeVisible();
+
+      // The original is the renovation's base image, not a discardable
+      // artifact — deleting the whole renovation lives in the timeline's ⋮
+      // menu, so the original preview must not offer a Trash button.
+      await expect(page.getByRole("button", { name: "Trash" })).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "Timeline" }),
+      ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
     }

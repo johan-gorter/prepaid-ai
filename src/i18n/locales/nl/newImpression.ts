@@ -55,7 +55,6 @@ const newImpression: NewImpressionMessages = {
     processingTimeout: "Het duurt langer dan verwacht. Probeer het opnieuw.",
     unknownError: "Onbekende fout",
     failedShareLink: "Deellink aanmaken mislukt",
-    deleteRenovationConfirm: "Deze make-over en alle bijbehorende impressies verwijderen?",
     chooseRemove: "Verwijderen",
     chooseRemoveSubtitle: "ook repareren en schoonmaken",
     chooseCost: "{credits} 🪙",

@@ -16,10 +16,7 @@ import {
   getImpressionSource,
   setImpressionSource,
 } from "../../composables/useImpressionStore";
-import {
-  deleteImpression,
-  deleteRenovation,
-} from "../../data/renovationRepo";
+import { deleteImpression } from "../../data/renovationRepo";
 import { useShareHydration } from "../../composables/useShareHydration";
 import { track } from "../../composables/useTrack";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
@@ -412,17 +409,6 @@ async function onTrash() {
     } else {
       router.replace("/renovations");
     }
-  } else if (source === "original") {
-    if (!currentUser.value || !renovationParam.value) return;
-    if (!confirm(t("newImpression.deleteRenovationConfirm"))) return;
-    try {
-      await deleteRenovation(currentUser.value.uid, renovationParam.value);
-    } catch {
-      // ignore
-    }
-    await clearImpressionSource();
-    await clearPersistedDraft();
-    router.replace("/renovations");
   } else {
     // photo / crop
     await clearImpressionSource();
@@ -459,11 +445,13 @@ const showMaskTrash = computed(
 );
 const showMaskTimeline = computed(() => hasRenovation.value);
 
-// Preview stage (at rest on a saved item): both Trash (delete this
-// impression/renovation — the dissatisfaction proxy) and Timeline (back to the
-// timeline) are meaningful and non-redundant. A share recipient owns nothing,
-// so both are hidden and the only forward action is "Another Change".
-const showTrashButton = computed(() => !isShareSource.value);
+// Preview stage (at rest on a saved item): Trash deletes *this* generated
+// impression (the dissatisfaction proxy in measurement.md), so it only makes
+// sense for source=impression. Viewing the renovation's `original` image is not
+// a discardable artifact — deleting the whole renovation is a separate,
+// higher-level action that lives in the timeline's ⋮ menu (RenovationDetailPage),
+// never behind a single Trash tap here. A share recipient owns nothing either.
+const showTrashButton = computed(() => sourceParam.value === "impression");
 const showTimelineButton = computed(() => !isShareSource.value);
 // The expand-to-fullscreen affordance only makes sense once a result image is
 // on screen — i.e. the preview stage with a loaded source.

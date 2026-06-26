@@ -253,15 +253,13 @@ test.describe("Share impression", () => {
     try {
       expect((await readShareDoc(token)).exists).toBe(true);
 
-      // Navigate to the renovation timeline so the original image is in
-      // view, then delete the renovation via the wizard's source=original
-      // Trash flow (which uses confirm() — accept the dialog).
+      // Navigate to the renovation timeline, then delete the whole renovation
+      // via the timeline's ⋮ menu (the only place that offers it — the
+      // source=original wizard view no longer carries a Trash button).
       await goToRenovationDetails(page);
-      await page.getByAltText("Original").click();
-      await page.waitForURL(/\/new-impression\?source=original&renovation=/);
-
-      page.once("dialog", (d) => void d.accept());
-      await page.getByRole("button", { name: "Trash" }).click();
+      await page.getByRole("button", { name: "Renovation menu" }).click();
+      await page.getByText("Delete renovation").click();
+      await page.getByRole("button", { name: "Delete", exact: true }).click();
       await page.waitForURL(/\/renovations$/);
 
       // The share doc for every impression of that renovation is gone.
