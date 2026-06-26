@@ -7,6 +7,8 @@
  *  - one-finger drag pans while zoomed in;
  *  - one-finger drag down while at 1× swipes the viewer closed;
  *  - double-tap toggles between fit and a 2.5× zoom centred on the tap;
+ *  - mouse wheel / trackpad scroll / trackpad pinch zooms around the cursor
+ *    (so pointer-less laptops and desktops can zoom too);
  *  - an X button and the browser back button (history state) both close it.
  *
  * Zoom is clamped to 1×–5× and panning is clamped to the image bounds so the
@@ -120,7 +122,7 @@ function resetTransform(): void {
   dragY.value = 0;
 }
 
-function relPos(e: PointerEvent): { x: number; y: number } {
+function relPos(e: MouseEvent): { x: number; y: number } {
   const rect = surfaceRef.value!.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
@@ -249,6 +251,29 @@ function handleTap(p: { x: number; y: number }): void {
   }
 }
 
+// Wheel / trackpad zoom for pointer-less devices (#90 follow-up): a real mouse
+// wheel and a trackpad two-finger scroll both arrive as `wheel` events, and a
+// trackpad pinch arrives as a `wheel` with `ctrlKey: true` plus small deltas.
+// We zoom around the cursor for all of them — scroll up / pinch out = zoom in.
+function onWheel(e: WheelEvent): void {
+  e.preventDefault();
+  measure();
+  if (surfaceW === 0) return;
+  const m = relPos(e);
+  // Trackpad pinch sends fine-grained deltas; a notched wheel / two-finger
+  // scroll sends coarse ones. Different intensities keep both feeling natural.
+  const intensity = e.ctrlKey ? 0.02 : 0.0035;
+  const target = clamp(
+    scale.value * Math.exp(-e.deltaY * intensity),
+    MIN_SCALE,
+    MAX_SCALE,
+  );
+  if (target === scale.value) return;
+  animating.value = false;
+  zoomAround(m, target / scale.value);
+  clampPan();
+}
+
 // --- open/close lifecycle + browser history -------------------------------
 // Opening pushes a history entry so the hardware/browser back button closes
 // the viewer instead of leaving the page; closing pops that entry back off.
@@ -331,6 +356,7 @@ onBeforeUnmount(teardownListeners);
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"
+        @wheel="onWheel"
       >
         <img
           ref="imgRef"
