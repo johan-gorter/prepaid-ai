@@ -24,7 +24,6 @@ const userInitials = computed(() => {
 
 <template>
   <div class="chat-messages">
-    <h4 class="no-margin">{{ $t("chat.title") }}</h4>
     <div
       v-if="messages.length === 0"
       class="center-align"
@@ -86,7 +85,7 @@ const userInitials = computed(() => {
 }
 .chat-bubble {
   padding: 0.75rem 1rem;
-  border-radius: 1.25rem;
+  border-radius: 0.9rem;
   max-width: 90%;
 }
 .chat-user {

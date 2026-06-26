@@ -94,7 +94,7 @@ defineExpose({ focus, autoGrow, revealChatInput });
     <div class="chat-bottom-inner">
       <!-- Input row -->
       <div class="chat-input-row">
-        <div class="field border round" style="margin: 0; flex: 1; min-width: 0">
+        <div class="field border" style="margin: 0; flex: 1; min-width: 0">
           <textarea
             ref="chatInputEl"
             v-model="userInput"
@@ -158,6 +158,7 @@ defineExpose({ focus, autoGrow, revealChatInput });
 <style scoped>
 .chat-input-row .field {
   min-height: 3.25rem;
+  border-radius: 0.4rem;
 }
 .chat-input-row .field textarea {
   font-size: 1.05rem;
