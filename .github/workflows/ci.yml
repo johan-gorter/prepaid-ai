@@ -267,6 +267,8 @@ jobs:
           echo "FIREBASE_TOKEN set? $([ -n "$FIREBASE_TOKEN" ] && echo yes || echo no)"
           echo "GOOGLE_GHA_CREDS_PATH=${GOOGLE_GHA_CREDS_PATH:-(unset)}"
           echo "CLOUDSDK env: $(env | grep -i '^CLOUDSDK' | cut -d= -f1 | tr '\n' ' ' || echo none)"
+          echo "proxy env: HTTP_PROXY=${HTTP_PROXY:-(unset)} HTTPS_PROXY=${HTTPS_PROXY:-(unset)} NO_PROXY=${NO_PROXY:-(unset)} http_proxy=${http_proxy:-(unset)} https_proxy=${https_proxy:-(unset)}"
+          echo "npm proxy: $(npm config get proxy) / $(npm config get https-proxy)"
           echo "::endgroup::"
 
           echo "::group::direct ADC exchange — real error + account AFTER"
@@ -291,6 +293,46 @@ jobs:
               }
             })();
           '
+          echo "::endgroup::"
+
+          echo "::group::TRANSPORT isolation — curl vs node to the exact token endpoint (Premature close)"
+          # gtoken POSTs to the LEGACY endpoint below (not the key's token_uri). A
+          # deliberately-invalid assertion should return a clean HTTP 400 JSON if the
+          # transport is healthy. curl uses system OpenSSL; node uses undici. If curl
+          # gets 400 but node gets "Premature close", it's a Node/undici transport
+          # bug (fixable in our config). If curl ALSO fails, it's true network egress.
+          echo "--- curl POST https://www.googleapis.com/oauth2/v4/token ---"
+          curl -sS -m 20 -X POST https://www.googleapis.com/oauth2/v4/token \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=invalid.invalid.invalid" \
+            -w "\ncurl http=%{http_code} time_total=%{time_total}s\n" 2>&1 | head -10 \
+            || echo "curl POST FAILED rc=$?"
+          echo "--- node http2-disabled / keepalive-off raw POST (undici) ---"
+          node -e '
+            const https=require("https");
+            const body="grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=invalid.invalid.invalid";
+            const req=https.request({host:"www.googleapis.com",path:"/oauth2/v4/token",method:"POST",
+              headers:{"Content-Type":"application/x-www-form-urlencoded","Content-Length":Buffer.byteLength(body),"Connection":"close"}},
+              res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>console.log("node https http="+res.statusCode+" bodyLen="+d.length));});
+            req.on("error",e=>console.log("node https ERROR "+e.message));
+            req.end(body);
+          '
+          echo "--- node getAccessToken x3 (determinism) — plain then ipv4first ---"
+          for opt in "" "--dns-result-order=ipv4first"; do
+            echo "NODE_OPTIONS='$opt':"
+            NODE_OPTIONS="$opt" node -e '
+              const {createRequire}=require("module");
+              const req=createRequire(require.resolve("firebase-tools/package.json"));
+              const {GoogleAuth}=req("google-auth-library");
+              (async()=>{
+                const client=await new GoogleAuth({scopes:["https://www.googleapis.com/auth/cloud-platform"]}).getClient();
+                for(let i=1;i<=3;i++){
+                  try{const t=await client.getAccessToken();console.log("  attempt "+i+": OK len="+((t&&t.token)||"").length);break;}
+                  catch(e){console.log("  attempt "+i+": FAIL "+e.message);}
+                }
+              })();
+            '
+          done
           echo "::endgroup::"
 
           echo "::group::firebase projects:list --debug (surfaces the swallowed original error)"
