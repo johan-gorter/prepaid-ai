@@ -219,6 +219,18 @@ jobs:
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa-key.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
+      # TEMP DIAGNOSTIC (remove after): inspect the materialized key file
+      # without ever printing the private key.
+      - name: DIAG inspect sa-key.json
+        run: |
+          echo "size_bytes=$(wc -c < "$RUNNER_TEMP/sa-key.json")"
+          echo "line_count=$(wc -l < "$RUNNER_TEMP/sa-key.json")"
+          echo "first_char=$(head -c 1 "$RUNNER_TEMP/sa-key.json" | xxd -p)"
+          echo "has_cr=$(grep -c $'\r' "$RUNNER_TEMP/sa-key.json" || true)"
+          node -e "const k=require(process.env.RUNNER_TEMP+'/sa-key.json'); console.log('json_ok type='+k.type+' email='+k.client_email+' pkid='+k.private_key_id+' pk_len='+(k.private_key||'').length+' pk_has_nl='+/\n/.test(k.private_key||''))"
+          echo "--- firebase auth probe (read-only) ---"
+          npx firebase projects:list 2>&1 | grep -iE "prepaid-ai-dev|error|authenticate|login" || true
+
       - name: Deploy to dev project
         run: |
           npx firebase deploy \
