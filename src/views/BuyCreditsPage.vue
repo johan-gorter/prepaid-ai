@@ -111,9 +111,9 @@ function submit() {
     </h4>
 
     <!-- Context: what this action costs + the work-is-saved reassurance. -->
-    <article
+    <div
       v-if="contextMessage"
-      class="border context-block"
+      class="context-block"
       data-testid="buy-credits-cost-message"
     >
       <p class="no-margin">
@@ -122,7 +122,7 @@ function submit() {
       <p class="small-text no-margin" style="opacity: 0.8; margin-top: 0.35rem">
         {{ $t("buyCredits.contextReassurance") }}
       </p>
-    </article>
+    </div>
 
     <p v-if="errorMessage" class="error-text" data-testid="buy-credits-error">
       {{ errorMessage }}
@@ -250,7 +250,6 @@ function submit() {
 
 .context-block {
   margin-bottom: 1.5rem;
-  border-left: 4px solid var(--primary, #006b3e);
 }
 
 .choice-list {

@@ -445,6 +445,10 @@ const showShareButton = computed(
     !!impressionParam.value,
 );
 const showTrashButton = computed(() => sourceParam.value !== "share");
+// The Timeline button navigates back to the renovation/renovations view, which
+// is meaningless for a share recipient (no owned renovation). Hide it in share
+// mode — the share viewer's only forward action is "Next Change".
+const showTimelineButton = computed(() => sourceParam.value !== "share");
 // The expand-to-fullscreen affordance only makes sense once a result image is
 // on screen — i.e. the preview stage with a loaded source.
 const showFullscreenButton = computed(
@@ -565,6 +569,7 @@ const showFullscreenButton = computed(
       <MaskStep
         v-if="stage === 'mask'"
         :show-retake="showRetake"
+        :show-trash="showTrashButton"
         @clear-mask="clearMaskEverywhere"
         @retake="onRetake"
         @trash="onTrash"
@@ -580,6 +585,7 @@ const showFullscreenButton = computed(
       v-if="stage === 'preview' && !shareError"
       :renovation-id="renovationParam"
       :impression-id="impressionParam"
+      :show-timeline-button="showTimelineButton"
       :show-share-button="showShareButton"
       :show-trash-button="showTrashButton"
       @renovation-details="onBack"

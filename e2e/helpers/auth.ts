@@ -11,6 +11,41 @@ import { EMULATOR_URLS, PROJECT_ID } from "./emulator-config";
 
 const RANDOM_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 const INITIAL_BALANCE = 100;
+const FETCH_RETRY_ATTEMPTS = 5;
+
+/**
+ * `fetch` with retry for the transient emulator connection drops that flake CI.
+ *
+ * The Auth emulator intermittently resets connections — most visibly during the
+ * `beforeCreate` blocking-function round-trip it makes to the Functions emulator
+ * — which surfaces here as `fetch failed` / `other side closed` on
+ * `accounts:signUp`. `fetch` only throws on network-layer failures, and against
+ * the emulator those are transient, so we retry with backoff (and on 5xx, which
+ * the emulators occasionally return under load) instead of failing the test.
+ */
+async function fetchWithRetry(
+  url: string,
+  init?: RequestInit,
+  attempts = FETCH_RETRY_ATTEMPTS,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const res = await fetch(url, init);
+      if (res.status < 500 || attempt === attempts) {
+        return res;
+      }
+      lastError = new Error(`Emulator responded ${res.status}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) {
+        throw error;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** (attempt - 1)));
+  }
+  throw lastError;
+}
 
 export interface TestUser {
   uid?: string;
@@ -51,7 +86,7 @@ export function createRandomTestUser(): TestUser {
 export async function createTestUser(
   user: TestUser = createRandomTestUser(),
 ): Promise<TestUser> {
-  const signUpRes = await fetch(
+  const signUpRes = await fetchWithRetry(
     `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
     {
       method: "POST",
@@ -75,7 +110,7 @@ export async function createTestUser(
   // The signUp endpoint doesn't reliably set displayName.
   // Use accounts:update with the idToken to set it.
   if (user.displayName) {
-    const updateRes = await fetch(
+    const updateRes = await fetchWithRetry(
       `${EMULATOR_URLS.auth}/identitytoolkit.googleapis.com/v1/accounts:update?key=fake-api-key`,
       {
         method: "POST",
@@ -106,7 +141,7 @@ export async function createTestUser(
  * Set the initial balance for a test user in the Firestore Emulator.
  */
 async function seedTestUserBalance(uid: string): Promise<void> {
-  const res = await fetch(
+  const res = await fetchWithRetry(
     `${EMULATOR_URLS.firestore}/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=balance`,
     {
       method: "PATCH",
@@ -135,7 +170,7 @@ export async function deleteTestUser(user: TestUser): Promise<void> {
     return;
   }
 
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
     {
       method: "DELETE",
@@ -182,7 +217,7 @@ export async function signInTestUser(
  * Clear all Firestore data in the emulator.
  */
 export async function clearFirestoreData(): Promise<void> {
-  await fetch(
+  await fetchWithRetry(
     `${EMULATOR_URLS.firestore}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
     { method: "DELETE" },
   );
@@ -192,7 +227,7 @@ export async function clearFirestoreData(): Promise<void> {
  * Clear all Auth emulator users.
  */
 export async function clearAuthUsers(): Promise<void> {
-  await fetch(
+  await fetchWithRetry(
     `${EMULATOR_URLS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`,
     { method: "DELETE", headers: { "Content-Type": "application/json" } },
   );

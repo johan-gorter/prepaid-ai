@@ -29,7 +29,7 @@ const buyCredits: BuyCreditsMessages = {
     contextReassurance:
       "Je werk blijft bewaard — na het betalen ga je direct verder.",
     optionLabel: "{credits} credits — ${usd}",
-    presetHint75: "≈ 7 acties",
+    presetHint75: "≈ 7–15 acties",
     customOption: "Eigen aantal",
     customAmountAria: "Eigen creditbedrag",
     trustLine1:

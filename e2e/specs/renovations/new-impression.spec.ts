@@ -113,7 +113,7 @@ test.describe("New Impression Page", () => {
     }
   });
 
-  test("Renovation Details footer button navigates to timeline", async ({
+  test("Timeline footer button navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
     const { grayPngPath } = await createRenovationAndWaitForResult(
@@ -124,7 +124,7 @@ test.describe("New Impression Page", () => {
     try {
       await goToRenovationDetails(page);
       await expect(
-        page.getByRole("heading", { name: "Renovation Details" }),
+        page.getByRole("heading", { name: "Timeline" }),
       ).toBeVisible();
     } finally {
       rmSync(grayPngPath, { force: true });
@@ -155,7 +155,7 @@ test.describe("New Impression Page", () => {
     }
   });
 
-  test("Renovation Details button on preview navigates to timeline", async ({
+  test("Timeline button on preview navigates to timeline", async ({
     authenticatedPage: page,
   }) => {
     test.slow(); // Two sequential Cloud Function round-trips
@@ -168,7 +168,7 @@ test.describe("New Impression Page", () => {
       // Chain a second impression via Next Change
       await chainImpression(page, "chained impression");
 
-      // Click Renovation Details → timeline
+      // Click Timeline → timeline
       await goToRenovationDetails(page);
 
       await expect(page.getByAltText("Result")).toHaveCount(2);
