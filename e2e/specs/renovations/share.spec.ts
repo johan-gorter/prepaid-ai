@@ -258,7 +258,7 @@ test.describe("Share impression", () => {
       // source=original wizard view no longer carries a Trash button).
       await goToRenovationDetails(page);
       await page.getByRole("button", { name: "Renovation menu" }).click();
-      await page.getByText("Delete renovation").click();
+      await page.getByTestId("delete-renovation-menu-item").click();
       await page.getByRole("button", { name: "Delete", exact: true }).click();
       await page.waitForURL(/\/renovations$/);
 

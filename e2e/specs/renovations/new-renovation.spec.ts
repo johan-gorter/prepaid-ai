@@ -89,7 +89,7 @@ test.describe("New Renovation Page", () => {
         // Pick Other → prompt stage
         await chooseFreePrompt(page);
         await expect(
-          page.getByText("What should change in the red area?"),
+          page.getByRole("heading", { name: "Describe Change" }),
         ).toBeVisible();
 
         const promptInput = page.getByTestId("prompt");

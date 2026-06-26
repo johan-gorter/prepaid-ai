@@ -323,6 +323,7 @@ onMounted(() => {
         <menu v-if="showRenovationMenu" class="active right no-wrap reno-menu">
           <li>
             <a
+              data-testid="delete-renovation-menu-item"
               @click="
                 showRenovationMenu = false;
                 showDeleteDialog = true;
