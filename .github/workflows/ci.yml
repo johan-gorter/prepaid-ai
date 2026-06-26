@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -56,7 +56,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - uses: actions/setup-java@v5
@@ -126,7 +126,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -165,7 +165,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -199,7 +199,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Download dist artifact
@@ -307,7 +307,7 @@ jobs:
             -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=invalid.invalid.invalid" \
             -w "\ncurl http=%{http_code} time_total=%{time_total}s\n" 2>&1 | head -10 \
             || echo "curl POST FAILED rc=$?"
-          echo "--- node http2-disabled / keepalive-off raw POST (undici) ---"
+          echo "--- node core https.request raw POST (SMALL body) ---"
           node -e '
             const https=require("https");
             const body="grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=invalid.invalid.invalid";
@@ -316,6 +316,34 @@ jobs:
               res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>console.log("node https http="+res.statusCode+" bodyLen="+d.length));});
             req.on("error",e=>console.log("node https ERROR "+e.message));
             req.end(body);
+          '
+          echo "--- node global fetch() == undici (same engine as gaxios), SMALL body ---"
+          node -e '
+            const body="grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=invalid.invalid.invalid";
+            fetch("https://www.googleapis.com/oauth2/v4/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body})
+              .then(async r=>console.log("fetch http="+r.status+" bodyLen="+(await r.text()).length))
+              .catch(e=>console.log("fetch ERROR "+e.message+(e.cause?" cause="+(e.cause.message||e.cause):"")));
+          '
+          echo "--- PAYLOAD/MTU test: same three clients with a LARGE (~3KB) body ---"
+          BIG=$(head -c 3000 /dev/zero | tr "\0" "A")
+          curl -sS -m 20 -X POST https://www.googleapis.com/oauth2/v4/token \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "assertion=$BIG" -d "grant_type=foo" \
+            -w "\ncurl(large) http=%{http_code} time_total=%{time_total}s\n" 2>&1 | tail -3 \
+            || echo "curl(large) FAILED rc=$?"
+          node -e '
+            const https=require("https");
+            const body="grant_type=foo&assertion="+"A".repeat(3000);
+            const req=https.request({host:"www.googleapis.com",path:"/oauth2/v4/token",method:"POST",
+              headers:{"Content-Type":"application/x-www-form-urlencoded","Content-Length":Buffer.byteLength(body),"Connection":"close"}},
+              res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>console.log("node-https(large) http="+res.statusCode+" bodyLen="+d.length));});
+            req.on("error",e=>console.log("node-https(large) ERROR "+e.message));
+            req.end(body);
+          '
+          node -e '
+            fetch("https://www.googleapis.com/oauth2/v4/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"grant_type=foo&assertion="+"A".repeat(3000)})
+              .then(async r=>console.log("fetch(large) http="+r.status+" bodyLen="+(await r.text()).length))
+              .catch(e=>console.log("fetch(large) ERROR "+e.message+(e.cause?" cause="+(e.cause.message||e.cause):"")));
           '
           echo "--- node getAccessToken x3 (determinism) — plain then ipv4first ---"
           for opt in "" "--dns-result-order=ipv4first"; do
@@ -333,6 +361,60 @@ jobs:
               })();
             '
           done
+          echo "::endgroup::"
+
+          echo "::group::Node version matrix — does a different bundled undici fix it?"
+          # gaxios uses Node's built-in fetch (undici). Node 22.23 bundles undici 6.x;
+          # Node 24 bundles undici 7.x; Node 20 also 6.x. Re-run the REAL getAccessToken
+          # under each to see whether the undici version is what's failing. Same repo
+          # node_modules (google-auth-library) — only the built-in undici differs.
+          echo "current: node $(node --version) bundles undici $(node -e 'console.log(process.versions.undici)')"
+          for NV in 20 24; do
+            base="https://nodejs.org/dist/latest-v${NV}.x"
+            fname=$(curl -sS -m 30 "$base/" | grep -oE "node-v${NV}\.[0-9]+\.[0-9]+-linux-x64\.tar\.xz" | head -1)
+            if [ -z "$fname" ]; then echo "node $NV: could not resolve tarball"; continue; fi
+            curl -sS -m 60 -o "/tmp/$fname" "$base/$fname" \
+              && mkdir -p "/tmp/n$NV" \
+              && tar -xJf "/tmp/$fname" -C "/tmp/n$NV" --strip-components=1 \
+              || { echo "node $NV: download/extract failed"; continue; }
+            NODE="/tmp/n$NV/bin/node"
+            echo "node $NV -> $($NODE --version) bundles undici $($NODE -e 'console.log(process.versions.undici)')"
+            "$NODE" -e '
+              const {createRequire}=require("module");
+              const req=createRequire(require.resolve("firebase-tools/package.json"));
+              const {GoogleAuth}=req("google-auth-library");
+              (async()=>{
+                try{
+                  const client=await new GoogleAuth({scopes:["https://www.googleapis.com/auth/cloud-platform"]}).getClient();
+                  const t=await client.getAccessToken();
+                  console.log("  getAccessToken: OK len="+((t&&t.token)||"").length);
+                }catch(e){console.log("  getAccessToken: FAIL "+e.message);}
+              })();
+            '
+          done
+          echo "::endgroup::"
+
+          echo "::group::MTU test — lower the runner MTU and retry the real ADC exchange"
+          # If small packets pass but the real (larger) JWT request gets "Premature
+          # close", a path-MTU black hole is the classic cause. Lowering the link MTU
+          # forces smaller segments; if getAccessToken then succeeds, MTU is the cause
+          # and the fix is to clamp MTU/MSS on the deploy job.
+          IFACE=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'dev \K\S+' | head -1)
+          echo "iface=$IFACE current_mtu=$(cat /sys/class/net/$IFACE/mtu 2>/dev/null)"
+          sudo ip link set dev "$IFACE" mtu 1400 && echo "lowered mtu to $(cat /sys/class/net/$IFACE/mtu)" || echo "could not set mtu"
+          node -e '
+            const {createRequire}=require("module");
+            const req=createRequire(require.resolve("firebase-tools/package.json"));
+            const {GoogleAuth}=req("google-auth-library");
+            (async()=>{
+              try{
+                const client=await new GoogleAuth({scopes:["https://www.googleapis.com/auth/cloud-platform"]}).getClient();
+                const t=await client.getAccessToken();
+                console.log("after-mtu-lower getAccessToken: OK len="+((t&&t.token)||"").length);
+              }catch(e){console.log("after-mtu-lower getAccessToken: FAIL "+e.message);}
+            })();
+          '
+          sudo ip link set dev "$IFACE" mtu 1500 2>/dev/null || true
           echo "::endgroup::"
 
           echo "::group::firebase projects:list --debug (surfaces the swallowed original error)"
@@ -360,7 +442,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
