@@ -1,28 +1,40 @@
 <script setup lang="ts">
 /**
- * Mask stage footer (#85): [Retake] | Trash | Undo | Next.
+ * Mask stage footer (#85): [Retake] | Trash | Timeline | Undo | Next.
  *
- * Undo clears the whole mask — acceptable for a ~10 s sloppy mask — and sits
- * between the destructive Trash and the primary Next so the destructive action
- * is never adjacent to the primary one (viral-flow invariant #9).
+ * Trash and Timeline are mutually exclusive and chosen by the page from the
+ * source: a fresh photo/crop (no renovation yet) shows Trash to discard the
+ * in-progress photo; an existing renovation (original/impression) shows
+ * Timeline to back out to the renovation timeline. Mid-mask, an existing
+ * renovation never offers Trash — that would mean deleting the parent
+ * impression/renovation while editing. A share recipient shows neither.
+ *
+ * Both sit far from the primary Next so the destructive Trash is never
+ * adjacent to it (viral-flow invariant #9). Undo clears the whole mask —
+ * acceptable for a ~10 s sloppy mask.
  *
  * The shared MaskingCanvas itself stays mounted in NewImpressionPage so the
  * painted mask survives stage changes; this step only owns the footer.
  */
 import StickyFooter from "../../../components/StickyFooter.vue";
 
-defineProps<{ showRetake: boolean; showTrash: boolean }>();
+defineProps<{
+  showRetake: boolean;
+  showTrash: boolean;
+  showTimeline: boolean;
+}>();
 
 defineEmits<{
   clearMask: [];
   retake: [];
   trash: [];
+  renovationDetails: [];
   next: [];
 }>();
 </script>
 
 <template>
-  <!-- Mask stage footer: [Retake] | Trash | Undo | Next -->
+  <!-- Mask stage footer: [Retake] | [Trash] | [Timeline] | Undo | Next -->
   <StickyFooter>
     <button
       v-if="showRetake"
@@ -39,6 +51,15 @@ defineEmits<{
     >
       <i aria-hidden="true">delete</i>
       <span>{{ $t("newImpression.trash") }}</span>
+    </button>
+    <button
+      v-if="showTimeline"
+      class="max small-round"
+      @click="$emit('renovationDetails')"
+      :aria-label="$t('newImpression.renovationDetails')"
+    >
+      <i aria-hidden="true">timeline</i>
+      <span>{{ $t("newImpression.renovationDetails") }}</span>
     </button>
     <button class="max border small-round" @click="$emit('clearMask')">
       <i aria-hidden="true">undo</i>

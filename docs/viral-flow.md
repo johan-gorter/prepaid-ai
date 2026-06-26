@@ -79,8 +79,8 @@ strongest reassurance we have. (#88)
 ### 6. The result page is also the next editing page
 
 The result reuses the masking canvas: the user can paint the next mask directly
-on the result. The "Next Change" footer button is **deliberately redundant** —
-power users go straight to painting, but not every user understands that, so
+on the result. The "Another Change" footer button is **deliberately redundant**
+— power users go straight to painting, but not every user understands that, so
 the explicit button stays. Do not remove either path. The page does not teach
 the shortcut with helper text (considered, rejected: keep the page quiet).
 
@@ -112,6 +112,59 @@ superlatives. AI fallibility is admitted openly and coupled to the remedy:
 - Footer: "next" action far right, "previous"/back far left, destructive
   actions never adjacent to the primary action (#91).
 - Everything NL + EN via vue-i18n; nothing may truncate or wrap at 320–412 px.
+
+### 9a. Wizard footer buttons: Trash vs. Timeline
+
+The wizard (`NewImpressionPage.vue`) is a state machine over a **Source** (where
+the image came from) and a **Stage**. Only the `mask` (`MaskStep.vue`) and
+`preview` (`PreviewStep.vue`) stages carry the Trash / Timeline buttons;
+`choose-action`, `paint`, and `prompt` only have Back + their primary action,
+and `processing` has none.
+
+The **Source** determines whether an owned renovation/timeline already exists:
+
+| Source        | Origin                                   | Renovation/timeline? |
+| ------------- | ---------------------------------------- | -------------------- |
+| `photo`/`crop`| fresh capture/upload, not yet generated  | **No** — nothing saved yet |
+| `original`    | the base image of an existing renovation | **Yes** |
+| `impression`  | a generated result (incl. after generate)| **Yes** |
+| `share`       | a `/share/:token` recipient              | **No** (nothing owned) |
+
+`photo`/`crop` never carry a renovation param; `original`/`impression` always
+do. The governing rule:
+
+> **Trash** = "discard the thing this screen is *about*." **Timeline** = "leave
+> to the renovation's timeline." Show Trash only when there is a discardable
+> artifact this screen represents; show Timeline only when an owned timeline
+> exists to return to.
+
+| Stage     | Source                | Retake | Trash | Timeline | Other                       |
+| --------- | --------------------- | :----: | :---: | :------: | --------------------------- |
+| `mask`    | `photo`/`crop` (fresh)|   ✅*  |  ✅   |    —     | Undo · Next                 |
+| `mask`    | `original`/`impression` |  —   |   —   |   ✅     | Undo · Next                 |
+| `mask`    | `share`               |   —    |   —   |    —     | Undo · Next                 |
+| `preview` | `original`/`impression` |  —   |  ✅   |   ✅     | [Share†] · Another Change   |
+| `preview` | `share`               |   —    |   —   |    —     | Another Change              |
+
+\* Retake shows for `photo` only, not `crop` (deliberate — a crop came from a
+photo that is still re-takable upstream, but we don't surface it twice).
+† Share button shows for `source=impression` only.
+
+The one asymmetry — `mask` of an existing renovation has **no** Trash, but
+`preview` of one **keeps** it — is intentional:
+
+- On **`mask`** you are mid-edit. "Trash" there means deleting the parent
+  impression/renovation (`onTrash` for `original` deletes the *whole*
+  renovation) — too destructive to sit beside an in-progress mask. Offer only
+  Timeline to back out.
+- On **`preview`** you are at rest on a saved result. Deleting *this* result is
+  a primary, expected action (the dissatisfaction proxy in measurement.md), so
+  Trash and Timeline are both present and non-redundant.
+
+In every row Trash is kept away from the primary Next / Another Change
+(invariant #9). A fresh photo never shows Timeline because there is no timeline
+yet — "Timeline" would mislabel a jump to the renovations list, and the user
+needs Trash to discard the unsaved photo.
 
 ### 10. Pricing facts (single source of truth for copy)
 
