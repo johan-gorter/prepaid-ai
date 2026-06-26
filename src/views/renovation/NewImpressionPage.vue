@@ -486,7 +486,12 @@ const showFullscreenButton = computed(
       </article>
 
       <div
-        v-if="!shareError && stage !== 'choose-action' && stage !== 'paint'"
+        v-if="
+          !shareError &&
+          stage !== 'choose-action' &&
+          stage !== 'paint' &&
+          stage !== 'prompt'
+        "
         class="step-hint"
       >
         <span v-if="stage === 'mask'">{{ $t("newImpression.paintHint") }}</span>
@@ -498,6 +503,7 @@ const showFullscreenButton = computed(
         :class="{
           'inert-canvas': stage === 'processing' || stage === 'choose-action',
           'canvas-area--collapsed': stage === 'prompt',
+          'canvas-area--compact': stage === 'choose-action',
           'canvas-area--hidden': stage === 'paint',
         }"
         @pointerdown="onCanvasPointerDown"
@@ -662,6 +668,15 @@ const showFullscreenButton = computed(
   pointer-events: none;
 }
 
+/* Choose-action stage: shrink the (inert) masked photo to half size and centre
+   it so the Remove / Change-color / Other buttons dominate the mobile viewport.
+   The canvas scales to its container width, so halving the width halves the
+   height too. Desktop half of the 544px max; mobile half of the edge-to-edge
+   100vw (see the media override below). */
+.canvas-area--compact {
+  max-width: 272px;
+}
+
 .wizard-title {
   padding: 0 1rem;
 }
@@ -699,6 +714,19 @@ const showFullscreenButton = computed(
   .canvas-area :deep(.masking-wrapper) {
     max-width: 100%;
     border-radius: 0;
+  }
+
+  /* Half of the edge-to-edge width; stays centred via the .canvas-area
+     margin-left/transform above. */
+  .canvas-area--compact {
+    width: 50vw;
+    max-width: 50vw;
+  }
+
+  /* Re-round the corners now that the photo no longer reaches the screen
+     edges. */
+  .canvas-area--compact :deep(.masking-wrapper) {
+    border-radius: 0.5rem;
   }
 }
 

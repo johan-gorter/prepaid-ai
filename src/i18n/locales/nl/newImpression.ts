@@ -40,7 +40,6 @@ const newImpression: NewImpressionMessages = {
     sourceMissing: "Bronafbeelding ontbreekt.",
     maskNotReady: "Masker nog niet gereed.",
     paintHint: "Verf over wat anders moet",
-    promptLabel: "Wat moet er in het rode gebied veranderen?",
     undo: "Opnieuw",
     creating: "Je impressie wordt gemaakt...",
     goHome: "Naar startpagina",

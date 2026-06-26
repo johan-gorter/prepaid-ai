@@ -45,7 +45,7 @@ onMounted(() => {
 
 <template>
   <div class="prompt-flex">
-    <div class="field textarea label border round prompt-field">
+    <div class="field textarea border small-round prompt-field">
       <textarea
         id="prompt-input"
         ref="promptInputRef"
@@ -55,7 +55,6 @@ onMounted(() => {
         @focus="revealPromptInput"
         @input="growPromptInput"
       ></textarea>
-      <label for="prompt-input">{{ $t("newImpression.promptLabel") }}</label>
     </div>
   </div>
 
@@ -79,7 +78,11 @@ onMounted(() => {
 
 <style scoped>
 .prompt-flex {
-  padding: 0.5rem;
+  /* Inset the textarea so the collapsed photo behind it shows as a frame:
+     32px (2rem) on each side and 16px (1rem) on top. The bottom inset stays
+     small so the textarea bottom keeps landing just above the mobile keyboard
+     (see the min-height clamp below). */
+  padding: 1rem 2rem 0.5rem;
   width: 100%;
   max-width: 544px;
   margin: 0 auto;
@@ -89,13 +92,20 @@ onMounted(() => {
 .prompt-field {
   width: 100%;
   background: var(--surface, #fff);
+  /* Minimal radius + a touch of elevation so the textarea reads as a card
+     lifted above the framed photo behind it. */
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 .prompt-field textarea {
+  /* Each term is 0.5rem smaller than the historical 14/12/28rem values to
+     exactly offset the extra 0.5rem of top inset added to .prompt-flex, so the
+     textarea bottom (tuned to sit above the Android/iOS keyboard) is unchanged. */
   min-height: clamp(
-    14rem,
-    calc(100dvh - var(--app-bar-clearance) - 12rem),
-    28rem
+    13.5rem,
+    calc(100dvh - var(--app-bar-clearance) - 12.5rem),
+    27.5rem
   );
   overflow-y: hidden;
   resize: none;

@@ -40,7 +40,6 @@ const newImpression = {
     sourceMissing: "Source image is missing.",
     maskNotReady: "Mask not ready.",
     paintHint: "Paint over what should change",
-    promptLabel: "What should change in the red area?",
     undo: "Undo",
     creating: "Creating your impression...",
     goHome: "Go to home",
