@@ -46,7 +46,7 @@ const newImpression = {
     renovationDetails: "Timeline",
     share: "Share",
     trash: "Trash",
-    nextChange: "Next Change",
+    nextChange: "Another Change",
     retake: "Retake",
     next: "Next",
     back: "Back",

@@ -46,7 +46,7 @@ const newImpression: NewImpressionMessages = {
     renovationDetails: "Tijdlijn",
     share: "Delen",
     trash: "Verwijderen",
-    nextChange: "Volgende wijziging",
+    nextChange: "Nog een wijziging",
     retake: "Opnieuw maken",
     next: "Volgende",
     back: "Terug",

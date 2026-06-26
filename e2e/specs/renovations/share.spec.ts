@@ -132,7 +132,7 @@ test.describe("Share impression", () => {
           timeout: 15_000,
         });
         await expect(
-          anonPage.getByRole("button", { name: "Next Change" }),
+          anonPage.getByRole("button", { name: "Another Change" }),
         ).toBeVisible();
 
         // Owner-only affordances are hidden for the recipient.
@@ -179,7 +179,7 @@ test.describe("Share impression", () => {
       // No preview footer renders in the error state — the recipient only
       // sees the error card and the Go home link.
       await expect(
-        page.getByRole("button", { name: "Next Change" }),
+        page.getByRole("button", { name: "Another Change" }),
       ).toHaveCount(0);
 
       const homeLink = page.getByTestId("share-error-home");
@@ -228,7 +228,7 @@ test.describe("Share impression", () => {
         // No half-broken wizard chrome behind the error.
         await expect(anonPage.locator("canvas")).toHaveCount(0);
         await expect(
-          anonPage.getByRole("button", { name: "Next Change" }),
+          anonPage.getByRole("button", { name: "Another Change" }),
         ).toHaveCount(0);
 
         // Functional "Go home" affordance routes back to the landing page.

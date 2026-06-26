@@ -444,11 +444,27 @@ const showShareButton = computed(
     !!renovationParam.value &&
     !!impressionParam.value,
 );
-const showTrashButton = computed(() => sourceParam.value !== "share");
-// The Timeline button navigates back to the renovation/renovations view, which
-// is meaningless for a share recipient (no owned renovation). Hide it in share
-// mode — the share viewer's only forward action is "Next Change".
-const showTimelineButton = computed(() => sourceParam.value !== "share");
+// An owned renovation/timeline exists only for original/impression (which
+// always carry a renovation param); photo/crop are fresh and share is a
+// recipient, so neither has a timeline to return to.
+const hasRenovation = computed(() => !!renovationParam.value);
+const isShareSource = computed(() => sourceParam.value === "share");
+
+// Mask stage (mutually exclusive): a fresh photo/crop shows Trash to discard
+// the in-progress photo; an existing renovation shows Timeline to back out.
+// Mid-mask we never offer Trash on an existing renovation (that would delete
+// the parent impression/renovation), and a share recipient gets neither.
+const showMaskTrash = computed(
+  () => !hasRenovation.value && !isShareSource.value,
+);
+const showMaskTimeline = computed(() => hasRenovation.value);
+
+// Preview stage (at rest on a saved item): both Trash (delete this
+// impression/renovation — the dissatisfaction proxy) and Timeline (back to the
+// timeline) are meaningful and non-redundant. A share recipient owns nothing,
+// so both are hidden and the only forward action is "Another Change".
+const showTrashButton = computed(() => !isShareSource.value);
+const showTimelineButton = computed(() => !isShareSource.value);
 // The expand-to-fullscreen affordance only makes sense once a result image is
 // on screen — i.e. the preview stage with a loaded source.
 const showFullscreenButton = computed(
@@ -575,10 +591,12 @@ const showFullscreenButton = computed(
       <MaskStep
         v-if="stage === 'mask'"
         :show-retake="showRetake"
-        :show-trash="showTrashButton"
+        :show-trash="showMaskTrash"
+        :show-timeline="showMaskTimeline"
         @clear-mask="clearMaskEverywhere"
         @retake="onRetake"
         @trash="onTrash"
+        @renovation-details="onBack"
         @next="onMaskNext"
       />
 

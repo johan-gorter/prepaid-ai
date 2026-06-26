@@ -130,7 +130,7 @@ export async function generateAndWait(page: Page): Promise<void> {
  * appear in-place (same URL, stage transition only).
  */
 export async function clickNextChange(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Next Change" }).click();
+  await page.getByRole("button", { name: "Another Change" }).click();
   await expect(
     page.getByText("Paint over what should change"),
   ).toBeVisible();
