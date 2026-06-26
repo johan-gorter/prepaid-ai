@@ -17,6 +17,27 @@ jobs:
           node-version: 24
           cache: npm
 
+      # GitHub's hostedtoolcache Node build (the binary `setup-node` installs)
+      # fails the OAuth2 token exchange to www.googleapis.com/oauth2/v4/token with
+      # "Premature close" while reading the access-token response, which
+      # firebase-tools reports as the generic "Failed to authenticate, have you run
+      # firebase login?". The official nodejs.org build of the same version does
+      # not. Install it and put it first on PATH so npm/npx/firebase run under it.
+      - name: Use official Node.js build for deploy (toolcache build breaks Google auth)
+        run: |
+          set -e
+          ver=v24.18.0
+          curl -fsS -m 120 -o /tmp/node.tar.xz \
+            "https://nodejs.org/dist/$ver/node-$ver-linux-x64.tar.xz"
+          sudo mkdir -p /opt/official-node
+          sudo tar -xJf /tmp/node.tar.xz -C /opt/official-node --strip-components=1
+          echo "/opt/official-node/bin" >> "$GITHUB_PATH"
+
+      - name: Confirm official Node is active
+        run: |
+          echo "node: $(command -v node) -> $(node --version)"
+          node -e "console.log('execPath='+process.execPath+' undici='+process.versions.undici)"
+
       - name: Install dependencies
         run: npm ci
 
