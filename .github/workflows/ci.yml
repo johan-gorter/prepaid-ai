@@ -73,6 +73,17 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
+      # Pin the emulator binaries run-to-run instead of re-downloading them every
+      # time (Firebase warns about this in CI). A fresh/changed emulator build is
+      # the likeliest trigger for the auth-emulator connection drops we saw.
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            firebase-emulators-${{ runner.os }}-
+
       - name: Start tracked E2E services
         run: |
           npm run services:start emulators
