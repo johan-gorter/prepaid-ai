@@ -32,6 +32,11 @@
       "Bash(npx vue-tsc:*)"
     ]
   },
+  "sandbox": {
+    "network": {
+      "allowedDomains": ["github.com", "*.githubusercontent.com"]
+    }
+  },
   "hooks": {
     "PreToolUse": [
       {
