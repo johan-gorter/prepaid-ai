@@ -185,33 +185,33 @@ Short, positive, explicit. Adjust the surface list to the domain.
 ### Recolour / paint a marked region (with a colour reference image)
 
 Current production prompt (nano banana 2, 50% checker, lightened hex), in
-`buildPaintPrompt()`:
+`buildPaintPrompt()`. Only one image is sent (no colour-reference image since
+2026-06-12), so the prompt no longer refers to a "first image":
 
-> The first image is a photo in which the area to repaint is covered by a
-> magenta checkerboard; the original surfaces are partly visible between the
-> squares. Paint only the surfaces the checkerboard spans entirely - whatever
-> their material or original colour - in the paint colour #xxxxxx; leave any
-> surface it spans only partly unchanged, never half-painting a surface.
-> Reconstruct the covered geometry exactly as it appears: every structural
-> element stays in place, painted in this one colour, varied only by lighting.
-> Objects in front of the painted surfaces are not painted: reconstruct them
-> crisp with their original colours. No magenta remains, and everything outside
-> the marked area stays unchanged.
+> This photo has a magenta checkerboard covering the surfaces to repaint; the
+> original surfaces show between the squares. Repaint every fully covered
+> surface in the colour #xxxxxx - one flat colour, varied only by the lighting
+> - whatever its material or original colour. Leave any surface that is only
+> partly covered untouched; never paint half a surface. Reconstruct the covered
+> geometry exactly as in the photo, and keep objects in front of these surfaces
+> unpainted in their original colours. Remove all magenta, and change nothing
+> outside the repainted surfaces.
 
 Why each clause earns its place:
-- _"covered by a magenta checkerboard … partly visible between"_ — tells it
-  what the marker is and that the original surfaces are recoverable.
-- _"only the surfaces the checkerboard spans entirely … never half-painting a
-  surface"_ — sloppy masks leave a surface only partly under the checkerboard;
-  without this the model paints the partial coverage and produces half-painted
-  walls/ceilings. Treats coverage as a per-surface all-or-nothing signal.
-- _"whatever their material or original colour"_ — covers multiple surfaces at
-  once without enumerating. **[proven]**
-- _"Reconstruct the covered geometry exactly as it appears"_ — without this
+- _"magenta checkerboard … original surfaces show between the squares"_ — tells
+  it what the marker is and that the original surfaces are recoverable.
+- _"every fully covered surface … never paint half a surface"_ — sloppy masks
+  leave a surface only partly under the checkerboard; without this the model
+  paints the partial coverage and produces half-painted walls/ceilings. Treats
+  coverage as a per-surface all-or-nothing signal.
+- _"one flat colour, varied only by the lighting … whatever its material or
+  original colour"_ — forces a full repaint of multiple surfaces at once
+  without enumerating them. **[proven]**
+- _"Reconstruct the covered geometry exactly as in the photo"_ — without this
   the model invents a simpler (e.g. beam-less) surface. **[proven]**
-- _"objects in front … are not painted: reconstruct them crisp"_ — without
-  this, objects under the pattern get painted over or ghosted. **[proven]**
-- _"No magenta remains"_ — cleans up the marker.
+- _"keep objects in front … unpainted"_ — without this, objects under the
+  pattern get painted over or ghosted. **[proven]**
+- _"Remove all magenta"_ — cleans up the marker.
 
 ### Remove an object (solid magenta fill)
 > Apply the prompt below to the magenta area. Reconstruct a clean, plausible

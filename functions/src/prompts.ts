@@ -6,28 +6,26 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Paint / recolour prompt (nano banana 2, 50% magenta checkerboard).
+ * Paint / recolour prompt (nano banana 2). A single image is sent: the photo
+ * with the surfaces to repaint covered by a 50% magenta checkerboard.
  *
  * `sentColor` is the already-lightened hex actually sent to the model.
  *
- * "spans entirely" + "never half-painting a surface" make the model treat the
- * checkerboard as a per-surface signal: a surface that is only partly under
- * the pattern (sloppy masking) is left untouched instead of being half
- * painted. Only surfaces the checkerboard covers from edge to edge get painted.
+ * "fully covered" + "never paint half a surface" make the model treat the
+ * checkerboard as a per-surface signal: a surface only partly under the
+ * pattern (sloppy masking) is left untouched instead of half painted.
  */
 export function buildPaintPrompt(sentColor: string): string {
   return (
-    `The first image is a photo in which the area to repaint is covered ` +
-    `by a magenta checkerboard; the original surfaces are partly visible ` +
-    `between the squares. Paint only the surfaces the checkerboard spans ` +
-    `entirely - whatever their material or original colour - in the paint ` +
-    `colour ${sentColor}; leave any surface it spans only partly unchanged, ` +
-    `never half-painting a surface. Reconstruct the covered geometry exactly ` +
-    `as it appears: every structural element stays in place, painted in this ` +
-    `one colour, varied only by lighting. Objects in front of the painted ` +
-    `surfaces are not painted: reconstruct them crisp with their original ` +
-    `colours. No magenta remains, and everything outside the marked area ` +
-    `stays unchanged.`
+    `This photo has a magenta checkerboard covering the surfaces to ` +
+    `repaint; the original surfaces show between the squares. Repaint every ` +
+    `fully covered surface in the colour ${sentColor} - one flat colour, ` +
+    `varied only by the lighting - whatever its material or original ` +
+    `colour. Leave any surface that is only partly covered untouched; never ` +
+    `paint half a surface. Reconstruct the covered geometry exactly as in ` +
+    `the photo, and keep objects in front of these surfaces unpainted in ` +
+    `their original colours. Remove all magenta, and change nothing outside ` +
+    `the repainted surfaces.`
   );
 }
 
