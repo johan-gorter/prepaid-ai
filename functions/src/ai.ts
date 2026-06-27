@@ -6,6 +6,7 @@
 // - "dummy"     — Sharp text overlay (no AI, for testing)
 // ---------------------------------------------------------------------------
 
+import { buildEditPrompt, buildPaintPrompt } from "./prompts.js";
 import { hexToRgb } from "./utils.js";
 
 export type AiBackend = "vertex" | "google-ai" | "dummy";
@@ -169,18 +170,7 @@ export async function geminiProcess(
     // only a timeline label, so it is deliberately not sent.
     const sentColor = lightenColor(paint.hex, paintLightenFactor(paint.hex));
     requestParts.push({
-      text:
-        `The first image is a photo in which the area to repaint is ` +
-        `covered by a magenta checkerboard; the original surfaces are ` +
-        `partly visible between the magenta squares. Paint every surface ` +
-        `under the checkerboard - whatever its material or original ` +
-        `colour - in the paint colour ${sentColor}. Reconstruct the ` +
-        `covered geometry exactly as it appears in the photo: every ` +
-        `structural element stays in place, painted in this same single ` +
-        `colour, varied only by lighting. Light fixtures and other ` +
-        `objects in front of the painted surfaces are not painted: ` +
-        `reconstruct them crisp with their original colours. No magenta ` +
-        `remains, and everything outside the marked area stays unchanged.`,
+      text: buildPaintPrompt(sentColor),
     });
     requestParts.push({
       inlineData: {
@@ -190,9 +180,7 @@ export async function geminiProcess(
     });
   } else {
     requestParts.push({
-      text:
-        `Apply the prompt below to the magenta checkered area. ` +
-        `Do not include the checkered area in the output.\n\n${prompt}`,
+      text: buildEditPrompt(prompt),
     });
     requestParts.push({
       inlineData: {
