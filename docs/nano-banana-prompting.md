@@ -7,7 +7,11 @@ removing an object, and free-prompt edits.
 
 The code lives in:
 
-- `functions/src/ai.ts` — `geminiProcess()`: builds the request and prompt.
+- `functions/src/prompts.ts` — the server-side edit prompts (`buildPaintPrompt`,
+  `buildEditPrompt`), kept separate from request building so wording can be
+  swapped / A/B-tested in isolation.
+- `functions/src/ai.ts` — `geminiProcess()`: builds the request from those prompts.
+- `src/prompts.ts` — the client-side prompt(s) (`REMOVE_PROMPT`).
 - `src/components/MaskingCanvas.vue` — `getCompositeBlob()`: produces the
   AI-facing image with the edit region marked.
 - `src/views/renovation/NewImpressionPage.vue` — chooses the marking variant per
@@ -180,23 +184,28 @@ Short, positive, explicit. Adjust the surface list to the domain.
 
 ### Recolour / paint a marked region (with a colour reference image)
 
-Current production prompt (nano banana 2, 50% checker, lightened hex):
+Current production prompt (nano banana 2, 50% checker, lightened hex), in
+`buildPaintPrompt()`:
 
 > The first image is a photo in which the area to repaint is covered by a
 > magenta checkerboard; the original surfaces are partly visible between the
-> magenta squares. Paint every surface under the checkerboard - whatever its
-> material or original colour - in the paint colour #xxxxxx. Reconstruct the
-> covered geometry exactly as it appears in the
-> photo: every structural element stays in place, painted in this same single
-> colour, varied only by lighting. Light fixtures and other objects in front
-> of the painted surfaces are not painted: reconstruct them crisp with their
-> original colours. No magenta remains, and everything outside the marked
-> area stays unchanged.
+> squares. Paint only the surfaces the checkerboard spans entirely - whatever
+> their material or original colour - in the paint colour #xxxxxx; leave any
+> surface it spans only partly unchanged, never half-painting a surface.
+> Reconstruct the covered geometry exactly as it appears: every structural
+> element stays in place, painted in this one colour, varied only by lighting.
+> Objects in front of the painted surfaces are not painted: reconstruct them
+> crisp with their original colours. No magenta remains, and everything outside
+> the marked area stays unchanged.
 
 Why each clause earns its place:
 - _"covered by a magenta checkerboard … partly visible between"_ — tells it
   what the marker is and that the original surfaces are recoverable.
-- _"whatever its material or original colour"_ — covers multiple surfaces at
+- _"only the surfaces the checkerboard spans entirely … never half-painting a
+  surface"_ — sloppy masks leave a surface only partly under the checkerboard;
+  without this the model paints the partial coverage and produces half-painted
+  walls/ceilings. Treats coverage as a per-surface all-or-nothing signal.
+- _"whatever their material or original colour"_ — covers multiple surfaces at
   once without enumerating. **[proven]**
 - _"Reconstruct the covered geometry exactly as it appears"_ — without this
   the model invents a simpler (e.g. beam-less) surface. **[proven]**

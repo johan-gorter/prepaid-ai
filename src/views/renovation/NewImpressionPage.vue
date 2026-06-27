@@ -21,6 +21,7 @@ import { useShareHydration } from "../../composables/useShareHydration";
 import { track } from "../../composables/useTrack";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
 import { db } from "../../firebase";
+import { REMOVE_PROMPT } from "../../prompts";
 import ChooseActionStep from "./wizard/ChooseActionStep.vue";
 import MaskStep from "./wizard/MaskStep.vue";
 import PaintStep from "./wizard/PaintStep.vue";
@@ -28,12 +29,6 @@ import { DEFAULT_PAINT_COLOR } from "./wizard/paintPresets";
 import PreviewStep from "./wizard/PreviewStep.vue";
 import PromptStep from "./wizard/PromptStep.vue";
 import type { Source, Stage } from "./wizard/wizardTypes";
-
-// Hard-coded prompt for the "Verwijderen" (remove) action. Paired with a
-// solid magenta composite so Gemini sees a clean "stain" and inpaints the
-// area instead of trying to interpret a free-form user prompt.
-const REMOVE_PROMPT =
-  "remove the magenta stains. There a clear clean empty piece of the photo there.";
 
 const route = useRoute();
 const router = useRouter();
