@@ -6,8 +6,21 @@ const newImpression = {
     takePhoto: "Take Photo",
     uploadImage: "Upload Image",
     pasteImage: "Paste Image",
+    fromInternet: "From internet",
     noImageClipboard: "No image found on clipboard",
     clipboardError: "Could not access clipboard",
+  },
+  // Tutorial dialog that teaches how to grab an image from the web (long-press →
+  // copy → paste back here). Opened by the "From internet" action; its CTA opens
+  // Google Images in a new tab to go find an image.
+  internetTutorial: {
+    title: "Add an image from the internet",
+    step1: "Long press internet image",
+    step1Desktop: "Right-click internet image",
+    step2: "Press copy image menu item",
+    step3: "Paste image in payasyougo.app",
+    cta: "Find image",
+    close: "Close",
   },
   photoCapture: {
     title: "Take Photo",

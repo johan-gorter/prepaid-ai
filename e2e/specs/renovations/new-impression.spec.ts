@@ -256,7 +256,7 @@ test.describe("New Impression Page", () => {
       // Guidance note + price anchor.
       await expect(page.getByTestId("choose-guidance")).toBeVisible();
       await expect(page.getByTestId("choose-price-anchor")).toHaveText(
-        "1 🪙 = $0.01",
+        "100 🪙 = $1",
       );
 
       // Every option shows its credit price (remove 5, colour 10, other 10).

@@ -6,8 +6,18 @@ const newImpression: NewImpressionMessages = {
     takePhoto: "Foto maken",
     uploadImage: "Afbeelding uploaden",
     pasteImage: "Afbeelding plakken",
+    fromInternet: "Van internet",
     noImageClipboard: "Geen afbeelding op het klembord gevonden",
     clipboardError: "Geen toegang tot het klembord",
+  },
+  internetTutorial: {
+    title: "Afbeelding van internet toevoegen",
+    step1: "Internetafbeelding lang indrukken",
+    step1Desktop: "Klik met rechtermuisknop op de afbeelding",
+    step2: "Kies 'Afbeelding kopiëren'",
+    step3: "Afbeelding plakken in payasyougo.app",
+    cta: "Afbeelding zoeken",
+    close: "Sluiten",
   },
   photoCapture: {
     title: "Foto maken",
