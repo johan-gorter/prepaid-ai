@@ -21,6 +21,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import CameraCapture from "../../../components/CameraCapture.vue";
 import ImageCropper from "../../../components/ImageCropper.vue";
+import InternetTutorialDialog from "../../../components/InternetTutorialDialog.vue";
 import StickyFooter from "../../../components/StickyFooter.vue";
 import StorageImage from "../../../components/StorageImage.vue";
 import {
@@ -52,6 +53,10 @@ const view = ref<View>("pick");
 const selectedBlob = ref<Blob | null>(null);
 const previewUrl = ref<string | null>(null);
 const pasteError = ref<string | null>(null);
+
+// "From internet" opens a tutorial explaining how to copy a web image onto the
+// clipboard; the user then returns and pastes via the "Paste image" action.
+const showInternetTutorial = ref(false);
 
 // Blob feeding the inline cropper (upload / paste before confirming the crop).
 const uncroppedBlob = ref<Blob | null>(null);
@@ -228,6 +233,14 @@ function onCameraBypass(event: Event) {
           <i aria-hidden="true">content_paste</i>
           <span>{{ $t("newRenovation.pasteImage") }}</span>
         </button>
+        <button
+          class="border small-round"
+          data-testid="material-internet-btn"
+          @click="showInternetTutorial = true"
+        >
+          <i aria-hidden="true">travel_explore</i>
+          <span>{{ $t("newRenovation.fromInternet") }}</span>
+        </button>
       </nav>
       <p v-if="pasteError" class="error-text small-text">{{ pasteError }}</p>
 
@@ -245,6 +258,11 @@ function onCameraBypass(event: Event) {
         accept="image/*"
         hidden
         @change="onCameraBypass"
+      />
+
+      <InternetTutorialDialog
+        :open="showInternetTutorial"
+        @close="showInternetTutorial = false"
       />
 
       <StickyFooter>
@@ -388,8 +406,11 @@ function onCameraBypass(event: Event) {
   gap: 0.5rem;
 }
 
+/* Two per row (2×2) on phones; each button's basis is half the row minus half
+   the gap. They grow to share any extra width, so on roomier layouts the four
+   can sit on a single row. */
 .material-add-actions button {
-  flex: 1 1 0;
+  flex: 1 1 calc(50% - 0.25rem);
   margin: 0;
   min-width: 0;
 }
