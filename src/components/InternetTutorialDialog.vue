@@ -6,12 +6,26 @@
  * opens Google Images in a new tab so the user can go find an image, then
  * returns to this tab to paste via the existing "Paste image" action.
  */
+import { useI18n } from "vue-i18n";
 import step1 from "../assets/tutorial/step1.png";
 import step2 from "../assets/tutorial/step2.png";
 import step3 from "../assets/tutorial/step3.png";
 
+const { t } = useI18n();
+
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
+
+// A mouse/desktop opens the image's context menu with a right-click; a touch
+// device uses a long-press. Pick the matching wording for step 1 (the rest of
+// the flow is the same). Hybrid devices that both hover and have a fine pointer
+// are treated as desktop — good enough for this stage.
+const isDesktop =
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(hover: hover) and (pointer: fine)").matches;
+
+const step1Text = () =>
+  isDesktop ? t("internetTutorial.step1Desktop") : t("internetTutorial.step1");
 
 function onFindImage() {
   // Open Google Images in a new tab to go find a picture. Triggered from a
@@ -51,8 +65,8 @@ function onFindImage() {
 
     <ol class="tutorial-steps">
       <li class="tutorial-step">
-        <img class="tutorial-img" :src="step1" :alt="$t('internetTutorial.step1')" />
-        <p class="tutorial-text">{{ $t("internetTutorial.step1") }}</p>
+        <img class="tutorial-img" :src="step1" :alt="step1Text()" />
+        <p class="tutorial-text">{{ step1Text() }}</p>
       </li>
       <li class="tutorial-step">
         <img class="tutorial-img" :src="step2" :alt="$t('internetTutorial.step2')" />

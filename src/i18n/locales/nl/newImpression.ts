@@ -13,6 +13,7 @@ const newImpression: NewImpressionMessages = {
   internetTutorial: {
     title: "Afbeelding van internet toevoegen",
     step1: "Internetafbeelding lang indrukken",
+    step1Desktop: "Klik met rechtermuisknop op de afbeelding",
     step2: "Kies 'Afbeelding kopiëren'",
     step3: "Afbeelding plakken in payasyougo.app",
     cta: "Afbeelding zoeken",

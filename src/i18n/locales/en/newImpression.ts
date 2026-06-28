@@ -16,6 +16,7 @@ const newImpression = {
   internetTutorial: {
     title: "Add an image from the internet",
     step1: "Long press internet image",
+    step1Desktop: "Right-click internet image",
     step2: "Press copy image menu item",
     step3: "Paste image in payasyougo.app",
     cta: "Find image",
