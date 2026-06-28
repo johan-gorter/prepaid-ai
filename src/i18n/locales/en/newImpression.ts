@@ -63,7 +63,7 @@ const newImpression = {
     chooseOtherSubtitle: "describe any change in your own words",
     chooseGuidance:
       "AI sometimes makes mistakes — work in small steps for the best result.",
-    choosePriceAnchor: "1 🪙 = $0.01",
+    choosePriceAnchor: "100 🪙 = $1",
     paintTabStandard: "Standard",
     paintTabCustom: "Custom",
     paintColorLabel: "Custom color",

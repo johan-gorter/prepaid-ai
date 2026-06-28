@@ -63,7 +63,7 @@ const newImpression: NewImpressionMessages = {
     chooseOtherSubtitle: "beschrijf zelf wat er moet veranderen",
     chooseGuidance:
       "AI kan soms fouten maken — werk in kleine stappen voor het beste resultaat.",
-    choosePriceAnchor: "1 🪙 = $0.01",
+    choosePriceAnchor: "100 🪙 = $1",
     paintTabStandard: "Standaard",
     paintTabCustom: "Aangepast",
     paintColorLabel: "Eigen kleur",
