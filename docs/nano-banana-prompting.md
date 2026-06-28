@@ -7,11 +7,15 @@ removing an object, and free-prompt edits.
 
 The code lives in:
 
-- `functions/src/prompts.ts` — the server-side edit prompts (`buildPaintPrompt`,
-  `buildEditPrompt`), kept separate from request building so wording can be
-  swapped / A/B-tested in isolation.
+- `functions/src/prompts/*.md` — the server-side edit prompt **templates**
+  (`paint.md`, `edit.md`) with named `{{placeholder}}` tokens, kept as plain
+  text so wording can be swapped / A/B-tested in isolation.
+- `functions/src/prompts.ts` — `buildPaintPrompt`/`buildEditPrompt`: load the
+  templates and substitute the placeholders. The build copies the `.md` files
+  into `lib/prompts/` via `copy-prompts.mjs`.
 - `functions/src/ai.ts` — `geminiProcess()`: builds the request from those prompts.
-- `src/prompts.ts` — the client-side prompt(s) (`REMOVE_PROMPT`).
+- `src/prompts/remove.md` + `src/prompts.ts` — the client-side prompt template
+  (`REMOVE_PROMPT`), inlined by Vite via a `?raw` import.
 - `src/components/MaskingCanvas.vue` — `getCompositeBlob()`: produces the
   AI-facing image with the edit region marked.
 - `src/views/renovation/NewImpressionPage.vue` — chooses the marking variant per
