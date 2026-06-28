@@ -20,6 +20,7 @@ import { ACTION_CREDITS } from "../../../credits";
 defineEmits<{
   remove: [];
   paint: [];
+  applyMaterial: [];
   other: [];
   back: [];
 }>();
@@ -67,6 +68,25 @@ defineEmits<{
       </span>
       <span class="choose-action-cost">{{
         $t("newImpression.chooseCost", { credits: ACTION_CREDITS.colorChange })
+      }}</span>
+    </button>
+
+    <button
+      class="border small-round choose-action-button"
+      data-testid="choose-apply-material"
+      @click="$emit('applyMaterial')"
+    >
+      <i aria-hidden="true">texture</i>
+      <span class="max choose-action-text">
+        <span class="choose-action-label">{{
+          $t("newImpression.chooseApplyMaterial")
+        }}</span>
+        <span class="choose-action-subtitle">{{
+          $t("newImpression.chooseApplyMaterialSubtitle")
+        }}</span>
+      </span>
+      <span class="choose-action-cost">{{
+        $t("newImpression.chooseCost", { credits: ACTION_CREDITS.applyMaterial })
       }}</span>
     </button>
 

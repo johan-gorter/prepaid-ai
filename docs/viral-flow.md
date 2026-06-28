@@ -51,9 +51,9 @@ skill. Adding precision tools would signal that precision matters. It doesn't.
 ### 3. Price is revealed *after* the mask, never before
 
 The choose-action page (#86) is the deliberate price-reveal moment: remove = 5
-credits, colour change = 10, free edit = 10, with the anchor "1 credit =
-$0.01". Earlier pages (landing, first-renovation, photo, mask) do not show
-operation prices.
+credits, colour change = 10, apply material = 10, free edit = 10, with the
+anchor "1 credit = $0.01". Earlier pages (landing, first-renovation, photo,
+mask) do not show operation prices.
 
 *Why:* after ~10 seconds of masking, a 5–10 cent price is a relief, not a
 barrier. Before any investment it is just a number that invites comparison
@@ -178,6 +178,7 @@ needs Trash to discard the unsaved photo.
 | 1 credit            | $0.01                                  |
 | Remove              | 5 credits                              |
 | Colour change       | 10 credits                             |
+| Apply material      | 10 credits                             |
 | Free-prompt edit    | 10 credits                             |
 | Minimum top-up      | 75 credits (Stripe transaction costs)  |
 | Credit expiry       | never                                  |

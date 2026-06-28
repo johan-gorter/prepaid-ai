@@ -32,6 +32,7 @@ const newImpression: NewImpressionMessages = {
     titleMark: "Gebied markeren",
     titleChoose: "Wat moet er gebeuren?",
     titlePaint: "Kies een kleur",
+    titleMaterial: "Kies een materiaal",
     shareUnavailableTitle: "Delen niet beschikbaar",
     shareLinkUnavailable:
       "Deze deellink is niet meer beschikbaar. De eigenaar heeft de impressie mogelijk verwijderd.",
@@ -59,6 +60,8 @@ const newImpression: NewImpressionMessages = {
     chooseRemoveSubtitle: "ook repareren en schoonmaken",
     chooseCost: "{credits} 🪙",
     choosePaint: "Kleur veranderen",
+    chooseApplyMaterial: "Materiaal toepassen",
+    chooseApplyMaterialSubtitle: "steen, hout, panelen, een plafondafwerking…",
     chooseOther: "Anders",
     chooseOtherSubtitle: "beschrijf zelf wat er moet veranderen",
     chooseGuidance:
@@ -76,6 +79,12 @@ const newImpression: NewImpressionMessages = {
     paintGroupPink: "Roze",
     paintGroupBrown: "Bruin",
     paintPrompt: "Schilder het gemarkeerde gebied {color}",
+    materialPickHint:
+      "Voeg een foto toe van het materiaal voor het gemarkeerde gebied.",
+    materialRecent: "Recent gebruikt",
+    materialAdd: "Materiaal toevoegen",
+    materialSelectedAlt: "Gekozen materiaal",
+    materialPrompt: "Pas het gekozen materiaal toe op het gemarkeerde gebied",
     fullscreenOpen: "Volledig scherm",
     fullscreenClose: "Volledig scherm sluiten",
     fullscreenAlt: "Vergrote impressie",

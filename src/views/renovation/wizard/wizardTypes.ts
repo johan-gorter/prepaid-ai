@@ -6,12 +6,13 @@
  * these two unions, so they live here rather than being re-declared per file.
  */
 
-/** The wizard's six stages, in roughly the order a fresh photo travels. */
+/** The wizard's stages, in roughly the order a fresh photo travels. */
 export type Stage =
   | "preview"
   | "mask"
   | "choose-action"
   | "paint"
+  | "material"
   | "prompt"
   | "processing";
 

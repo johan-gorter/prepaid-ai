@@ -32,6 +32,9 @@ export interface ImpressionDraftContext {
   useSolidMask: Ref<boolean>;
   usePaintMode: Ref<boolean>;
   paintColor: Ref<string>;
+  useMaterialMode: Ref<boolean>;
+  /** Storage path of a chosen registry material, when one is selected. */
+  materialPath: Ref<string | null>;
   initialMask: Ref<Blob | null>;
   maskingRef: Ref<MaskBlobSource | null>;
 }
@@ -45,6 +48,8 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
     useSolidMask,
     usePaintMode,
     paintColor,
+    useMaterialMode,
+    materialPath,
     initialMask,
     maskingRef,
   } = ctx;
@@ -68,6 +73,11 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
       impression: impressionParam.value,
       solidMask: useSolidMask.value,
       paintColor: usePaintMode.value ? paintColor.value : undefined,
+      materialMode: useMaterialMode.value ? true : undefined,
+      materialPath:
+        useMaterialMode.value && materialPath.value
+          ? materialPath.value
+          : undefined,
     };
   }
 
@@ -85,6 +95,8 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
     restoredDraftKey.value = null;
     useSolidMask.value = false;
     usePaintMode.value = false;
+    useMaterialMode.value = false;
+    materialPath.value = null;
   }
 
   /**
@@ -108,6 +120,10 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
       if (draft.paintColor) {
         usePaintMode.value = true;
         paintColor.value = draft.paintColor;
+      }
+      if (draft.materialMode) {
+        useMaterialMode.value = true;
+        materialPath.value = draft.materialPath ?? null;
       }
       initialMask.value = await getImpressionMask();
       restoredDraftKey.value = draftKey();

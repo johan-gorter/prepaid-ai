@@ -25,7 +25,12 @@ const pricing = JSON.parse(read("../shared/pricing.json")) as {
   geminiProOutputPricePerM: number;
   imageGenerationPriceUsd: number;
   minTopupCredits: number;
-  actionCredits: { remove: number; colorChange: number; freePrompt: number };
+  actionCredits: {
+    remove: number;
+    colorChange: number;
+    freePrompt: number;
+    applyMaterial: number;
+  };
 };
 
 /** Pull `export const NAME = <number>;` out of a credits.ts source file. */
@@ -35,11 +40,12 @@ function scalar(source: string, name: string): number {
   return Number.parseFloat(match[1]);
 }
 
-/** Pull the three numbers out of the `ACTION_CREDITS = { ... }` literal. */
+/** Pull the per-action numbers out of the `ACTION_CREDITS = { ... }` literal. */
 function actionCredits(source: string): {
   remove: number;
   colorChange: number;
   freePrompt: number;
+  applyMaterial: number;
 } {
   const block = source.match(/ACTION_CREDITS = \{([\s\S]*?)\}/);
   if (!block) throw new Error("could not find ACTION_CREDITS literal in source");
@@ -52,6 +58,7 @@ function actionCredits(source: string): {
     remove: num("remove"),
     colorChange: num("colorChange"),
     freePrompt: num("freePrompt"),
+    applyMaterial: num("applyMaterial"),
   };
 }
 

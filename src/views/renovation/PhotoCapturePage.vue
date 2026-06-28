@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppBar from "../../components/AppBar.vue";
+import CameraCapture from "../../components/CameraCapture.vue";
 import StickyFooter from "../../components/StickyFooter.vue";
 import {
   clearImpressionDraft,
@@ -13,75 +14,17 @@ import {
 const { t } = useI18n();
 const router = useRouter();
 
-const CAPTURE_SIZE = 1024;
-
-const videoRef = ref<HTMLVideoElement | null>(null);
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const errorMessage = ref<string | null>(null);
+const cameraRef = ref<InstanceType<typeof CameraCapture> | null>(null);
 const cameraReady = ref(false);
-let stream: MediaStream | null = null;
+const errorMessage = ref<string | null>(null);
 
-onMounted(async () => {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false,
-    });
-    const video = videoRef.value;
-    if (video) {
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        cameraReady.value = true;
-      };
-    }
-  } catch {
-    errorMessage.value = t("photoCapture.cameraError");
-  }
-});
-
-onUnmounted(() => {
-  stopStream();
-});
-
-function stopStream() {
-  if (stream) {
-    stream.getTracks().forEach((track) => track.stop());
-    stream = null;
-  }
-}
-
-async function handleCapture() {
-  const video = videoRef.value;
-  const canvas = canvasRef.value;
-  if (!video || !canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-  const size = Math.min(vw, vh);
-  const sx = (vw - size) / 2;
-  const sy = (vh - size) / 2;
-
-  canvas.width = CAPTURE_SIZE;
-  canvas.height = CAPTURE_SIZE;
-  ctx.drawImage(video, sx, sy, size, size, 0, 0, CAPTURE_SIZE, CAPTURE_SIZE);
-
-  const blob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
-      "image/webp",
-    ),
-  );
-  stopStream();
+async function onCapture(blob: Blob) {
   await setImpressionSource(blob);
   await Promise.all([clearImpressionMask(), clearImpressionDraft()]);
   router.push("/new-impression?source=photo");
 }
 
 function handleCancel() {
-  stopStream();
   router.push("/renovations");
 }
 </script>
@@ -108,20 +51,16 @@ function handleCancel() {
         <p class="center-align small-text">
           {{ $t("photoCapture.positionHint") }}
         </p>
-        <div class="camera-wrapper">
-          <video
-            ref="videoRef"
-            autoplay
-            playsinline
-            muted
-            data-testid="camera-preview"
-          ></video>
-        </div>
+        <CameraCapture
+          ref="cameraRef"
+          @capture="onCapture"
+          @ready="cameraReady = $event"
+          @error="errorMessage = t('photoCapture.cameraError')"
+        />
       </template>
-      <canvas ref="canvasRef" style="display: none"></canvas>
     </main>
 
-    <StickyFooter>
+    <StickyFooter v-if="!errorMessage">
       <button class="max border small-round" @click="handleCancel">
         <i aria-hidden="true">close</i>
         <span>{{ $t("common.cancel") }}</span>
@@ -130,7 +69,7 @@ function handleCancel() {
       <button
         class="max small-round"
         :disabled="!cameraReady"
-        @click="handleCapture"
+        @click="cameraRef?.capture()"
         :aria-label="$t('photoCapture.capturePhotoAria')"
       >
         <i aria-hidden="true">camera</i>
@@ -146,24 +85,6 @@ function handleCancel() {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-}
-
-.camera-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  aspect-ratio: 1 / 1;
-  background: #000;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  margin: 0 auto;
-}
-
-.camera-wrapper video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .error-panel {
