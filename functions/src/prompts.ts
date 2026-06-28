@@ -1,9 +1,42 @@
 // ---------------------------------------------------------------------------
-// AI edit prompts, kept in one place so they can be swapped or A/B-tested
-// without touching the request-building logic in ai.ts. Read
+// AI edit prompts. The wording lives in the .md templates under
+// `prompts/` (named-placeholder files like `{{color}}`) so it can be swapped
+// or A/B-tested without touching the request-building logic in ai.ts. Read
 // docs/nano-banana-prompting.md before changing any wording — it records what
 // has been proven to work and what backfired.
+//
+// The build step (`tsc` + copy-prompts.mjs) copies `src/prompts/*.md` to
+// `lib/prompts/*.md`, so templates resolve next to the compiled module both
+// in the emulator and in the deployed function.
 // ---------------------------------------------------------------------------
+
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), "prompts");
+
+const templateCache = new Map<string, string>();
+
+/** Read a prompt template by name, caching it after first read. */
+function loadTemplate(name: string): string {
+  let template = templateCache.get(name);
+  if (template === undefined) {
+    template = readFileSync(join(PROMPTS_DIR, `${name}.md`), "utf8").trim();
+    templateCache.set(name, template);
+  }
+  return template;
+}
+
+/** Replace every `{{name}}` placeholder with the matching variable. */
+function render(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key: string) => {
+    if (!(key in vars)) {
+      throw new Error(`Missing value for prompt placeholder "{{${key}}}"`);
+    }
+    return vars[key];
+  });
+}
 
 /**
  * Paint / recolour prompt (nano banana 2). A single image is sent: the photo
@@ -16,26 +49,13 @@
  * pattern (sloppy masking) is left untouched instead of half painted.
  */
 export function buildPaintPrompt(sentColor: string): string {
-  return (
-    `This photo has a magenta checkerboard covering the surfaces to ` +
-    `repaint; the original surfaces show between the squares. Repaint every ` +
-    `fully covered surface in the colour ${sentColor} - one flat colour, ` +
-    `varied only by the lighting - whatever its material or original ` +
-    `colour. Leave any surface that is only partly covered untouched; never ` +
-    `paint half a surface. Reconstruct the covered geometry exactly as in ` +
-    `the photo, and keep objects in front of these surfaces unpainted in ` +
-    `their original colours. Remove all magenta, and change nothing outside ` +
-    `the repainted surfaces.`
-  );
+  return render(loadTemplate("paint"), { color: sentColor });
 }
 
 /**
- * Free-prompt / remove wrapper. The user's instruction is appended after a
+ * Free-prompt / remove wrapper. The user's instruction is substituted into a
  * short framing that points the model at the magenta-marked region.
  */
 export function buildEditPrompt(userPrompt: string): string {
-  return (
-    `Apply the prompt below to the magenta checkered area. ` +
-    `Do not include the checkered area in the output.\n\n${userPrompt}`
-  );
+  return render(loadTemplate("edit"), { prompt: userPrompt });
 }

@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node copy-prompts.mjs",
     "typecheck": "tsc --noEmit",
     "serve": "npm -s run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
