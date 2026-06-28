@@ -137,7 +137,7 @@ Gemini sees _where_ to edit without a separate mask channel. Three variants
 
 | Variant    | What it draws                              | Used by        |
 | ---------- | ------------------------------------------ | -------------- |
-| `"checker"`| Magenta checkerboard (50% cover) over the region | Paint / recolour + free-prompt |
+| `"checker"`| Magenta checkerboard (50% cover) over the region | Paint / recolour + free-prompt + apply-material |
 | `"solid"`  | Solid magenta fill of the region           | Remove object  |
 
 (The former `"grayscale"`/dots variant is retired — see the 2026-06-12
@@ -229,6 +229,30 @@ the recolour.) **[guide]**
 ### Free-prompt edit (checkerboard fill)
 > Apply the prompt below to the magenta checkered area. Do not include the
 > checkered area in the output.
+
+### Apply a material from a reference photo (checkerboard + second image)
+
+The apply-material flow resurfaces the marked area with a **material photo the
+user supplies**, sent as the *second* image. Two images go in: the marked photo
+(50% magenta checkerboard, "the first image") and the material reference ("the
+second image"). It runs on the pro image model (`GEMINI_PAINT_MODEL`) for the
+same reason paint does — `gemini-2.5-flash-image` won't commit to masked surface
+edits. Built by `buildMaterialPrompt()` (`functions/src/prompts/material.md`):
+
+> The first image has a magenta checkerboard covering the surfaces to resurface;
+> the original surfaces show between the squares. Resurface every fully covered
+> surface with the material shown in the second image, mapping it to follow each
+> surface's geometry, perspective, scale, and lighting. Leave any surface that is
+> only partly covered untouched; never resurface half a surface. Reconstruct the
+> covered geometry exactly as in the first image, and keep objects in front of
+> these surfaces unchanged in their original appearance. Remove all magenta, and
+> change nothing outside the resurfaced surfaces.
+
+This reuses the proven paint structure (per-surface all-or-nothing coverage,
+reconstruct geometry, keep objects-in-front, remove magenta) and swaps the flat
+colour for "the material shown in the second image … mapping it to follow …
+geometry, perspective, scale, and lighting." Like every prompt here it has not
+yet been A/B-tuned — iterate it in `functions/ai-lab` before relying on it.
 
 ---
 

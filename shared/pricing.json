@@ -9,6 +9,7 @@
   "actionCredits": {
     "remove": 5,
     "colorChange": 10,
-    "freePrompt": 10
+    "freePrompt": 10,
+    "applyMaterial": 10
   }
 }

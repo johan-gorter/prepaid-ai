@@ -25,6 +25,8 @@ const impressionParam = computed<string | null>(() => null);
 const useSolidMask = ref(false);
 const usePaintMode = ref(false);
 const paintColor = ref("#F4F4F0");
+const useMaterialMode = ref(false);
+const materialPath = ref<string | null>(null);
 const initialMask = ref<Blob | null>(null);
 const maskingRef = ref<{ getMaskBlob: () => Promise<Blob | null> } | null>({
   getMaskBlob: async () => new Blob(["mask"], { type: "image/webp" }),
@@ -43,6 +45,8 @@ const {
   useSolidMask,
   usePaintMode,
   paintColor,
+  useMaterialMode,
+  materialPath,
   initialMask,
   maskingRef,
 });

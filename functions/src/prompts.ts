@@ -59,3 +59,13 @@ export function buildPaintPrompt(sentColor: string): string {
 export function buildEditPrompt(userPrompt: string): string {
   return render(loadTemplate("edit"), { prompt: userPrompt });
 }
+
+/**
+ * Apply-material prompt (nano banana 2). Two images are sent: the photo with the
+ * surfaces to resurface covered by a 50% magenta checkerboard (the first image)
+ * and the user's material reference photo (the second image). The prompt refers
+ * to the images by position, so the request must push them in that order.
+ */
+export function buildMaterialPrompt(): string {
+  return render(loadTemplate("material"), {});
+}

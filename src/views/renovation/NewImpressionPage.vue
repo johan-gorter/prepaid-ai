@@ -12,6 +12,7 @@ import { useImpressionDraft } from "../../composables/useImpressionDraft";
 import {
   clearImpressionMask,
   clearImpressionSource,
+  clearMaterialSource,
   getImpressionDraft,
   getImpressionSource,
   setImpressionSource,
@@ -24,6 +25,7 @@ import { db } from "../../firebase";
 import { REMOVE_PROMPT } from "../../prompts";
 import ChooseActionStep from "./wizard/ChooseActionStep.vue";
 import MaskStep from "./wizard/MaskStep.vue";
+import MaterialStep from "./wizard/MaterialStep.vue";
 import PaintStep from "./wizard/PaintStep.vue";
 import { DEFAULT_PAINT_COLOR } from "./wizard/paintPresets";
 import PreviewStep from "./wizard/PreviewStep.vue";
@@ -49,6 +51,14 @@ const useSolidMask = ref(false);
 // Function asks Gemini to repaint the checkerboard-marked area in that colour.
 const usePaintMode = ref(false);
 const paintColor = ref(DEFAULT_PAINT_COLOR);
+// Apply-material flow: true once the user picks the "Apply material" action.
+// makes onGenerate write `mode: "material"` + the chosen material's Storage path
+// so the Cloud Function applies that material to the checkerboard-marked area.
+const useMaterialMode = ref(false);
+// Storage path of a chosen registry material; null while a fresh (not-yet-
+// uploaded) capture is the selection (its blob lives in the materialSource IDB
+// key). Persisted via the draft so a buy-credits / sign-in detour keeps it.
+const materialPath = ref<string | null>(null);
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 
@@ -83,6 +93,8 @@ const {
   useSolidMask,
   usePaintMode,
   paintColor,
+  useMaterialMode,
+  materialPath,
   initialMask,
   maskingRef,
 });
@@ -102,6 +114,8 @@ const { canGenerate, onGenerate } = useGenerateImpression({
   useSolidMask,
   usePaintMode,
   paintColor,
+  useMaterialMode,
+  materialPath,
   stage,
   errorMessage,
   isMaskReady: () => !!maskingRef.value,
@@ -116,6 +130,7 @@ const pageTitle = computed(() => {
   if (stage.value === "preview") return t("newImpression.titleImpression");
   if (stage.value === "choose-action") return t("newImpression.titleChoose");
   if (stage.value === "paint") return t("newImpression.titlePaint");
+  if (stage.value === "material") return t("newImpression.titleMaterial");
   return t("newImpression.titleMark");
 });
 
@@ -173,6 +188,8 @@ async function initFromRoute(): Promise<void> {
   useSolidMask.value = false;
   usePaintMode.value = false;
   paintColor.value = DEFAULT_PAINT_COLOR;
+  useMaterialMode.value = false;
+  materialPath.value = null;
   restoredDraftKey.value = null;
   revokeSourceUrl();
 
@@ -224,9 +241,11 @@ async function initFromRoute(): Promise<void> {
   sourceObjectUrl.value = URL.createObjectURL(blob);
 
   if (matches) {
-    // Resume the paint step (with the chosen colour) after a buy-credits /
-    // sign-in detour, rather than dropping into the free-prompt screen.
-    if (usePaintMode.value) {
+    // Resume the action-specific step after a buy-credits / sign-in detour,
+    // rather than dropping into the free-prompt screen.
+    if (useMaterialMode.value) {
+      stage.value = "material";
+    } else if (usePaintMode.value) {
       stage.value = "paint";
     } else {
       stage.value = prompt.value || initialMask.value ? "prompt" : "mask";
@@ -313,6 +332,9 @@ async function onNextChange() {
   await clearMaskEverywhere();
   useSolidMask.value = false;
   usePaintMode.value = false;
+  useMaterialMode.value = false;
+  materialPath.value = null;
+  await clearMaterialSource();
   prompt.value = "";
   stage.value = "mask";
 }
@@ -331,17 +353,45 @@ async function onChooseRemove() {
   prompt.value = REMOVE_PROMPT;
   useSolidMask.value = true;
   usePaintMode.value = false;
+  useMaterialMode.value = false;
   await onGenerate();
 }
 
 function onChoosePaint() {
   track("action_chosen");
+  useMaterialMode.value = false;
   stage.value = "paint";
 }
 
 function onPaintBack() {
   usePaintMode.value = false;
   stage.value = "choose-action";
+}
+
+async function onChooseApplyMaterial() {
+  track("action_chosen");
+  useMaterialMode.value = true;
+  useSolidMask.value = false;
+  usePaintMode.value = false;
+  materialPath.value = null;
+  await clearMaterialSource();
+  stage.value = "material";
+}
+
+async function onMaterialBack() {
+  useMaterialMode.value = false;
+  materialPath.value = null;
+  await clearMaterialSource();
+  stage.value = "choose-action";
+}
+
+async function onMaterialGenerate() {
+  useMaterialMode.value = true;
+  useSolidMask.value = false;
+  usePaintMode.value = false;
+  // Non-empty prompt satisfies canGenerate and gives the timeline a label.
+  prompt.value = t("newImpression.materialPrompt");
+  await onGenerate();
 }
 
 async function onPaintGenerate() {
@@ -354,10 +404,11 @@ async function onPaintGenerate() {
 
 function onChooseOther() {
   track("action_chosen");
-  // Clear any leftover state from a previous Verwijderen / Schilder attempt so
-  // the user gets the standard checkerboard + free-prompt flow.
+  // Clear any leftover state from a previous Verwijderen / Schilder / material
+  // attempt so the user gets the standard checkerboard + free-prompt flow.
   useSolidMask.value = false;
   usePaintMode.value = false;
+  useMaterialMode.value = false;
   if (prompt.value === REMOVE_PROMPT) prompt.value = "";
   stage.value = "prompt";
 }
@@ -368,6 +419,7 @@ function onPromptBack() {
 
 async function onRetake() {
   await clearImpressionSource();
+  await clearMaterialSource();
   await clearPersistedDraft();
   router.replace("/photo");
 }
@@ -398,6 +450,7 @@ async function onTrash() {
       }
     }
     await clearImpressionSource();
+    await clearMaterialSource();
     await clearPersistedDraft();
     if (renovationParam.value) {
       router.replace(`/renovation/${renovationParam.value}`);
@@ -407,6 +460,7 @@ async function onTrash() {
   } else {
     // photo / crop
     await clearImpressionSource();
+    await clearMaterialSource();
     await clearPersistedDraft();
     router.replace("/renovations");
   }
@@ -489,6 +543,7 @@ const showFullscreenButton = computed(
           !shareError &&
           stage !== 'choose-action' &&
           stage !== 'paint' &&
+          stage !== 'material' &&
           stage !== 'prompt'
         "
         class="step-hint"
@@ -503,7 +558,7 @@ const showFullscreenButton = computed(
           'inert-canvas': stage === 'processing' || stage === 'choose-action',
           'canvas-area--collapsed': stage === 'prompt',
           'canvas-area--compact': stage === 'choose-action',
-          'canvas-area--hidden': stage === 'paint',
+          'canvas-area--hidden': stage === 'paint' || stage === 'material',
         }"
         @pointerdown="onCanvasPointerDown"
         @pointerup="onCanvasPointerUp"
@@ -560,6 +615,7 @@ const showFullscreenButton = computed(
         v-if="stage === 'choose-action'"
         @remove="onChooseRemove"
         @paint="onChoosePaint"
+        @apply-material="onChooseApplyMaterial"
         @other="onChooseOther"
         @back="onChooseBack"
       />
@@ -569,6 +625,13 @@ const showFullscreenButton = computed(
         v-model="paintColor"
         @back="onPaintBack"
         @generate="onPaintGenerate"
+      />
+
+      <MaterialStep
+        v-if="stage === 'material'"
+        v-model:material-path="materialPath"
+        @back="onMaterialBack"
+        @generate="onMaterialGenerate"
       />
 
       <MaskStep

@@ -6,7 +6,11 @@
 // - "dummy"     — Sharp text overlay (no AI, for testing)
 // ---------------------------------------------------------------------------
 
-import { buildEditPrompt, buildPaintPrompt } from "./prompts.js";
+import {
+  buildEditPrompt,
+  buildMaterialPrompt,
+  buildPaintPrompt,
+} from "./prompts.js";
 import { hexToRgb } from "./utils.js";
 
 export type AiBackend = "vertex" | "google-ai" | "dummy";
@@ -145,11 +149,17 @@ export interface PaintInput {
   hex: string;
 }
 
+export interface MaterialInput {
+  /** The user's material reference photo, sent as the second image. */
+  buffer: Buffer;
+}
+
 export async function geminiProcess(
   backend: "google-ai" | "vertex",
   imageBuffer: Buffer,
   prompt: string,
   paint?: PaintInput,
+  material?: MaterialInput,
 ): Promise<Buffer> {
   const GoogleGenAI = await loadGenAI();
   const ai = createGenAI(GoogleGenAI, backend);
@@ -178,6 +188,26 @@ export async function geminiProcess(
         data: imageBuffer.toString("base64"),
       },
     });
+  } else if (material) {
+    // Apply-material: the masked area arrives covered by the same 50% magenta
+    // checkerboard as paint (geometry stays readable while every fully-covered
+    // surface is resurfaced). The material reference is the SECOND image; the
+    // prompt refers to them by position, so push the marked photo first.
+    requestParts.push({
+      text: buildMaterialPrompt(),
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: imageBuffer.toString("base64"),
+      },
+    });
+    requestParts.push({
+      inlineData: {
+        mimeType: "image/webp",
+        data: material.buffer.toString("base64"),
+      },
+    });
   } else {
     requestParts.push({
       text: buildEditPrompt(prompt),
@@ -191,7 +221,7 @@ export async function geminiProcess(
   }
 
   const response = await ai.models.generateContent({
-    model: paint ? GEMINI_PAINT_MODEL : GEMINI_MODEL,
+    model: paint || material ? GEMINI_PAINT_MODEL : GEMINI_MODEL,
     contents: [
       {
         role: "user",

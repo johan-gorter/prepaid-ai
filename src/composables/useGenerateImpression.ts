@@ -15,11 +15,16 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import type { User } from "firebase/auth";
 import { useBalance } from "./useBalance";
-import { getImpressionSource, setImpressionSource } from "./useImpressionStore";
+import {
+  getImpressionSource,
+  getMaterialSource,
+  setImpressionSource,
+} from "./useImpressionStore";
 import { resolveStorageUrl } from "./useStorageUrl";
 import { track } from "./useTrack";
 import { ACTION_CREDITS, type RenovationAction } from "../credits";
 import { createImpression, createRenovation } from "../data/renovationRepo";
+import { getOrCreateMaterial } from "../data/materialsRepo";
 import { db, storage } from "../firebase";
 import type { Source, Stage } from "../views/renovation/wizard/wizardTypes";
 
@@ -42,6 +47,9 @@ export interface GenerateImpressionContext {
   useSolidMask: Ref<boolean>;
   usePaintMode: Ref<boolean>;
   paintColor: Ref<string>;
+  useMaterialMode: Ref<boolean>;
+  /** Storage path of a chosen registry material; null for a fresh upload. */
+  materialPath: Ref<string | null>;
   stage: Ref<Stage>;
   errorMessage: Ref<string | null>;
   isMaskReady: () => boolean;
@@ -60,6 +68,8 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
     useSolidMask,
     usePaintMode,
     paintColor,
+    useMaterialMode,
+    materialPath,
     stage,
     errorMessage,
     isMaskReady,
@@ -79,11 +89,13 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
   // min/max params, and the server-side charge all key off this so a user
   // is never sent to buy too few credits for the action they picked.
   const action = computed<RenovationAction>(() =>
-    usePaintMode.value
-      ? "colorChange"
-      : useSolidMask.value
-        ? "remove"
-        : "freePrompt",
+    useMaterialMode.value
+      ? "applyMaterial"
+      : usePaintMode.value
+        ? "colorChange"
+        : useSolidMask.value
+          ? "remove"
+          : "freePrompt",
   );
   const actionCredits = computed(() => ACTION_CREDITS[action.value]);
 
@@ -235,6 +247,20 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           compositeBlob,
         );
 
+        // Apply-material: resolve the chosen material to a Storage path. A
+        // registry pick already has one; a fresh upload is hash-deduped into the
+        // user's materials registry (reusing the object if seen before).
+        let materialImagePath: string | undefined;
+        if (useMaterialMode.value) {
+          if (materialPath.value) {
+            materialImagePath = materialPath.value;
+          } else {
+            const materialBlob = await getMaterialSource();
+            if (!materialBlob) throw new Error("Material image missing");
+            materialImagePath = await getOrCreateMaterial(uid, materialBlob);
+          }
+        }
+
         const newImpressionId = await createImpression(uid, renovationId!, {
           sourceImagePath,
           compositeImagePath,
@@ -242,6 +268,9 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           action: action.value,
           ...(usePaintMode.value
             ? { paintColor: paintColor.value, mode: "paint" }
+            : {}),
+          ...(useMaterialMode.value
+            ? { materialImagePath, mode: "material" }
             : {}),
         });
 
@@ -275,14 +304,17 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
         track("generate_fail");
         errorMessage.value =
           err instanceof Error ? err.message : t("newImpression.unknownError");
-        // The Verwijderen and Schilder flows skip the free-prompt screen, so on
-        // failure fall back to their own step instead: paint returns to the
-        // colour picker (keeping the selection), remove to choose-action.
-        stage.value = usePaintMode.value
-          ? "paint"
-          : useSolidMask.value
-            ? "choose-action"
-            : "prompt";
+        // The Verwijderen / Schilder / material flows skip the free-prompt
+        // screen, so on failure fall back to their own step instead: paint and
+        // material return to their picker (keeping the selection), remove to
+        // choose-action.
+        stage.value = useMaterialMode.value
+          ? "material"
+          : usePaintMode.value
+            ? "paint"
+            : useSolidMask.value
+              ? "choose-action"
+              : "prompt";
       }
     } finally {
       generateInFlight = false;

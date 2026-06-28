@@ -32,6 +32,7 @@ const newImpression = {
     titleMark: "Mark Area",
     titleChoose: "What should happen?",
     titlePaint: "Choose a color",
+    titleMaterial: "Choose a material",
     shareUnavailableTitle: "Share unavailable",
     shareLinkUnavailable:
       "This share link is no longer available. The owner may have deleted the impression.",
@@ -59,6 +60,8 @@ const newImpression = {
     chooseRemoveSubtitle: "also repair and clean up",
     chooseCost: "{credits} 🪙",
     choosePaint: "Change color",
+    chooseApplyMaterial: "Apply material",
+    chooseApplyMaterialSubtitle: "stone, wood, panels, a ceiling finish…",
     chooseOther: "Other",
     chooseOtherSubtitle: "describe any change in your own words",
     chooseGuidance:
@@ -76,6 +79,12 @@ const newImpression = {
     paintGroupPink: "Pink",
     paintGroupBrown: "Brown",
     paintPrompt: "Paint the marked area {color}",
+    materialPickHint:
+      "Add a photo of the material to apply to the marked area.",
+    materialRecent: "Recently used",
+    materialAdd: "Add material",
+    materialSelectedAlt: "Selected material",
+    materialPrompt: "Apply the chosen material to the marked area",
     fullscreenOpen: "View fullscreen",
     fullscreenClose: "Close fullscreen",
     fullscreenAlt: "Enlarged impression",

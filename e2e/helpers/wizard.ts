@@ -81,6 +81,45 @@ export async function chooseFreePrompt(page: Page): Promise<void> {
   await otherButton.click();
 }
 
+/**
+ * Pick the "Apply material" option on the choose-action stage and wait for the
+ * material stage to appear.
+ */
+export async function chooseApplyMaterial(page: Page): Promise<void> {
+  const btn = page.getByTestId("choose-apply-material");
+  await expect(btn).toBeVisible();
+  await btn.click();
+  await expect(page.getByTestId("material-step")).toBeVisible();
+}
+
+// ---------------------------------------------------------------------------
+// Material stage
+// ---------------------------------------------------------------------------
+
+/**
+ * Provide a material reference image via the hidden camera-input bypass (the
+ * live camera is unavailable headless) and wait for the selection preview.
+ * The caller owns the temp file and must clean it up.
+ */
+export async function provideMaterialImage(
+  page: Page,
+  filePath: string,
+): Promise<void> {
+  await page
+    .locator('[data-testid="material-camera-input"]')
+    .setInputFiles(filePath);
+  await expect(page.getByTestId("material-selected")).toBeVisible();
+}
+
+/**
+ * Click Generate on the material stage and wait for the preview stage (Cloud
+ * Function round-trip).
+ */
+export async function generateMaterialAndWait(page: Page): Promise<void> {
+  await page.getByTestId("material-generate").click();
+  await waitForPreviewResult(page);
+}
+
 // ---------------------------------------------------------------------------
 // Prompt stage
 // ---------------------------------------------------------------------------

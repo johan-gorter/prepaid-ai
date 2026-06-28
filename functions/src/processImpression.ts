@@ -37,6 +37,9 @@ export const processImpression = onDocumentCreated(
       | undefined;
     const mode = impressionData.mode as string | undefined;
     const paintColor = impressionData.paintColor as string | undefined;
+    const materialImagePath = impressionData.materialImagePath as
+      | string
+      | undefined;
     const action = impressionData.action as string | undefined;
 
     // Charge the per-action price (docs/viral-flow.md §10): remove = 5,
@@ -80,6 +83,14 @@ export const processImpression = onDocumentCreated(
       const paint =
         mode === "paint" && paintColor ? { hex: paintColor } : undefined;
 
+      // Apply-material mode: download the user's material reference photo so it
+      // can be sent to Gemini as the second image alongside the marked photo.
+      let material: { buffer: Buffer } | undefined;
+      if (mode === "material" && materialImagePath) {
+        const [materialBuffer] = await bucket.file(materialImagePath).download();
+        material = { buffer: materialBuffer };
+      }
+
       let resultBuffer: Buffer;
       const backend = getAiBackend();
       console.log(`Processing with backend: ${backend}`);
@@ -97,7 +108,13 @@ export const processImpression = onDocumentCreated(
 
         resultBuffer = await dummyProcess(fileBuffer, prompt, priorPrompts);
       } else {
-        resultBuffer = await geminiProcess(backend, fileBuffer, prompt, paint);
+        resultBuffer = await geminiProcess(
+          backend,
+          fileBuffer,
+          prompt,
+          paint,
+          material,
+        );
       }
 
       // Re-encode as lossy WebP to reduce file size
