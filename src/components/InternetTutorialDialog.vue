@@ -3,7 +3,7 @@
  * Tutorial that explains how to bring an image in from the web: long-press an
  * image on another site, copy it, then paste it back into payasyougo.app. The
  * three illustrated steps come from the designer (src/assets/tutorial). The CTA
- * opens a fresh, empty browser tab so the user can go hunt for an image, then
+ * opens Google Images in a new tab so the user can go find an image, then
  * returns to this tab to paste via the existing "Paste image" action.
  */
 import step1 from "../assets/tutorial/step1.png";
@@ -13,15 +13,24 @@ import step3 from "../assets/tutorial/step3.png";
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 
-function onGetIt() {
-  // A blank, clean tab to go find an image on the web. Opened from a click
-  // (user gesture) so the browser doesn't treat it as a blocked popup.
-  window.open("about:blank", "_blank", "noopener");
+function onFindImage() {
+  // Open Google Images in a new tab to go find a picture. Triggered from a
+  // click (user gesture) so it isn't treated as a blocked popup.
+  window.open("https://www.google.com/imghp", "_blank", "noopener");
   emit("close");
 }
 </script>
 
 <template>
+  <!-- Beer CSS backdrop scrim; clicking it dismisses the dialog. Rendered
+       before the dialog so the dialog (same z-index) paints on top. -->
+  <div
+    class="overlay"
+    :class="{ active: open }"
+    data-testid="internet-tutorial-backdrop"
+    @click="emit('close')"
+  ></div>
+
   <dialog
     :class="{ active: open }"
     class="tutorial-dialog"
@@ -57,22 +66,28 @@ function onGetIt() {
 
     <button
       type="button"
-      class="tutorial-cta"
+      class="tutorial-cta small-round"
       data-testid="internet-tutorial-cta"
-      @click="onGetIt"
+      @click="onFindImage"
     >
+      <i aria-hidden="true">travel_explore</i>
       <span>{{ $t("internetTutorial.cta") }}</span>
     </button>
   </dialog>
 </template>
 
 <style scoped>
-/* Fits from 300px-wide phones up; widens and lays the steps out in a row on
-   bigger screens (see the min-width query below). */
+/* A single layout at every size: the header and CTA stay pinned while the
+   steps scroll, so the dialog fits from 300px-wide phones up to short
+   landscape viewports without anything falling off. */
 .tutorial-dialog {
-  width: min(92vw, 30rem);
+  width: min(92vw, 28rem);
   max-width: 92vw;
-  max-height: 90vh;
+  /* Override Beer's `min-inline-size: 20rem` (which would overflow <320px). */
+  min-inline-size: auto;
+  /* Override Beer's `max-block-size: 80%` so a short (rotated) viewport still
+     leaves room and the steps scroll instead of pushing the CTA off-screen. */
+  max-block-size: 88vh;
   padding: 1rem;
   box-sizing: border-box;
   display: flex;
@@ -82,6 +97,7 @@ function onGetIt() {
 }
 
 .tutorial-head {
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -101,17 +117,23 @@ function onGetIt() {
   margin: -0.25rem -0.25rem 0 0;
 }
 
+/* The scrollable middle. min-height:0 lets it shrink inside the flex column so
+   the CTA below stays visible on short screens. */
 .tutorial-steps {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  overflow-y: auto;
 }
 
-/* Phone layout: thumbnail on the left, label on the right. */
+/* Each step is thumbnail-left / label-right, and the three steps always stack
+   vertically. The thumbnails are never laid out in a horizontal row — that
+   broke on rotation (labels and CTA fell off). */
 .tutorial-step {
   display: flex;
   align-items: center;
@@ -138,34 +160,12 @@ function onGetIt() {
   line-height: 1.25;
 }
 
+/* Sized to its label and centred rather than stretched edge to edge. */
 .tutorial-cta {
-  width: 100%;
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+  max-width: 100%;
   margin: 0;
-}
-
-/* Roomier screens: widen the dialog and stand the three steps side by side
-   with the thumbnail above its label. */
-@media (min-width: 560px) {
-  .tutorial-dialog {
-    width: min(92vw, 44rem);
-    gap: 1rem;
-  }
-
-  .tutorial-steps {
-    flex-direction: row;
-    gap: 1rem;
-  }
-
-  .tutorial-step {
-    flex: 1 1 0;
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-    gap: 0.5rem;
-  }
-
-  .tutorial-img {
-    width: 100%;
-  }
 }
 </style>

@@ -15,7 +15,7 @@ const newImpression: NewImpressionMessages = {
     step1: "Internetafbeelding lang indrukken",
     step2: "Kies 'Afbeelding kopiëren'",
     step3: "Afbeelding plakken in payasyougo.app",
-    cta: "Ik snap het, open nieuw tabblad",
+    cta: "Afbeelding zoeken",
     close: "Sluiten",
   },
   photoCapture: {
