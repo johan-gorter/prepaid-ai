@@ -8,8 +8,9 @@
 
 import {
   buildEditPrompt,
-  buildMaterialPrompt,
   buildPaintPrompt,
+  buildReferencePrompt,
+  type ReferenceKind,
 } from "./prompts.js";
 import { hexToRgb } from "./utils.js";
 
@@ -149,9 +150,11 @@ export interface PaintInput {
   hex: string;
 }
 
-export interface MaterialInput {
-  /** The user's material reference photo, sent as the second image. */
+export interface ReferenceInput {
+  /** The user's reference photo, sent as the second image. */
   buffer: Buffer;
+  /** Which reference flow this is — selects the prompt template. */
+  kind: ReferenceKind;
 }
 
 export async function geminiProcess(
@@ -159,7 +162,7 @@ export async function geminiProcess(
   imageBuffer: Buffer,
   prompt: string,
   paint?: PaintInput,
-  material?: MaterialInput,
+  reference?: ReferenceInput,
 ): Promise<Buffer> {
   const GoogleGenAI = await loadGenAI();
   const ai = createGenAI(GoogleGenAI, backend);
@@ -188,13 +191,14 @@ export async function geminiProcess(
         data: imageBuffer.toString("base64"),
       },
     });
-  } else if (material) {
-    // Apply-material: the masked area arrives covered by the same 50% magenta
-    // checkerboard as paint (geometry stays readable while every fully-covered
-    // surface is resurfaced). The material reference is the SECOND image; the
-    // prompt refers to them by position, so push the marked photo first.
+  } else if (reference) {
+    // Reference-image edits (apply material / add furniture): the marked area
+    // arrives covered by the same 50% magenta checkerboard as paint (geometry
+    // stays readable while the marked area is resurfaced / filled). The user's
+    // reference is the SECOND image; the prompt refers to them by position, so
+    // push the marked photo first. The kind selects the prompt template.
     requestParts.push({
-      text: buildMaterialPrompt(),
+      text: buildReferencePrompt(reference.kind),
     });
     requestParts.push({
       inlineData: {
@@ -205,7 +209,7 @@ export async function geminiProcess(
     requestParts.push({
       inlineData: {
         mimeType: "image/webp",
-        data: material.buffer.toString("base64"),
+        data: reference.buffer.toString("base64"),
       },
     });
   } else {
@@ -221,7 +225,7 @@ export async function geminiProcess(
   }
 
   const response = await ai.models.generateContent({
-    model: paint || material ? GEMINI_PAINT_MODEL : GEMINI_MODEL,
+    model: paint || reference ? GEMINI_PAINT_MODEL : GEMINI_MODEL,
     contents: [
       {
         role: "user",

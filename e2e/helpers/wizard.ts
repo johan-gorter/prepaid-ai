@@ -82,43 +82,63 @@ export async function chooseFreePrompt(page: Page): Promise<void> {
 }
 
 /**
- * Pick the "Apply material" option on the choose-action stage and wait for the
- * material stage to appear.
+ * Reference-image flows ("Apply material" / "Add furniture") share one step
+ * component, parametrised by kind. These helpers key off the kind so a single
+ * implementation drives both funnels; the material/furniture-named wrappers
+ * below keep the spec call sites readable.
  */
-export async function chooseApplyMaterial(page: Page): Promise<void> {
-  const btn = page.getByTestId("choose-apply-material");
-  await expect(btn).toBeVisible();
-  await btn.click();
-  await expect(page.getByTestId("material-step")).toBeVisible();
-}
-
-// ---------------------------------------------------------------------------
-// Material stage
-// ---------------------------------------------------------------------------
+type ReferenceKind = "material" | "furniture";
 
 /**
- * Provide a material reference image via the hidden camera-input bypass (the
- * live camera is unavailable headless) and wait for the selection preview.
- * The caller owns the temp file and must clean it up.
+ * Pick the apply-material / add-furniture option on the choose-action stage and
+ * wait for that reference stage to appear.
  */
-export async function provideMaterialImage(
+export async function chooseReference(
   page: Page,
+  kind: ReferenceKind,
+): Promise<void> {
+  const action = kind === "material" ? "apply-material" : "add-furniture";
+  const btn = page.getByTestId(`choose-${action}`);
+  await expect(btn).toBeVisible();
+  await btn.click();
+  await expect(page.getByTestId(`${kind}-step`)).toBeVisible();
+}
+
+/**
+ * Provide a reference image via the hidden camera-input bypass (the live camera
+ * is unavailable headless) and wait for the selection preview. The caller owns
+ * the temp file and must clean it up.
+ */
+export async function provideReferenceImage(
+  page: Page,
+  kind: ReferenceKind,
   filePath: string,
 ): Promise<void> {
   await page
-    .locator('[data-testid="material-camera-input"]')
+    .locator(`[data-testid="${kind}-camera-input"]`)
     .setInputFiles(filePath);
-  await expect(page.getByTestId("material-selected")).toBeVisible();
+  await expect(page.getByTestId(`${kind}-selected`)).toBeVisible();
 }
 
 /**
- * Click Generate on the material stage and wait for the preview stage (Cloud
+ * Click Generate on a reference stage and wait for the preview stage (Cloud
  * Function round-trip).
  */
-export async function generateMaterialAndWait(page: Page): Promise<void> {
-  await page.getByTestId("material-generate").click();
+export async function generateReferenceAndWait(
+  page: Page,
+  kind: ReferenceKind,
+): Promise<void> {
+  await page.getByTestId(`${kind}-generate`).click();
   await waitForPreviewResult(page);
 }
+
+// Material-named wrappers (the apply-material spec reads better with them).
+export const chooseApplyMaterial = (page: Page) =>
+  chooseReference(page, "material");
+export const provideMaterialImage = (page: Page, filePath: string) =>
+  provideReferenceImage(page, "material", filePath);
+export const generateMaterialAndWait = (page: Page) =>
+  generateReferenceAndWait(page, "material");
 
 // ---------------------------------------------------------------------------
 // Prompt stage

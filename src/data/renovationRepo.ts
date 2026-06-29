@@ -48,7 +48,7 @@ export async function createImpression(
     maskImagePath?: string;
     compositeImagePath?: string;
     paintColor?: string;
-    materialImagePath?: string;
+    referenceImagePath?: string;
     mode?: string;
     action?: RenovationAction;
   },
@@ -76,8 +76,8 @@ export async function createImpression(
   if (data.paintColor) {
     docData.paintColor = data.paintColor;
   }
-  if (data.materialImagePath) {
-    docData.materialImagePath = data.materialImagePath;
+  if (data.referenceImagePath) {
+    docData.referenceImagePath = data.referenceImagePath;
   }
   if (data.mode) {
     docData.mode = data.mode;

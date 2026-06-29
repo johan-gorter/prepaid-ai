@@ -60,12 +60,18 @@ export function buildEditPrompt(userPrompt: string): string {
   return render(loadTemplate("edit"), { prompt: userPrompt });
 }
 
+/** The kinds of user-supplied reference-image edit (second image flows). */
+export type ReferenceKind = "material" | "furniture";
+
 /**
- * Apply-material prompt (nano banana 2). Two images are sent: the photo with the
- * surfaces to resurface covered by a 50% magenta checkerboard (the first image)
- * and the user's material reference photo (the second image). The prompt refers
- * to the images by position, so the request must push them in that order.
+ * Reference-image prompt (nano banana 2) for the apply-material and add-furniture
+ * flows. Two images are sent: the photo with the marked area covered by a 50%
+ * magenta checkerboard (the first image) and the user's reference photo — the
+ * material to resurface with, or the furniture to place (the second image). The
+ * prompt refers to the images by position, so the request must push them in that
+ * order. The furniture template additionally insists on realistic real-world
+ * dimensions for the placed piece (see prompts/furniture.md).
  */
-export function buildMaterialPrompt(): string {
-  return render(loadTemplate("material"), {});
+export function buildReferencePrompt(kind: ReferenceKind): string {
+  return render(loadTemplate(kind), {});
 }

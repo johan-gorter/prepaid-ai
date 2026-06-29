@@ -37,9 +37,11 @@ export const processImpression = onDocumentCreated(
       | undefined;
     const mode = impressionData.mode as string | undefined;
     const paintColor = impressionData.paintColor as string | undefined;
-    const materialImagePath = impressionData.materialImagePath as
-      | string
-      | undefined;
+    // The user-supplied reference image for the apply-material / add-furniture
+    // flows. (`materialImagePath` is the pre-rename field name — read it as a
+    // fallback so any in-flight doc created just before deploy still resolves.)
+    const referenceImagePath = (impressionData.referenceImagePath ??
+      impressionData.materialImagePath) as string | undefined;
     const action = impressionData.action as string | undefined;
 
     // Charge the per-action price (docs/viral-flow.md §10): remove = 5,
@@ -83,12 +85,16 @@ export const processImpression = onDocumentCreated(
       const paint =
         mode === "paint" && paintColor ? { hex: paintColor } : undefined;
 
-      // Apply-material mode: download the user's material reference photo so it
-      // can be sent to Gemini as the second image alongside the marked photo.
-      let material: { buffer: Buffer } | undefined;
-      if (mode === "material" && materialImagePath) {
-        const [materialBuffer] = await bucket.file(materialImagePath).download();
-        material = { buffer: materialBuffer };
+      // Reference-image modes (apply material / add furniture): download the
+      // user's reference photo so it can be sent to Gemini as the second image
+      // alongside the marked photo. `mode` is the reference kind, which selects
+      // the prompt template.
+      let reference: { buffer: Buffer; kind: "material" | "furniture" } | undefined;
+      if ((mode === "material" || mode === "furniture") && referenceImagePath) {
+        const [referenceBuffer] = await bucket
+          .file(referenceImagePath)
+          .download();
+        reference = { buffer: referenceBuffer, kind: mode };
       }
 
       let resultBuffer: Buffer;
@@ -113,7 +119,7 @@ export const processImpression = onDocumentCreated(
           fileBuffer,
           prompt,
           paint,
-          material,
+          reference,
         );
       }
 

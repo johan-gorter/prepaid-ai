@@ -3,8 +3,9 @@
 The app lets a user supply an image three ways: **take a photo** (camera),
 **upload + crop**, and **paste + crop**. This started as one-off code for the
 renovation *source* photo, but it is now used by more than one feature (the
-apply-material flow adds a second use case, and a third is coming). This doc
-explains how to reuse it so you don't copy-paste the camera/crop logic again.
+apply-material and add-furniture flows both supply a second reference image via
+the same inline step). This doc explains how to reuse it so you don't copy-paste
+the camera/crop logic again.
 
 ## The split: reusable *components*, per-feature *hosts*
 
@@ -37,14 +38,17 @@ copy. The host decides all of that.
 - The entry buttons live in `useImpressionInput.ts` /
   `NewRenovationCard.vue` / `FirstRenovationPage.vue`.
 
-### 2. Apply-material — inline inside the wizard stage
+### 2. Apply-material / add-furniture — inline inside the wizard stage
 
-`src/views/renovation/wizard/MaterialStep.vue` hosts **both** components inline
-(no route change), swapping a local `view: "pick" | "camera" | "crop"` so the
-mask is preserved and the whole flow stays on `/new-impression` for a clean
-funnel. It additionally shows a grid of previously-used materials (the registry,
-below). On confirm it stashes the blob under the `materialSource` IndexedDB key
-and mirrors the selection to the parent via the `materialPath` model — the
+`src/views/renovation/wizard/ReferenceCaptureStep.vue` hosts **both** components
+inline (no route change), swapping a local `view: "pick" | "camera" | "crop"` so
+the mask is preserved and the whole flow stays on `/new-impression` for a clean
+funnel. One component serves both reference flows via a `kind:
+"material" | "furniture"` prop, which namespaces its testids, i18n keys, IDB
+source key, and registry subcollection so the two funnels stay separable. It
+additionally shows a grid of previously-used references (the registry, below).
+On confirm it stashes the blob under the `referenceSource:<kind>` IndexedDB key
+and mirrors the selection to the parent via the `selectedPath` model — the
 upload itself is deferred to Generate so it survives a buy-credits / sign-in
 detour.
 
@@ -56,7 +60,7 @@ detour.
    otherwise an in-memory `ref<Blob>` is enough.
 2. **Host the components.** For a full-screen step, add a page like
    `PhotoCapturePage`/`CropImagePage`. For an in-flow step, mount them inline
-   like `MaterialStep` and switch a local `view` ref. Wire:
+   like `ReferenceCaptureStep` and switch a local `view` ref. Wire:
    - `CameraCapture`: `@ready`, `@error`, `@capture`; render your own
      shutter button calling `cameraRef.capture()`.
    - `ImageCropper`: pass `:source`, render your own confirm button calling
@@ -74,14 +78,17 @@ detour.
 6. **E2E bypass.** Live camera doesn't work headless. Add a hidden
    `data-testid="...-camera-input"` file input that turns a `setInputFiles` file
    directly into the captured blob (mirror the room flow's `camera-input` and
-   the material flow's `material-camera-input`).
+   the reference flow's `<kind>-camera-input`).
 
-## The materials registry (reuse pattern)
+## The reference-image registries (reuse pattern)
 
-`src/data/materialsRepo.ts` + `src/composables/useMaterialsList.ts` remember the
-materials a user has applied so repeat use is two taps. Dedupe is by content
-hash: the Firestore doc id and the Storage object name are both the SHA-256 of
-the bytes (`hashBlob`), so `getOrCreateMaterial` reuses the object when a
-material is seen again and bumps `createdAt` for recency. Because this lives
-under `users/{uid}` in Firestore it persists across devices and survives
-sign-out (unlike the IndexedDB drafts, which are wiped on sign-out).
+`src/data/referenceImageRepo.ts` + `src/composables/useReferenceImagesList.ts`
+remember the references a user has applied, per kind (a `materials` and a
+`furniture` Firestore subcollection), so repeat use is two taps. Dedupe is by
+content hash: the Firestore doc id and the Storage object name are both the
+SHA-256 of the bytes (`hashBlob`), so `getOrCreateReferenceImage(uid, kind,
+blob)` reuses the object when a reference is seen again and bumps `createdAt` for
+recency. Because this lives under `users/{uid}` in Firestore it persists across
+devices and survives sign-out (unlike the IndexedDB drafts, which are wiped on
+sign-out). Adding another reference kind is just a new entry in the kind→
+collection map plus an owner-only subcollection rule in `firestore.rules`.

@@ -19,6 +19,7 @@ import {
   type ImpressionDraft,
 } from "./useImpressionStore";
 import type { Source } from "../views/renovation/wizard/wizardTypes";
+import type { ReferenceKind } from "../data/referenceImageRepo";
 
 interface MaskBlobSource {
   getMaskBlob: () => Promise<Blob | null>;
@@ -32,9 +33,10 @@ export interface ImpressionDraftContext {
   useSolidMask: Ref<boolean>;
   usePaintMode: Ref<boolean>;
   paintColor: Ref<string>;
-  useMaterialMode: Ref<boolean>;
-  /** Storage path of a chosen registry material, when one is selected. */
-  materialPath: Ref<string | null>;
+  /** The active reference-image action ("material" / "furniture"), or null. */
+  referenceKind: Ref<ReferenceKind | null>;
+  /** Storage path of a chosen registry reference, when one is selected. */
+  referencePath: Ref<string | null>;
   initialMask: Ref<Blob | null>;
   maskingRef: Ref<MaskBlobSource | null>;
 }
@@ -48,8 +50,8 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
     useSolidMask,
     usePaintMode,
     paintColor,
-    useMaterialMode,
-    materialPath,
+    referenceKind,
+    referencePath,
     initialMask,
     maskingRef,
   } = ctx;
@@ -73,10 +75,10 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
       impression: impressionParam.value,
       solidMask: useSolidMask.value,
       paintColor: usePaintMode.value ? paintColor.value : undefined,
-      materialMode: useMaterialMode.value ? true : undefined,
-      materialPath:
-        useMaterialMode.value && materialPath.value
-          ? materialPath.value
+      referenceKind: referenceKind.value ?? undefined,
+      referencePath:
+        referenceKind.value && referencePath.value
+          ? referencePath.value
           : undefined,
     };
   }
@@ -95,8 +97,8 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
     restoredDraftKey.value = null;
     useSolidMask.value = false;
     usePaintMode.value = false;
-    useMaterialMode.value = false;
-    materialPath.value = null;
+    referenceKind.value = null;
+    referencePath.value = null;
   }
 
   /**
@@ -121,9 +123,9 @@ export function useImpressionDraft(ctx: ImpressionDraftContext) {
         usePaintMode.value = true;
         paintColor.value = draft.paintColor;
       }
-      if (draft.materialMode) {
-        useMaterialMode.value = true;
-        materialPath.value = draft.materialPath ?? null;
+      if (draft.referenceKind) {
+        referenceKind.value = draft.referenceKind;
+        referencePath.value = draft.referencePath ?? null;
       }
       initialMask.value = await getImpressionMask();
       restoredDraftKey.value = draftKey();

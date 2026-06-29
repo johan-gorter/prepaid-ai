@@ -13,6 +13,7 @@ export type Stage =
   | "choose-action"
   | "paint"
   | "material"
+  | "furniture"
   | "prompt"
   | "processing";
 

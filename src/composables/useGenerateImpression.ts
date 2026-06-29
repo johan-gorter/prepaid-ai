@@ -17,16 +17,28 @@ import type { User } from "firebase/auth";
 import { useBalance } from "./useBalance";
 import {
   getImpressionSource,
-  getMaterialSource,
+  getReferenceSource,
   setImpressionSource,
 } from "./useImpressionStore";
 import { resolveStorageUrl } from "./useStorageUrl";
 import { track } from "./useTrack";
 import { ACTION_CREDITS, type RenovationAction } from "../credits";
 import { createImpression, createRenovation } from "../data/renovationRepo";
-import { getOrCreateMaterial } from "../data/materialsRepo";
+import {
+  getOrCreateReferenceImage,
+  type ReferenceKind,
+} from "../data/referenceImageRepo";
 import { db, storage } from "../firebase";
 import type { Source, Stage } from "../views/renovation/wizard/wizardTypes";
+
+/**
+ * Per-kind credit action for a reference-image edit. Distinct keys keep the two
+ * funnels (and their pricing) separable; both happen to cost 10 credits today.
+ */
+const REFERENCE_ACTION: Record<ReferenceKind, RenovationAction> = {
+  material: "applyMaterial",
+  furniture: "addFurniture",
+};
 
 /**
  * Safety ceiling for the Cloud Function round-trip. If the function never
@@ -47,9 +59,10 @@ export interface GenerateImpressionContext {
   useSolidMask: Ref<boolean>;
   usePaintMode: Ref<boolean>;
   paintColor: Ref<string>;
-  useMaterialMode: Ref<boolean>;
-  /** Storage path of a chosen registry material; null for a fresh upload. */
-  materialPath: Ref<string | null>;
+  /** The active reference-image action ("material" / "furniture"), or null. */
+  referenceKind: Ref<ReferenceKind | null>;
+  /** Storage path of a chosen registry reference; null for a fresh upload. */
+  referencePath: Ref<string | null>;
   stage: Ref<Stage>;
   errorMessage: Ref<string | null>;
   isMaskReady: () => boolean;
@@ -68,8 +81,8 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
     useSolidMask,
     usePaintMode,
     paintColor,
-    useMaterialMode,
-    materialPath,
+    referenceKind,
+    referencePath,
     stage,
     errorMessage,
     isMaskReady,
@@ -84,13 +97,14 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
   const { balance, waitForLoad: waitForBalance } = useBalance();
   const canGenerate = computed(() => prompt.value.trim().length > 0);
 
-  // The per-action credit price (docs/viral-flow.md §10): remove = 5,
-  // colour change = 10, free edit = 10. The balance gate, the buy-credits
-  // min/max params, and the server-side charge all key off this so a user
-  // is never sent to buy too few credits for the action they picked.
+  // The per-action credit price (docs/viral-flow.md §10): remove = 5, colour
+  // change = 10, free edit = 10, apply material = 10, add furniture = 10. The
+  // balance gate, the buy-credits min/max params, and the server-side charge all
+  // key off this so a user is never sent to buy too few credits for the action
+  // they picked.
   const action = computed<RenovationAction>(() =>
-    useMaterialMode.value
-      ? "applyMaterial"
+    referenceKind.value
+      ? REFERENCE_ACTION[referenceKind.value]
       : usePaintMode.value
         ? "colorChange"
         : useSolidMask.value
@@ -247,17 +261,24 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           compositeBlob,
         );
 
-        // Apply-material: resolve the chosen material to a Storage path. A
-        // registry pick already has one; a fresh upload is hash-deduped into the
-        // user's materials registry (reusing the object if seen before).
-        let materialImagePath: string | undefined;
-        if (useMaterialMode.value) {
-          if (materialPath.value) {
-            materialImagePath = materialPath.value;
+        // Reference-image edits (apply material / add furniture): resolve the
+        // chosen reference to a Storage path. A registry pick already has one; a
+        // fresh upload is hash-deduped into the user's per-kind registry
+        // (reusing the object if seen before). `mode` carries the kind so the
+        // Cloud Function picks the matching prompt.
+        const kind = referenceKind.value;
+        let referenceImagePath: string | undefined;
+        if (kind) {
+          if (referencePath.value) {
+            referenceImagePath = referencePath.value;
           } else {
-            const materialBlob = await getMaterialSource();
-            if (!materialBlob) throw new Error("Material image missing");
-            materialImagePath = await getOrCreateMaterial(uid, materialBlob);
+            const referenceBlob = await getReferenceSource(kind);
+            if (!referenceBlob) throw new Error("Reference image missing");
+            referenceImagePath = await getOrCreateReferenceImage(
+              uid,
+              kind,
+              referenceBlob,
+            );
           }
         }
 
@@ -269,9 +290,7 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
           ...(usePaintMode.value
             ? { paintColor: paintColor.value, mode: "paint" }
             : {}),
-          ...(useMaterialMode.value
-            ? { materialImagePath, mode: "material" }
-            : {}),
+          ...(kind ? { referenceImagePath, mode: kind } : {}),
         });
 
         const resultPath = await waitForCompletion(
@@ -304,12 +323,13 @@ export function useGenerateImpression(ctx: GenerateImpressionContext) {
         track("generate_fail");
         errorMessage.value =
           err instanceof Error ? err.message : t("newImpression.unknownError");
-        // The Verwijderen / Schilder / material flows skip the free-prompt
-        // screen, so on failure fall back to their own step instead: paint and
-        // material return to their picker (keeping the selection), remove to
-        // choose-action.
-        stage.value = useMaterialMode.value
-          ? "material"
+        // The Verwijderen / Schilder / reference-image flows skip the
+        // free-prompt screen, so on failure fall back to their own step
+        // instead: paint and the reference flows return to their picker
+        // (keeping the selection), remove to choose-action. The reference
+        // stage name equals the kind ("material" / "furniture").
+        stage.value = referenceKind.value
+          ? referenceKind.value
           : usePaintMode.value
             ? "paint"
             : useSolidMask.value

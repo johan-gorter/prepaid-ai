@@ -41,6 +41,7 @@ export const ACTION_CREDITS = {
   colorChange: 10,
   freePrompt: 10,
   applyMaterial: 10,
+  addFurniture: 10,
 } as const;
 
 /** The actions a user can pick on the choose-action step. */
