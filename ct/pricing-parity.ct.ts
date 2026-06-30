@@ -30,6 +30,7 @@ const pricing = JSON.parse(read("../shared/pricing.json")) as {
     colorChange: number;
     freePrompt: number;
     applyMaterial: number;
+    addFurniture: number;
   };
 };
 
@@ -46,6 +47,7 @@ function actionCredits(source: string): {
   colorChange: number;
   freePrompt: number;
   applyMaterial: number;
+  addFurniture: number;
 } {
   const block = source.match(/ACTION_CREDITS = \{([\s\S]*?)\}/);
   if (!block) throw new Error("could not find ACTION_CREDITS literal in source");
@@ -59,6 +61,7 @@ function actionCredits(source: string): {
     colorChange: num("colorChange"),
     freePrompt: num("freePrompt"),
     applyMaterial: num("applyMaterial"),
+    addFurniture: num("addFurniture"),
   };
 }
 

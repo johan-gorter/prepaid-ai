@@ -179,6 +179,7 @@ needs Trash to discard the unsaved photo.
 | Remove              | 5 credits                              |
 | Colour change       | 10 credits                             |
 | Apply material      | 10 credits                             |
+| Add furniture       | 10 credits                             |
 | Free-prompt edit    | 10 credits                             |
 | Minimum top-up      | 75 credits (Stripe transaction costs)  |
 | Credit expiry       | never                                  |

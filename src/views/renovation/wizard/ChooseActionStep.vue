@@ -21,6 +21,7 @@ defineEmits<{
   remove: [];
   paint: [];
   applyMaterial: [];
+  addFurniture: [];
   other: [];
   back: [];
 }>();
@@ -87,6 +88,25 @@ defineEmits<{
       </span>
       <span class="choose-action-cost">{{
         $t("newImpression.chooseCost", { credits: ACTION_CREDITS.applyMaterial })
+      }}</span>
+    </button>
+
+    <button
+      class="border small-round choose-action-button"
+      data-testid="choose-add-furniture"
+      @click="$emit('addFurniture')"
+    >
+      <i aria-hidden="true">chair</i>
+      <span class="max choose-action-text">
+        <span class="choose-action-label">{{
+          $t("newImpression.chooseAddFurniture")
+        }}</span>
+        <span class="choose-action-subtitle">{{
+          $t("newImpression.chooseAddFurnitureSubtitle")
+        }}</span>
+      </span>
+      <span class="choose-action-cost">{{
+        $t("newImpression.chooseCost", { credits: ACTION_CREDITS.addFurniture })
       }}</span>
     </button>
 

@@ -43,6 +43,7 @@ const newImpression: NewImpressionMessages = {
     titleChoose: "Wat moet er gebeuren?",
     titlePaint: "Kies een kleur",
     titleMaterial: "Kies een materiaal",
+    titleFurniture: "Kies meubels",
     shareUnavailableTitle: "Delen niet beschikbaar",
     shareLinkUnavailable:
       "Deze deellink is niet meer beschikbaar. De eigenaar heeft de impressie mogelijk verwijderd.",
@@ -72,6 +73,8 @@ const newImpression: NewImpressionMessages = {
     choosePaint: "Kleur veranderen",
     chooseApplyMaterial: "Materiaal toepassen",
     chooseApplyMaterialSubtitle: "steen, hout, panelen, een plafondafwerking…",
+    chooseAddFurniture: "Meubels toevoegen",
+    chooseAddFurnitureSubtitle: "een bank, tafel, bed, kast…",
     chooseOther: "Anders",
     chooseOtherSubtitle: "beschrijf zelf wat er moet veranderen",
     chooseGuidance:
@@ -95,6 +98,12 @@ const newImpression: NewImpressionMessages = {
     materialAdd: "Materiaal toevoegen",
     materialSelectedAlt: "Gekozen materiaal",
     materialPrompt: "Pas het gekozen materiaal toe op het gemarkeerde gebied",
+    furniturePickHint:
+      "Voeg een foto toe van de meubels voor het gemarkeerde gebied.",
+    furnitureRecent: "Recent gebruikt",
+    furnitureAdd: "Meubels toevoegen",
+    furnitureSelectedAlt: "Gekozen meubels",
+    furniturePrompt: "Plaats de gekozen meubels in het gemarkeerde gebied",
     fullscreenOpen: "Volledig scherm",
     fullscreenClose: "Volledig scherm sluiten",
     fullscreenAlt: "Vergrote impressie",

@@ -10,14 +10,16 @@ import { useAuth } from "../../composables/useAuth";
 import { useGenerateImpression } from "../../composables/useGenerateImpression";
 import { useImpressionDraft } from "../../composables/useImpressionDraft";
 import {
+  clearAllReferenceSources,
   clearImpressionMask,
   clearImpressionSource,
-  clearMaterialSource,
+  clearReferenceSource,
   getImpressionDraft,
   getImpressionSource,
   setImpressionSource,
 } from "../../composables/useImpressionStore";
 import { deleteImpression } from "../../data/renovationRepo";
+import type { ReferenceKind } from "../../data/referenceImageRepo";
 import { useShareHydration } from "../../composables/useShareHydration";
 import { track } from "../../composables/useTrack";
 import { resolveStorageUrl } from "../../composables/useStorageUrl";
@@ -25,12 +27,24 @@ import { db } from "../../firebase";
 import { REMOVE_PROMPT } from "../../prompts";
 import ChooseActionStep from "./wizard/ChooseActionStep.vue";
 import MaskStep from "./wizard/MaskStep.vue";
-import MaterialStep from "./wizard/MaterialStep.vue";
+import ReferenceCaptureStep from "./wizard/ReferenceCaptureStep.vue";
 import PaintStep from "./wizard/PaintStep.vue";
 import { DEFAULT_PAINT_COLOR } from "./wizard/paintPresets";
 import PreviewStep from "./wizard/PreviewStep.vue";
 import PromptStep from "./wizard/PromptStep.vue";
 import type { Source, Stage } from "./wizard/wizardTypes";
+
+// Per-kind i18n keys for the reference-image flows. The page sets the timeline
+// label prompt and the stage title from these; the step component resolves its
+// own hint/grid/add labels by kind. Kept here so adding a third kind is local.
+const REFERENCE_TITLE_KEY: Record<ReferenceKind, string> = {
+  material: "newImpression.titleMaterial",
+  furniture: "newImpression.titleFurniture",
+};
+const REFERENCE_PROMPT_KEY: Record<ReferenceKind, string> = {
+  material: "newImpression.materialPrompt",
+  furniture: "newImpression.furniturePrompt",
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -51,14 +65,15 @@ const useSolidMask = ref(false);
 // Function asks Gemini to repaint the checkerboard-marked area in that colour.
 const usePaintMode = ref(false);
 const paintColor = ref(DEFAULT_PAINT_COLOR);
-// Apply-material flow: true once the user picks the "Apply material" action.
-// makes onGenerate write `mode: "material"` + the chosen material's Storage path
-// so the Cloud Function applies that material to the checkerboard-marked area.
-const useMaterialMode = ref(false);
-// Storage path of a chosen registry material; null while a fresh (not-yet-
-// uploaded) capture is the selection (its blob lives in the materialSource IDB
+// Reference-image flows ("Apply material" / "Add furniture"): set to the chosen
+// kind once the user picks that action. Makes onGenerate write `mode: <kind>` +
+// the chosen reference's Storage path so the Cloud Function applies it to the
+// checkerboard-marked area with the kind's prompt.
+const referenceKind = ref<ReferenceKind | null>(null);
+// Storage path of a chosen registry reference; null while a fresh (not-yet-
+// uploaded) capture is the selection (its blob lives in the referenceSource IDB
 // key). Persisted via the draft so a buy-credits / sign-in detour keeps it.
-const materialPath = ref<string | null>(null);
+const referencePath = ref<string | null>(null);
 
 const maskingRef = ref<InstanceType<typeof MaskingCanvas> | null>(null);
 
@@ -93,8 +108,8 @@ const {
   useSolidMask,
   usePaintMode,
   paintColor,
-  useMaterialMode,
-  materialPath,
+  referenceKind,
+  referencePath,
   initialMask,
   maskingRef,
 });
@@ -114,8 +129,8 @@ const { canGenerate, onGenerate } = useGenerateImpression({
   useSolidMask,
   usePaintMode,
   paintColor,
-  useMaterialMode,
-  materialPath,
+  referenceKind,
+  referencePath,
   stage,
   errorMessage,
   isMaskReady: () => !!maskingRef.value,
@@ -124,13 +139,22 @@ const { canGenerate, onGenerate } = useGenerateImpression({
   clearPersistedDraft,
 });
 
+// The active reference-image kind when on its stage, else null. Drives the
+// shared ReferenceCaptureStep's `kind` prop and its back/generate handlers.
+const referenceStage = computed<ReferenceKind | null>(() =>
+  stage.value === "material" || stage.value === "furniture"
+    ? stage.value
+    : null,
+);
+
 const pageTitle = computed(() => {
   if (stage.value === "prompt") return t("newImpression.titleDescribe");
   if (stage.value === "processing") return t("newImpression.titleProcessing");
   if (stage.value === "preview") return t("newImpression.titleImpression");
   if (stage.value === "choose-action") return t("newImpression.titleChoose");
   if (stage.value === "paint") return t("newImpression.titlePaint");
-  if (stage.value === "material") return t("newImpression.titleMaterial");
+  if (stage.value === "material" || stage.value === "furniture")
+    return t(REFERENCE_TITLE_KEY[stage.value]);
   return t("newImpression.titleMark");
 });
 
@@ -188,8 +212,8 @@ async function initFromRoute(): Promise<void> {
   useSolidMask.value = false;
   usePaintMode.value = false;
   paintColor.value = DEFAULT_PAINT_COLOR;
-  useMaterialMode.value = false;
-  materialPath.value = null;
+  referenceKind.value = null;
+  referencePath.value = null;
   restoredDraftKey.value = null;
   revokeSourceUrl();
 
@@ -242,9 +266,10 @@ async function initFromRoute(): Promise<void> {
 
   if (matches) {
     // Resume the action-specific step after a buy-credits / sign-in detour,
-    // rather than dropping into the free-prompt screen.
-    if (useMaterialMode.value) {
-      stage.value = "material";
+    // rather than dropping into the free-prompt screen. The reference stage
+    // name equals the kind ("material" / "furniture").
+    if (referenceKind.value) {
+      stage.value = referenceKind.value;
     } else if (usePaintMode.value) {
       stage.value = "paint";
     } else {
@@ -332,9 +357,9 @@ async function onNextChange() {
   await clearMaskEverywhere();
   useSolidMask.value = false;
   usePaintMode.value = false;
-  useMaterialMode.value = false;
-  materialPath.value = null;
-  await clearMaterialSource();
+  referenceKind.value = null;
+  referencePath.value = null;
+  await clearAllReferenceSources();
   prompt.value = "";
   stage.value = "mask";
 }
@@ -353,13 +378,13 @@ async function onChooseRemove() {
   prompt.value = REMOVE_PROMPT;
   useSolidMask.value = true;
   usePaintMode.value = false;
-  useMaterialMode.value = false;
+  referenceKind.value = null;
   await onGenerate();
 }
 
 function onChoosePaint() {
   track("action_chosen");
-  useMaterialMode.value = false;
+  referenceKind.value = null;
   stage.value = "paint";
 }
 
@@ -368,29 +393,31 @@ function onPaintBack() {
   stage.value = "choose-action";
 }
 
-async function onChooseApplyMaterial() {
+// Shared entry point for the reference-image actions (apply material / add
+// furniture): same flow, distinct kind. The stage name equals the kind.
+async function onChooseReference(kind: ReferenceKind) {
   track("action_chosen");
-  useMaterialMode.value = true;
+  referenceKind.value = kind;
+  referencePath.value = null;
   useSolidMask.value = false;
   usePaintMode.value = false;
-  materialPath.value = null;
-  await clearMaterialSource();
-  stage.value = "material";
+  await clearReferenceSource(kind);
+  stage.value = kind;
 }
 
-async function onMaterialBack() {
-  useMaterialMode.value = false;
-  materialPath.value = null;
-  await clearMaterialSource();
+async function onReferenceBack(kind: ReferenceKind) {
+  referenceKind.value = null;
+  referencePath.value = null;
+  await clearReferenceSource(kind);
   stage.value = "choose-action";
 }
 
-async function onMaterialGenerate() {
-  useMaterialMode.value = true;
+async function onReferenceGenerate(kind: ReferenceKind) {
+  referenceKind.value = kind;
   useSolidMask.value = false;
   usePaintMode.value = false;
   // Non-empty prompt satisfies canGenerate and gives the timeline a label.
-  prompt.value = t("newImpression.materialPrompt");
+  prompt.value = t(REFERENCE_PROMPT_KEY[kind]);
   await onGenerate();
 }
 
@@ -404,11 +431,11 @@ async function onPaintGenerate() {
 
 function onChooseOther() {
   track("action_chosen");
-  // Clear any leftover state from a previous Verwijderen / Schilder / material
+  // Clear any leftover state from a previous Verwijderen / Schilder / reference
   // attempt so the user gets the standard checkerboard + free-prompt flow.
   useSolidMask.value = false;
   usePaintMode.value = false;
-  useMaterialMode.value = false;
+  referenceKind.value = null;
   if (prompt.value === REMOVE_PROMPT) prompt.value = "";
   stage.value = "prompt";
 }
@@ -419,7 +446,7 @@ function onPromptBack() {
 
 async function onRetake() {
   await clearImpressionSource();
-  await clearMaterialSource();
+  await clearAllReferenceSources();
   await clearPersistedDraft();
   router.replace("/photo");
 }
@@ -450,7 +477,7 @@ async function onTrash() {
       }
     }
     await clearImpressionSource();
-    await clearMaterialSource();
+    await clearAllReferenceSources();
     await clearPersistedDraft();
     if (renovationParam.value) {
       router.replace(`/renovation/${renovationParam.value}`);
@@ -460,7 +487,7 @@ async function onTrash() {
   } else {
     // photo / crop
     await clearImpressionSource();
-    await clearMaterialSource();
+    await clearAllReferenceSources();
     await clearPersistedDraft();
     router.replace("/renovations");
   }
@@ -544,6 +571,7 @@ const showFullscreenButton = computed(
           stage !== 'choose-action' &&
           stage !== 'paint' &&
           stage !== 'material' &&
+          stage !== 'furniture' &&
           stage !== 'prompt'
         "
         class="step-hint"
@@ -558,7 +586,10 @@ const showFullscreenButton = computed(
           'inert-canvas': stage === 'processing' || stage === 'choose-action',
           'canvas-area--collapsed': stage === 'prompt',
           'canvas-area--compact': stage === 'choose-action',
-          'canvas-area--hidden': stage === 'paint' || stage === 'material',
+          'canvas-area--hidden':
+            stage === 'paint' ||
+            stage === 'material' ||
+            stage === 'furniture',
         }"
         @pointerdown="onCanvasPointerDown"
         @pointerup="onCanvasPointerUp"
@@ -615,7 +646,8 @@ const showFullscreenButton = computed(
         v-if="stage === 'choose-action'"
         @remove="onChooseRemove"
         @paint="onChoosePaint"
-        @apply-material="onChooseApplyMaterial"
+        @apply-material="onChooseReference('material')"
+        @add-furniture="onChooseReference('furniture')"
         @other="onChooseOther"
         @back="onChooseBack"
       />
@@ -627,11 +659,15 @@ const showFullscreenButton = computed(
         @generate="onPaintGenerate"
       />
 
-      <MaterialStep
-        v-if="stage === 'material'"
-        v-model:material-path="materialPath"
-        @back="onMaterialBack"
-        @generate="onMaterialGenerate"
+      <!-- Apply material and Add furniture share one component (the user
+           supplies a reference photo); the `kind` keeps the funnels separate. -->
+      <ReferenceCaptureStep
+        v-if="referenceStage"
+        :key="referenceStage"
+        :kind="referenceStage"
+        v-model:selected-path="referencePath"
+        @back="onReferenceBack(referenceStage)"
+        @generate="onReferenceGenerate(referenceStage)"
       />
 
       <MaskStep

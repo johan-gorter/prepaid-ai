@@ -230,14 +230,18 @@ the recolour.) **[guide]**
 > Apply the prompt below to the magenta checkered area. Do not include the
 > checkered area in the output.
 
-### Apply a material from a reference photo (checkerboard + second image)
+### Reference-photo edits — apply material / add furniture (checkerboard + second image)
 
-The apply-material flow resurfaces the marked area with a **material photo the
-user supplies**, sent as the *second* image. Two images go in: the marked photo
-(50% magenta checkerboard, "the first image") and the material reference ("the
-second image"). It runs on the pro image model (`GEMINI_PAINT_MODEL`) for the
-same reason paint does — `gemini-2.5-flash-image` won't commit to masked surface
-edits. Built by `buildMaterialPrompt()` (`functions/src/prompts/material.md`):
+Two flows let the user supply a **reference photo as the *second* image**:
+apply-material resurfaces the marked area with a material, and add-furniture
+places a piece of furniture into it. Both send two images — the marked photo
+(50% magenta checkerboard, "the first image") and the user's reference ("the
+second image") — and both run on the pro image model (`GEMINI_PAINT_MODEL`) for
+the same reason paint does (`gemini-2.5-flash-image` won't commit to masked
+edits). They differ only in the prompt template, selected by kind via
+`buildReferencePrompt(kind)` (`functions/src/prompts/{material,furniture}.md`).
+
+Apply-material (`material.md`):
 
 > The first image has a magenta checkerboard covering the surfaces to resurface;
 > the original surfaces show between the squares. Resurface every fully covered
@@ -248,11 +252,20 @@ edits. Built by `buildMaterialPrompt()` (`functions/src/prompts/material.md`):
 > these surfaces unchanged in their original appearance. Remove all magenta, and
 > change nothing outside the resurfaced surfaces.
 
-This reuses the proven paint structure (per-surface all-or-nothing coverage,
-reconstruct geometry, keep objects-in-front, remove magenta) and swaps the flat
-colour for "the material shown in the second image … mapping it to follow …
-geometry, perspective, scale, and lighting." Like every prompt here it has not
-yet been A/B-tuned — iterate it in `functions/ai-lab` before relying on it.
+Add-furniture (`furniture.md`) treats the marked region as a *placement zone*
+rather than a surface to resurface, and leans hard on **realistic real-world
+dimensions** (the model otherwise scales the piece to fill the marked region):
+
+> …Add the furniture shown in the second image into that area, resting naturally
+> on the floor or against the surface there. Size it to realistic real-world
+> dimensions: scale it to the room and the objects around it so the piece is
+> exactly as large as it would be in reality, never stretched or shrunk to fill
+> the marked region. Match the scene's perspective, lighting, and shadows, and
+> keep the furniture's true proportions…
+
+Both reuse the proven paint structure (reconstruct geometry, keep objects in
+front, remove magenta). Like every prompt here they have not yet been A/B-tuned
+— iterate them in `functions/ai-lab` before relying on them.
 
 ---
 

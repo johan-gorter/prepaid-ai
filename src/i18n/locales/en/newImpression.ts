@@ -46,6 +46,7 @@ const newImpression = {
     titleChoose: "What should happen?",
     titlePaint: "Choose a color",
     titleMaterial: "Choose a material",
+    titleFurniture: "Choose furniture",
     shareUnavailableTitle: "Share unavailable",
     shareLinkUnavailable:
       "This share link is no longer available. The owner may have deleted the impression.",
@@ -75,6 +76,8 @@ const newImpression = {
     choosePaint: "Change color",
     chooseApplyMaterial: "Apply material",
     chooseApplyMaterialSubtitle: "stone, wood, panels, a ceiling finish…",
+    chooseAddFurniture: "Add furniture",
+    chooseAddFurnitureSubtitle: "a sofa, table, bed, cabinet…",
     chooseOther: "Other",
     chooseOtherSubtitle: "describe any change in your own words",
     chooseGuidance:
@@ -98,6 +101,12 @@ const newImpression = {
     materialAdd: "Add material",
     materialSelectedAlt: "Selected material",
     materialPrompt: "Apply the chosen material to the marked area",
+    furniturePickHint:
+      "Add a photo of the furniture to place in the marked area.",
+    furnitureRecent: "Recently used",
+    furnitureAdd: "Add furniture",
+    furnitureSelectedAlt: "Selected furniture",
+    furniturePrompt: "Place the chosen furniture in the marked area",
     fullscreenOpen: "View fullscreen",
     fullscreenClose: "Close fullscreen",
     fullscreenAlt: "Enlarged impression",
